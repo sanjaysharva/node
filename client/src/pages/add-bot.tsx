@@ -73,6 +73,10 @@ export default function AddBot() {
       serverCount: 0,
       verified: false,
       featured: false,
+      iconUrl: "",
+      bannerUrl: "",
+      uses: "",
+      type: "",
     },
   });
 
@@ -127,6 +131,101 @@ export default function AddBot() {
                           data-testid="input-bot-name"
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Bot Icon URL */}
+                <FormField
+                  control={form.control}
+                  name="iconUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bot Icon URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://cdn.discordapp.com/avatars/..."
+                          {...field}
+                          data-testid="input-icon-url"
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        Direct link to your bot's avatar/icon image
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Bot Banner URL */}
+                <FormField
+                  control={form.control}
+                  name="bannerUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bot Banner URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/banner.jpg"
+                          {...field}
+                          data-testid="input-banner-url"
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        Banner image for your bot (recommended: 1200x400px)
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Bot Uses/Purpose */}
+                <FormField
+                  control={form.control}
+                  name="uses"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bot Uses/Purpose *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          rows={3}
+                          placeholder="What is your bot used for? (e.g., Music playback, Server moderation, Fun commands, etc.)"
+                          {...field}
+                          data-testid="textarea-uses"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Bot Type */}
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bot Type *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-bot-type">
+                            <SelectValue placeholder="Select bot type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="music">Music Bot</SelectItem>
+                          <SelectItem value="moderation">Moderation Bot</SelectItem>
+                          <SelectItem value="utility">Utility Bot</SelectItem>
+                          <SelectItem value="fun">Fun/Entertainment Bot</SelectItem>
+                          <SelectItem value="economy">Economy Bot</SelectItem>
+                          <SelectItem value="roleplay">Roleplay Bot</SelectItem>
+                          <SelectItem value="gaming">Gaming Bot</SelectItem>
+                          <SelectItem value="social">Social Bot</SelectItem>
+                          <SelectItem value="multipurpose">Multi-purpose Bot</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

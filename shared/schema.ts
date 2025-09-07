@@ -66,6 +66,10 @@ export const bots = pgTable("bots", {
   verified: boolean("verified").default(false),
   featured: boolean("featured").default(false),
   prefix: text("prefix"),
+  iconUrl: text("icon_url"),
+  bannerUrl: text("banner_url"),
+  uses: text("uses").notNull(),
+  type: text("type").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

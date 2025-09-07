@@ -22,9 +22,14 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2" data-testid="link-home">
-                <i className="fab fa-discord text-3xl text-primary"></i>
-                <span className="font-bold text-xl text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">Smart Serve</span>
+              <Link href="/" className="flex items-center space-x-2 group" data-testid="link-home">
+                <div className="relative">
+                  <i className="fab fa-discord text-3xl text-primary transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"></i>
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                </div>
+                <span className="font-bold text-xl text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
+                  Smart Serve
+                </span>
               </Link>
             </div>
             <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
@@ -39,9 +44,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2" data-testid="link-home">
-              <i className="fab fa-discord text-3xl text-primary"></i>
-              <span className="font-bold text-xl">DiscordHub</span>
+            <Link href="/" className="flex items-center space-x-2 group" data-testid="link-home">
+              <div className="relative">
+                <i className="fab fa-discord text-3xl text-primary transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"></i>
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+              </div>
+              <span className="font-bold text-xl text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
+                Smart Serve
+              </span>
             </Link>
             <div className="hidden md:flex space-x-6 items-center">
               <Link
@@ -99,19 +109,34 @@ export default function Navbar() {
                     Premium
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-purple-400/20" />
-                  <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-feedback">
-                    <i className="fas fa-comment mr-2 h-4 w-4 text-blue-400"></i>
-                    Feedback
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-submit-ticket">
-                    <i className="fas fa-ticket-alt mr-2 h-4 w-4 text-green-400"></i>
-                    Submit Ticket
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-purple-400/20" />
-                  <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-discord-menu">
-                    <i className="fab fa-discord mr-2 h-4 w-4 text-primary"></i>
-                    Discord
-                  </DropdownMenuItem>
+                  {/* Categories inside dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild className="w-full px-2 py-1.5 text-sm outline-none cursor-pointer focus:bg-accent focus:text-accent-foreground">
+                      <div className="flex items-center">
+                        <i className="fas fa-sitemap mr-2 h-4 w-4 text-blue-400"></i>
+                        Categories
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48 bg-card/95 backdrop-blur-sm border border-blue-400/20 ml-2">
+                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-support">
+                        <i className="fas fa-question-circle mr-2 h-4 w-4 text-blue-400"></i>
+                        Support
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-feedback">
+                        <i className="fas fa-comment mr-2 h-4 w-4 text-blue-400"></i>
+                        Feedback
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-submit-ticket">
+                        <i className="fas fa-ticket-alt mr-2 h-4 w-4 text-green-400"></i>
+                        Submit Ticket
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-blue-400/20" />
+                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-discord-menu">
+                        <i className="fab fa-discord mr-2 h-4 w-4 text-primary"></i>
+                        Discord
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -122,7 +147,7 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center space-x-2 bg-secondary/20 hover:bg-secondary/30"
+                  className="flex items-center space-x-2 bg-secondary/20 hover:bg-secondary/30 transition-all duration-300 hover:scale-105"
                   data-testid="button-user-menu"
                 >
                   <Avatar className="w-8 h-8">
@@ -133,7 +158,7 @@ export default function Navbar() {
                     <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   <span data-testid="text-username">{user?.username}</span>
-                  <i className="fas fa-chevron-down text-sm"></i>
+                  <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -179,7 +204,7 @@ export default function Navbar() {
           ) : (
             <Button
               onClick={loginWithDiscord}
-              className="bg-primary hover:bg-primary/90"
+              className="bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
               data-testid="button-login"
             >
               <i className="fab fa-discord mr-2"></i>

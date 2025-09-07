@@ -42,15 +42,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const clientId = process.env.DISCORD_CLIENT_ID;
     const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
     const scope = 'identify email';
-    
+
     const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
-    
+
     res.redirect(discordAuthUrl);
   });
 
   app.get("/api/auth/discord/callback", async (req, res) => {
     const { code } = req.query;
-    
+
     if (!code) {
       return res.status(400).json({ message: "Authorization code not provided" });
     }
@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const tokenData = await tokenResponse.json();
-      
+
       if (!tokenResponse.ok) {
         throw new Error(tokenData.error_description || 'Failed to get access token');
       }
@@ -89,17 +89,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const discordUser = await userResponse.json();
-      
+
       if (!userResponse.ok) {
         throw new Error('Failed to get user info');
       }
 
       // Check if user exists in database
       let user = await storage.getUserByDiscordId(discordUser.id);
-      
+
       // Check if this is the admin user
       const isAdminUser = discordUser.username === 'aetherflux_002';
-      
+
       if (!user) {
         // Create new user
         user = await storage.createUser({
@@ -122,11 +122,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Set user in session
-      req.session.userId = user.id;
-      
-      // Redirect to home page
-      res.redirect('/');
-      
+      const session = req.session as any;
+      session.userId = user.id;
+
+      // Redirect to home
+      res.redirect('/?auth=success');
+
     } catch (error) {
       console.error('Discord OAuth error:', error);
       res.status(500).json({ message: "Authentication failed" });
@@ -134,7 +135,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
+    const session = req.session as any;
+    session.destroy((err: any) => {
       if (err) {
         console.error('Session destruction error:', err);
       }
@@ -308,14 +310,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/discord/validate-invite", async (req, res) => {
     try {
       const { inviteCode } = req.body;
-      
+
       if (!inviteCode) {
         return res.status(400).json({ message: "Invite code is required" });
       }
 
       // Extract invite code from full URL if provided
       const code = inviteCode.split('/').pop();
-      
+
       // This would normally make a Discord API call
       // For now, return mock data structure
       const mockServerData = {

@@ -81,11 +81,11 @@ export default function Home() {
         >
           <div className="absolute inset-0 bg-black/20" />
           <div className="relative z-10 text-center max-w-4xl mx-auto px-8">
-            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-              Discover Amazing Discord Communities
+            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent animate-pulse">
+              Smart Communities, Smarter Connections
             </h1>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Find the perfect Discord server for gaming, learning, chatting, and more. Join thousands of active communities today.
+              Discover the perfect Discord servers and bots with Smart Serve. Join thousands of active communities and enhance your Discord experience.
             </p>
             <HeroSearch onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
           </div>
@@ -220,10 +220,10 @@ export default function Home() {
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <i className="fab fa-discord text-2xl text-primary"></i>
-                <span className="font-bold text-xl">DiscordHub</span>
+                <span className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Smart Serve</span>
               </div>
               <p className="text-muted-foreground">
-                Discover the best Discord servers and bots for your community.
+                Smart communities, smarter connections. Discover the best Discord servers and bots for your community.
               </p>
             </div>
 
@@ -259,7 +259,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 DiscordHub. All rights reserved.</p>
+            <p>&copy; 2024 Smart Serve. All rights reserved.</p>
           </div>
         </div>
       </footer>
