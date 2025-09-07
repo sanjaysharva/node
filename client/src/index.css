@@ -51,6 +51,38 @@
   }
 }
 
+@keyframes dark-purple-wave {
+  0%, 100% {
+    background: linear-gradient(135deg, hsl(262, 83%, 25%) 0%, hsl(262, 83%, 35%) 50%, hsl(262, 83%, 30%) 100%);
+  }
+  33% {
+    background: linear-gradient(135deg, hsl(262, 83%, 30%) 0%, hsl(262, 83%, 25%) 50%, hsl(262, 83%, 40%) 100%);
+  }
+  66% {
+    background: linear-gradient(135deg, hsl(262, 83%, 35%) 0%, hsl(262, 83%, 40%) 50%, hsl(262, 83%, 25%) 100%);
+  }
+}
+
+@keyframes dark-purple-glow {
+  0%, 100% {
+    border-color: rgba(95, 39, 205, 0.3);
+    box-shadow: 0 0 5px rgba(95, 39, 205, 0.2);
+  }
+  50% {
+    border-color: rgba(95, 39, 205, 0.5);
+    box-shadow: 0 0 15px rgba(95, 39, 205, 0.4), 0 0 30px rgba(95, 39, 205, 0.2);
+  }
+}
+
+@keyframes dark-purple-pulse {
+  0%, 100% {
+    box-shadow: 0 25px 35px -5px rgba(95, 39, 205, 0.4), 0 0 20px rgba(95, 39, 205, 0.3);
+  }
+  50% {
+    box-shadow: 0 30px 40px -5px rgba(95, 39, 205, 0.6), 0 0 30px rgba(95, 39, 205, 0.5);
+  }
+}
+
 @keyframes card-hover {
   0% {
     transform: translateY(0) scale(1);
@@ -142,32 +174,32 @@
   --card-foreground: hsl(0, 0%, 98%);
   --popover: hsl(240, 10%, 10%);
   --popover-foreground: hsl(0, 0%, 98%);
-  --primary: hsl(262, 83%, 58%);
+  --primary: hsl(262, 83%, 35%);
   --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(262, 83%, 68%);
+  --secondary: hsl(262, 83%, 40%);
   --secondary-foreground: hsl(240, 5%, 26%);
   --muted: hsl(240, 5%, 26%);
   --muted-foreground: hsl(240, 5%, 65%);
-  --accent: hsl(262, 83%, 78%);
+  --accent: hsl(262, 83%, 45%);
   --accent-foreground: hsl(240, 6%, 10%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
   --border: hsl(240, 6%, 20%);
   --input: hsl(240, 6%, 20%);
-  --ring: hsl(262, 83%, 58%);
-  --chart-1: hsl(262, 83%, 58%);
+  --ring: hsl(262, 83%, 35%);
+  --chart-1: hsl(262, 83%, 35%);
   --chart-2: hsl(159, 100%, 36%);
   --chart-3: hsl(42, 93%, 56%);
   --chart-4: hsl(147, 79%, 42%);
   --chart-5: hsl(341, 75%, 51%);
   --sidebar: hsl(240, 10%, 10%);
   --sidebar-foreground: hsl(0, 0%, 98%);
-  --sidebar-primary: hsl(262, 83%, 58%);
+  --sidebar-primary: hsl(262, 83%, 35%);
   --sidebar-primary-foreground: hsl(0, 0%, 98%);
-  --sidebar-accent: hsl(262, 83%, 78%);
+  --sidebar-accent: hsl(262, 83%, 45%);
   --sidebar-accent-foreground: hsl(240, 6%, 10%);
   --sidebar-border: hsl(240, 6%, 20%);
-  --sidebar-ring: hsl(262, 83%, 58%);
+  --sidebar-ring: hsl(262, 83%, 35%);
   --font-sans: "Inter", sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -208,34 +240,42 @@
 
 @layer utilities {
   .gradient-bg {
-    background: linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(262, 83%, 68%) 100%);
+    background: linear-gradient(135deg, hsl(262, 83%, 25%) 0%, hsl(262, 83%, 35%) 50%, hsl(262, 83%, 30%) 100%);
+    animation: dark-purple-wave 4s ease-in-out infinite;
   }
   
   .glass-card {
     background: rgba(26, 26, 46, 0.6);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(124, 58, 237, 0.2);
+    border: 1px solid rgba(95, 39, 205, 0.3);
+    animation: dark-purple-glow 3s ease-in-out infinite;
   }
   
   .server-card {
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(95, 39, 205, 0.2);
   }
   
   .server-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.3);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 25px 35px -5px rgba(95, 39, 205, 0.4), 0 0 20px rgba(95, 39, 205, 0.3);
+    border: 1px solid rgba(95, 39, 205, 0.5);
+    animation: dark-purple-pulse 2s ease-in-out infinite;
   }
   
   .category-chip {
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(95, 39, 205, 0.3);
   }
   
   .category-chip:hover {
-    background: hsl(262, 83%, 58%);
+    background: hsl(262, 83%, 35%);
     color: white;
+    box-shadow: 0 0 15px rgba(95, 39, 205, 0.6);
+    transform: scale(1.05);
   }
   
   .search-glow:focus {
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+    box-shadow: 0 0 0 4px rgba(95, 39, 205, 0.4), 0 0 20px rgba(95, 39, 205, 0.3);
   }
 }
