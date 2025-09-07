@@ -316,20 +316,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Extract invite code from full URL if provided
-      const code = inviteCode.split('/').pop();
+      const code = inviteCode.split('/').pop().split('?')[0];
 
-      // This would normally make a Discord API call
-      // For now, return mock data structure
-      const mockServerData = {
-        name: "Server Name",
-        icon: null,
-        memberCount: 0,
-        onlineCount: 0,
-        valid: true
+      // Get invite information
+      const inviteResponse = await fetch(`https://discord.com/api/v10/invites/${code}?with_counts=true`);
+      
+      if (!inviteResponse.ok) {
+        return res.status(400).json({ message: "Invalid invite code" });
+      }
+
+      const inviteData = await inviteResponse.json();
+      const serverId = inviteData.guild.id;
+
+      // Check if our bot is in the server
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      const guildResponse = await fetch(`https://discord.com/api/v10/guilds/${serverId}`, {
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+        },
+      });
+
+      if (!guildResponse.ok) {
+        return res.status(400).json({ 
+          message: "Bot is not in this server. Please invite our bot first.",
+          botNotInServer: true 
+        });
+      }
+
+      const guildData = await guildResponse.json();
+
+      // Get additional guild info for member counts
+      const guildMembersResponse = await fetch(`https://discord.com/api/v10/guilds/${serverId}?with_counts=true`, {
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+        },
+      });
+
+      const guildMembersData = await guildMembersResponse.json();
+
+      const serverData = {
+        name: guildData.name,
+        icon: guildData.icon ? `https://cdn.discordapp.com/icons/${serverId}/${guildData.icon}.png` : null,
+        banner: guildData.banner ? `https://cdn.discordapp.com/banners/${serverId}/${guildData.banner}.png` : null,
+        description: guildData.description || "",
+        memberCount: guildMembersData.approximate_member_count || inviteData.approximate_member_count || 0,
+        onlineCount: guildMembersData.approximate_presence_count || inviteData.approximate_presence_count || 0,
+        valid: true,
+        serverId: serverId
       };
 
-      res.json(mockServerData);
+      res.json(serverData);
     } catch (error) {
+      console.error("Discord validation error:", error);
       res.status(500).json({ message: "Failed to validate invite" });
     }
   });
