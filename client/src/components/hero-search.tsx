@@ -51,14 +51,13 @@ export default function HeroSearch({ onSearch, onCategoryFilter }: HeroSearchPro
         </form>
 
         {/* Quick Category Filters */}
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap gap-3 justify-center">
           {categories.map((category) => (
             <Button
               key={category}
-              variant="ghost"
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:scale-105 transition-all duration-300 category-chip"
               onClick={() => onCategoryFilter(category.toLowerCase())}
-              className="category-chip bg-white/20 hover:bg-primary text-white px-4 py-2 rounded-full text-sm font-medium transition-all"
-              data-testid={`button-category-${category.toLowerCase()}`}
             >
               {category}
             </Button>
