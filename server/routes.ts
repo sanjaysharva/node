@@ -40,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/discord", (req, res) => {
     const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
-    const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
+    const redirectUri = `https://${req.get('host')}/api/auth/discord/callback`;
     const scope = 'identify email';
 
     console.log('Discord OAuth - Client ID:', clientId);
@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
       const clientSecret = process.env.DISCORD_CLIENT_SECRET || "HcTo5WQbahuxCzWirKq3yJcg_CRW9fLu";
-      const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
+      const redirectUri = `https://${req.get('host')}/api/auth/discord/callback`;
 
       console.log('Discord Callback - Client ID:', clientId);
       console.log('Discord Callback - Client Secret:', clientSecret ? 'Set' : 'Not set');
