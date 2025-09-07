@@ -31,7 +31,7 @@ export default function AddServer() {
   const queryClient = useQueryClient();
 
   // Fetch categories
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 

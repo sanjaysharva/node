@@ -1,8 +1,21 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertServerSchema, insertBotSchema } from "@shared/schema";
 import { z } from "zod";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        discordId: string;
+        username: string;
+        avatar?: string;
+      };
+    }
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -70,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const serverData = insertServerSchema.parse({
         ...req.body,
-        ownerId: (req.user as any).id,
+        ownerId: req.user.id,
       });
       const server = await storage.createServer(serverData);
       res.status(201).json(server);
@@ -93,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Server not found" });
       }
 
-      if (server.ownerId !== (req.user as any).id) {
+      if (server.ownerId !== req.user.id) {
         return res.status(403).json({ message: "You can only edit your own servers" });
       }
 
@@ -119,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Server not found" });
       }
 
-      if (server.ownerId !== (req.user as any).id) {
+      if (server.ownerId !== req.user.id) {
         return res.status(403).json({ message: "You can only delete your own servers" });
       }
 
@@ -164,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const botData = insertBotSchema.parse({
         ...req.body,
-        ownerId: (req.user as any).id,
+        ownerId: req.user.id,
       });
       const bot = await storage.createBot(botData);
       res.status(201).json(bot);

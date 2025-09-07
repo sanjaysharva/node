@@ -30,7 +30,7 @@ export default function AddBot() {
   const queryClient = useQueryClient();
 
   // Fetch categories
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
@@ -207,6 +207,7 @@ export default function AddBot() {
                         <Input
                           placeholder="! or $ or //"
                           {...field}
+                          value={field.value || ""}
                           data-testid="input-prefix"
                         />
                       </FormControl>

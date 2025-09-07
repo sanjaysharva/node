@@ -132,7 +132,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteServer(id: string): Promise<boolean> {
     const result = await db.delete(servers).where(eq(servers.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Bot operations
@@ -197,7 +197,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBot(id: string): Promise<boolean> {
     const result = await db.delete(bots).where(eq(bots.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
