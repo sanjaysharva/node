@@ -39,9 +39,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/discord", (req, res) => {
-    const clientId = process.env.DISCORD_CLIENT_ID;
+    const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
     const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
     const scope = 'identify email';
+
+    console.log('Discord OAuth - Client ID:', clientId);
+    console.log('Discord OAuth - Redirect URI:', redirectUri);
+
+    if (!clientId) {
+      return res.status(500).json({ message: "Discord client ID not configured" });
+    }
 
     const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
 
@@ -56,9 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const clientId = process.env.DISCORD_CLIENT_ID;
-      const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+      const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
+      const clientSecret = process.env.DISCORD_CLIENT_SECRET || "HcTo5WQbahuxCzWirKq3yJcg_CRW9fLu";
       const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
+
+      console.log('Discord Callback - Client ID:', clientId);
+      console.log('Discord Callback - Client Secret:', clientSecret ? 'Set' : 'Not set');
 
       // Exchange code for access token
       const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
