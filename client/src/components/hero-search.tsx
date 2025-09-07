@@ -27,13 +27,6 @@ export default function HeroSearch({ onSearch, onCategoryFilter }: HeroSearchPro
   return (
     <section className="gradient-bg py-20">
       <div className="max-w-4xl mx-auto px-4 text-center">
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white">
-          Discover Amazing <br />
-          <span className="text-accent">Discord Communities</span>
-        </h1>
-        <p className="text-xl mb-8 text-purple-100">
-          Find the perfect Discord servers and bots for your community
-        </p>
 
         {/* Search Bar */}
         <form onSubmit={handleSearchSubmit} className="relative max-w-2xl mx-auto mb-8">
