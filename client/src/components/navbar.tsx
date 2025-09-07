@@ -80,12 +80,12 @@ export default function Navbar() {
               >
                 Events
               </Link>
-              
+
               {/* Three dots dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)]"
                     data-testid="button-menu-dots"
@@ -158,6 +158,14 @@ export default function Navbar() {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
+                {user.isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={logout}
                   className="text-red-400 focus:text-red-400"

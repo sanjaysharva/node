@@ -10,7 +10,20 @@ export const users = pgTable("users", {
   discriminator: varchar("discriminator", { length: 4 }),
   avatar: text("avatar"),
   email: text("email"),
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const ads = pgTable("ads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  linkUrl: text("link_url"),
+  position: text("position").notNull(), // 'header', 'sidebar', 'footer', 'between-content'
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const categories = pgTable("categories", {
@@ -113,6 +126,12 @@ export const insertBotSchema = createInsertSchema(bots).omit({
   updatedAt: true,
 });
 
+export const insertAdSchema = createInsertSchema(ads).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -122,3 +141,5 @@ export type Server = typeof servers.$inferSelect;
 export type InsertServer = z.infer<typeof insertServerSchema>;
 export type Bot = typeof bots.$inferSelect;
 export type InsertBot = z.infer<typeof insertBotSchema>;
+export type Ad = typeof ads.$inferSelect;
+export type InsertAd = z.infer<typeof insertAdSchema>;

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import AddServer from "@/pages/add-server";
 import AddBot from "@/pages/add-bot";
+import AdminPage from "@/pages/admin"; // Import the AdminPage
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/add-server" component={AddServer} />
       <Route path="/add-bot" component={AddBot} />
+      <Route path="/admin" component={AdminPage} /> {/* Add the admin route */}
       <Route component={NotFound} />
     </Switch>
   );

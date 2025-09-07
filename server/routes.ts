@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServerSchema, insertBotSchema } from "@shared/schema";
+import { insertServerSchema, insertBotSchema, insertAdSchema } from "@shared/schema";
 import { z } from "zod";
 
 declare global {
@@ -18,6 +18,17 @@ declare global {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Admin middleware
+  const requireAdmin = (req: Request, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    next();
+  };
+
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
     if (req.user) {
@@ -86,6 +97,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user exists in database
       let user = await storage.getUserByDiscordId(discordUser.id);
       
+      // Check if this is the admin user
+      const isAdminUser = discordUser.username === 'aetherflux_002';
+      
       if (!user) {
         // Create new user
         user = await storage.createUser({
@@ -94,6 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           discriminator: discordUser.discriminator,
           avatar: discordUser.avatar,
           email: discordUser.email,
+          isAdmin: isAdminUser,
         });
       } else {
         // Update existing user
@@ -102,6 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           discriminator: discordUser.discriminator,
           avatar: discordUser.avatar,
           email: discordUser.email,
+          isAdmin: isAdminUser,
         });
       }
 
@@ -307,6 +323,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(mockServerData);
     } catch (error) {
       res.status(500).json({ message: "Failed to validate invite" });
+    }
+  });
+
+  // Ads routes
+  app.get("/api/ads", async (req, res) => {
+    try {
+      const { position } = req.query;
+      const ads = await storage.getAds(position as string);
+      res.json(ads);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch ads" });
+    }
+  });
+
+  app.post("/api/ads", requireAdmin, async (req, res) => {
+    try {
+      const adData = insertAdSchema.parse(req.body);
+      const ad = await storage.createAd(adData);
+      res.status(201).json(ad);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create ad" });
+    }
+  });
+
+  app.put("/api/ads/:id", requireAdmin, async (req, res) => {
+    try {
+      const adData = insertAdSchema.partial().parse(req.body);
+      const updatedAd = await storage.updateAd(req.params.id, adData);
+      if (!updatedAd) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+      res.json(updatedAd);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update ad" });
+    }
+  });
+
+  app.delete("/api/ads/:id", requireAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteAd(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete ad" });
     }
   });
 

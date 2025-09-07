@@ -7,6 +7,7 @@ export interface User {
   discriminator?: string;
   avatar?: string;
   email?: string;
+  isAdmin?: boolean;
 }
 
 export function useAuth() {

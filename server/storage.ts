@@ -1,4 +1,4 @@
-import { users, servers, bots, categories, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Category, type InsertCategory } from "@shared/schema";
+import { users, servers, bots, categories, ads, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Category, type InsertCategory, type Ad, type InsertAd } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, ilike, or, and, inArray } from "drizzle-orm";
 
@@ -31,6 +31,13 @@ export interface IStorage {
   createBot(bot: InsertBot): Promise<Bot>;
   updateBot(id: string, bot: Partial<InsertBot>): Promise<Bot | undefined>;
   deleteBot(id: string): Promise<boolean>;
+
+  // Ad operations
+  getAds(position?: string): Promise<Ad[]>;
+  getAd(id: string): Promise<Ad | undefined>;
+  createAd(ad: InsertAd): Promise<Ad>;
+  updateAd(id: string, ad: Partial<InsertAd>): Promise<Ad | undefined>;
+  deleteAd(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -197,6 +204,37 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBot(id: string): Promise<boolean> {
     const result = await db.delete(bots).where(eq(bots.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Ad operations
+  async getAds(position?: string): Promise<Ad[]> {
+    let query = db.select().from(ads).where(eq(ads.isActive, true));
+    
+    if (position) {
+      query = query.where(and(eq(ads.isActive, true), eq(ads.position, position)));
+    }
+    
+    return await query.orderBy(desc(ads.createdAt));
+  }
+
+  async getAd(id: string): Promise<Ad | undefined> {
+    const [ad] = await db.select().from(ads).where(eq(ads.id, id));
+    return ad || undefined;
+  }
+
+  async createAd(insertAd: InsertAd): Promise<Ad> {
+    const [ad] = await db.insert(ads).values(insertAd).returning();
+    return ad;
+  }
+
+  async updateAd(id: string, ad: Partial<InsertAd>): Promise<Ad | undefined> {
+    const [updatedAd] = await db.update(ads).set({ ...ad, updatedAt: new Date() }).where(eq(ads.id, id)).returning();
+    return updatedAd || undefined;
+  }
+
+  async deleteAd(id: string): Promise<boolean> {
+    const result = await db.delete(ads).where(eq(ads.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }

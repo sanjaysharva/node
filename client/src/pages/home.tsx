@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import type { Server, Category } from "@shared/schema";
+import { AdBanner } from "@/components/ad-banner";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,11 +62,11 @@ export default function Home() {
       });
       return;
     }
-    
+
     // Find the server and redirect to Discord invite
-    const server = allServers?.find((s: Server) => s.id === serverId) || 
+    const server = allServers?.find((s: Server) => s.id === serverId) ||
                   popularServers?.find((s: Server) => s.id === serverId);
-    
+
     if (server?.inviteCode) {
       window.open(`https://discord.gg/${server.inviteCode}`, '_blank');
     }
@@ -74,8 +75,25 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <HeroSearch onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
+
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full h-[400px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl flex items-center justify-center text-white relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="relative z-10 text-center max-w-4xl mx-auto px-8">
+            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+              Discover Amazing Discord Communities
+            </h1>
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Find the perfect Discord server for gaming, learning, chatting, and more. Join thousands of active communities today.
+            </p>
+            <HeroSearch onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
+          </div>
+        </div>
+
+        {/* Header Ad */}
+        <AdBanner position="header" className="mt-8" />
+      </section>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Popular Servers Showcase */}
