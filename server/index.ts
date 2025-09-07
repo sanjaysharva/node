@@ -1,10 +1,44 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true in production with HTTPS
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// User authentication middleware
+app.use(async (req, res, next) => {
+  if (req.session?.userId) {
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (user) {
+        req.user = {
+          id: user.id,
+          discordId: user.discordId,
+          username: user.username,
+          avatar: user.avatar,
+          isAdmin: user.isAdmin
+        };
+      }
+    } catch (error) {
+      console.error('Error loading user:', error);
+    }
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

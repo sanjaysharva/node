@@ -210,11 +210,11 @@ export class DatabaseStorage implements IStorage {
   // Ad operations
   async getAds(position?: string): Promise<Ad[]> {
     let query = db.select().from(ads).where(eq(ads.isActive, true));
-    
+
     if (position) {
       query = query.where(and(eq(ads.isActive, true), eq(ads.position, position)));
     }
-    
+
     return await query.orderBy(desc(ads.createdAt));
   }
 

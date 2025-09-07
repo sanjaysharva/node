@@ -121,9 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Set user in session (you'll need to implement session management)
-      // For now, we'll just redirect to home with user data
-      res.redirect(`/?auth=success&user=${encodeURIComponent(JSON.stringify(user))}`);
+      // Set user in session
+      req.session.userId = user.id;
+      
+      // Redirect to home page
+      res.redirect('/');
       
     } catch (error) {
       console.error('Discord OAuth error:', error);
@@ -132,8 +134,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/logout", (req, res) => {
-    // Clear session/cookies here
-    res.redirect('/');
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destruction error:', err);
+      }
+      res.redirect('/');
+    });
   });
 
   // Categories
