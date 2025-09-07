@@ -27,6 +27,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/auth/discord", (req, res) => {
+    const clientId = process.env.DISCORD_CLIENT_ID;
+    const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
+    const scope = 'identify email';
+    
+    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+    
+    res.redirect(discordAuthUrl);
+  });
+
+  app.get("/api/auth/discord/callback", async (req, res) => {
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.status(400).json({ message: "Authorization code not provided" });
+    }
+
+    try {
+      const clientId = process.env.DISCORD_CLIENT_ID;
+      const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
+
+      // Exchange code for access token
+      const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: clientId!,
+          client_secret: clientSecret!,
+          grant_type: 'authorization_code',
+          code: code as string,
+          redirect_uri: redirectUri,
+        }),
+      });
+
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenResponse.ok) {
+        throw new Error(tokenData.error_description || 'Failed to get access token');
+      }
+
+      // Get user info from Discord
+      const userResponse = await fetch('https://discord.com/api/users/@me', {
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+        },
+      });
+
+      const discordUser = await userResponse.json();
+      
+      if (!userResponse.ok) {
+        throw new Error('Failed to get user info');
+      }
+
+      // Check if user exists in database
+      let user = await storage.getUserByDiscordId(discordUser.id);
+      
+      if (!user) {
+        // Create new user
+        user = await storage.createUser({
+          discordId: discordUser.id,
+          username: discordUser.username,
+          discriminator: discordUser.discriminator,
+          avatar: discordUser.avatar,
+          email: discordUser.email,
+        });
+      } else {
+        // Update existing user
+        user = await storage.updateUser(user.id, {
+          username: discordUser.username,
+          discriminator: discordUser.discriminator,
+          avatar: discordUser.avatar,
+          email: discordUser.email,
+        });
+      }
+
+      // Set user in session (you'll need to implement session management)
+      // For now, we'll just redirect to home with user data
+      res.redirect(`/?auth=success&user=${encodeURIComponent(JSON.stringify(user))}`);
+      
+    } catch (error) {
+      console.error('Discord OAuth error:', error);
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  app.get("/api/auth/logout", (req, res) => {
+    // Clear session/cookies here
+    res.redirect('/');
+  });
+
   // Categories
   app.get("/api/categories", async (req, res) => {
     try {
