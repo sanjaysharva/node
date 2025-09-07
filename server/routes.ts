@@ -23,7 +23,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
-    if (!req.user.isAdmin) {
+    if (!(req.user as any).isAdmin) {
       return res.status(403).json({ message: "Admin access required" });
     }
     next();

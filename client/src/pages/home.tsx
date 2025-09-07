@@ -26,7 +26,18 @@ export default function Home() {
 
   // Fetch all servers with filters
   const { data: allServers, isLoading: loadingServers } = useQuery({
-    queryKey: ["/api/servers", { search: searchQuery, categories: selectedCategories, sort: sortBy }],
+    queryKey: ["/api/servers", searchQuery, selectedCategories.join(","), sortBy],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set("search", searchQuery);
+      if (selectedCategories.length > 0) params.set("categoryId", selectedCategories[0]);
+      params.set("limit", "20");
+      params.set("offset", "0");
+      
+      const response = await fetch(`/api/servers?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch servers");
+      return response.json();
+    },
   });
 
   // Fetch categories
@@ -77,74 +88,20 @@ export default function Home() {
       <Navbar />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="relative w-full min-h-[500px] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl overflow-hidden">
-          {/* Animated background elements */}
-          <div className="absolute inset-0">
-            <div className="absolute top-20 left-20 w-2 h-2 bg-purple-400 rounded-full opacity-60 animate-pulse"></div>
-            <div className="absolute top-40 right-32 w-1 h-1 bg-pink-400 rounded-full opacity-40 animate-pulse delay-300"></div>
-            <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-blue-400 rounded-full opacity-50 animate-pulse delay-700"></div>
-            <div className="absolute top-1/3 right-20 w-1 h-1 bg-cyan-400 rounded-full opacity-30 animate-pulse delay-1000"></div>
-            <div className="absolute bottom-20 right-1/4 w-2 h-2 bg-purple-300 rounded-full opacity-40 animate-pulse delay-500"></div>
+        <HeroSearch onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
+        
+        <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span>10K+ Active Servers</span>
           </div>
-
-          {/* Main content */}
-          <div className="relative z-10 flex items-center justify-center min-h-[500px] text-white px-8">
-            <div className="text-center max-w-4xl mx-auto">
-              <div className="mb-8 flex justify-center">
-                <div className="relative">
-                  <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-2xl">
-                    <div className="grid grid-cols-9 gap-0.5 w-10 h-10">
-                      {Array.from({length: 81}).map((_, i) => {
-                        const row = Math.floor(i / 9);
-                        const col = i % 9;
-                        const distance = Math.sqrt((row - 4)**2 + (col - 4)**2);
-                        const opacity = distance <= 4 ? Math.max(0.1, 1 - (distance / 4) * 0.9) : 0;
-                        return (
-                          <div 
-                            key={i} 
-                            className="w-0.5 h-0.5 bg-white rounded-full animate-pulse"
-                            style={{ 
-                              opacity,
-                              animationDelay: `${i * 50}ms`,
-                              animationDuration: '3s'
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl blur-xl opacity-50 scale-110 animate-pulse"></div>
-                </div>
-              </div>
-
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                <span className="block text-white">Discover Amazing</span>
-                <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent animate-gradient-x bg-300%">
-                  Discord Communities
-                </span>
-              </h1>
-              
-              <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-                Find the perfect Discord servers and bots for your community. Join thousands of active communities and enhance your Discord experience.
-              </p>
-              
-              <HeroSearch onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
-              
-              <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>10K+ Active Servers</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-300"></div>
-                  <span>5K+ Trusted Bots</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-700"></div>
-                  <span>1M+ Members</span>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-300"></div>
+            <span>5K+ Trusted Bots</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-700"></div>
+            <span>1M+ Members</span>
           </div>
         </div>
 
