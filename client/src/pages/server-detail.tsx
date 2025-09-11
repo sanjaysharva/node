@@ -1,5 +1,5 @@
 
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -23,8 +23,9 @@ import { useToast } from "@/hooks/use-toast";
 import type { Server, Review } from "@shared/schema";
 
 export default function ServerDetail() {
-  const { serverId } = useParams();
-  const navigate = useNavigate();
+  const [match, params] = useRoute("/server/:serverId");
+  const serverId = params?.serverId;
+  const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [rating, setRating] = useState(0);

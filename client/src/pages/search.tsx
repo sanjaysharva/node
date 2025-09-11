@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useLocation, useSearch } from "wouter";
 import Navbar from "@/components/navbar";
 import ServerCard from "@/components/server-card";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,12 @@ import { useAuth } from "@/lib/auth";
 import type { Server } from "@shared/schema";
 
 export default function SearchPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   
+  // Get search params from URL
+  const searchParams = new URLSearchParams(window.location.search);
   const initialQuery = searchParams.get("q") || "";
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [contentType, setContentType] = useState<"servers" | "bots">("servers");
@@ -27,9 +28,11 @@ export default function SearchPage() {
   // Update URL when search query changes
   useEffect(() => {
     if (searchQuery) {
-      setSearchParams({ q: searchQuery });
+      const url = new URL(window.location.href);
+      url.searchParams.set("q", searchQuery);
+      window.history.pushState({}, "", url.toString());
     }
-  }, [searchQuery, setSearchParams]);
+  }, [searchQuery]);
 
   // Fetch search results
   const { data: searchResults, isLoading: loadingResults } = useQuery({

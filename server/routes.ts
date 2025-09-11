@@ -1,11 +1,26 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServerSchema, insertBotSchema, insertEventSchema, insertAdSchema, insertServerJoinSchema, insertEventSchema } from "@shared/schema";
+import { db } from "./db";
+import { 
+  servers, 
+  bots, 
+  events, 
+  users, 
+  ads, 
+  slideshows, 
+  reviews, 
+  serverJoins, 
+  bumpChannels,
+  insertServerSchema, 
+  insertBotSchema, 
+  insertEventSchema, 
+  insertAdSchema, 
+  insertServerJoinSchema,
+  insertSlideshowSchema
+} from "@shared/schema";
 import { z } from "zod";
-import { servers, bots, events, users, ads, slideshows, reviews, insertServerSchema, insertBotSchema, insertEventSchema, serverJoins, bumpChannels, insertAdSchema, insertSlideshowSchema } from "@shared/schema";
 import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm";
-import { createDiscordBot } from "./discord-bot";
 import { 
   strictLimiter, 
   reviewLimiter, 

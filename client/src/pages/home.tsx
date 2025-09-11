@@ -240,7 +240,7 @@ export default function Home() {
                   <SelectValue placeholder="Language" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Languages</SelectItem>
+                  <SelectItem value="all">All Languages</SelectItem>
                   <SelectItem value="English">English</SelectItem>
                   <SelectItem value="Spanish">Spanish</SelectItem>
                   <SelectItem value="French">French</SelectItem>
@@ -257,7 +257,7 @@ export default function Home() {
                   <SelectValue placeholder="Timezone" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Timezones</SelectItem>
+                  <SelectItem value="all">All Timezones</SelectItem>
                   <SelectItem value="UTC">UTC</SelectItem>
                   <SelectItem value="EST">EST</SelectItem>
                   <SelectItem value="PST">PST</SelectItem>
@@ -273,7 +273,7 @@ export default function Home() {
                   <SelectValue placeholder="Activity Level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Activity</SelectItem>
+                  <SelectItem value="all">All Activity</SelectItem>
                   <SelectItem value="Low">Low</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="High">High</SelectItem>

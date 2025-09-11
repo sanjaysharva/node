@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -11,7 +11,7 @@ interface HeroSearchProps {
 
 export default function HeroSearch({ onSearch }: HeroSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

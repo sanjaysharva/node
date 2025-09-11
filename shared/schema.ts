@@ -96,9 +96,6 @@ export const reviews = pgTable("reviews", {
   userServerUnique: sql`UNIQUE (${table.userId}, ${table.serverId})`
 }));
 
-
-});
-
 export const events = pgTable("events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
@@ -189,7 +186,14 @@ export const eventsRelations = relations(events, ({ one }) => ({
 
 export const serverJoinsRelations = relations(serverJoins, ({ one }) => ({
   user: one(users, {
-
+    fields: [serverJoins.userId],
+    references: [users.id],
+  }),
+  server: one(servers, {
+    fields: [serverJoins.serverId],
+    references: [servers.id],
+  }),
+}));
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({
   server: one(servers, {
@@ -199,16 +203,6 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   user: one(users, {
     fields: [reviews.userId],
     references: [users.id],
-  }),
-}));
-
-
-    fields: [serverJoins.userId],
-    references: [users.id],
-  }),
-  server: one(servers, {
-    fields: [serverJoins.serverId],
-    references: [servers.id],
   }),
 }));
 

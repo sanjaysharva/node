@@ -11,6 +11,13 @@ import {
   errorHandler 
 } from "./middleware/security";
 
+// Augment express-session types
+declare module 'express-session' {
+  interface SessionData {
+    userId?: string;
+  }
+}
+
 // Set default Discord Client ID if not provided
 if (!process.env.DISCORD_CLIENT_ID) {
   process.env.DISCORD_CLIENT_ID = "1372226433191247983";
@@ -25,8 +32,6 @@ const app = express();
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  setupAuth(app);
-  registerRoutes(app);
 
   // Error handling
   app.use(errorHandler);
@@ -54,7 +59,7 @@ app.use(async (req, res, next) => {
           id: user.id,
           discordId: user.discordId,
           username: user.username,
-          avatar: user.avatar,
+          avatar: user.avatar ?? undefined,
           isAdmin: user.isAdmin
         };
       }
