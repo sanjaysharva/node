@@ -38,7 +38,7 @@ export default function YourServers() {
       
       if (data.botPresent) {
         // Bot is present, redirect to advertise page
-        window.location.href = '/advertise-server';
+        window.location.href = '/add-server';
       } else {
         // Bot is not present, show modal
         setSelectedServer(server);
@@ -284,12 +284,12 @@ export default function YourServers() {
         <DialogContent className="max-w-md mx-auto bg-card border border-purple-400/30 backdrop-blur-sm">
           <DialogHeader className="text-center">
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">
-              Invite Smart Serve Bot
+              Bot Not Found!
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6 text-center">
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
               <Bot className="w-8 h-8 text-white" />
             </div>
             
@@ -298,19 +298,27 @@ export default function YourServers() {
                 Smart Serve Bot Required
               </h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                To advertise <span className="font-semibold text-purple-400">{selectedServer?.name}</span>, 
-                you need to invite our Smart Serve bot to your Discord server first.
+                Our Smart Serve bot is not present in <span className="font-semibold text-purple-400">{selectedServer?.name}</span>. 
+                You must invite the bot first before you can advertise this server.
               </p>
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 mt-4">
+                <p className="text-orange-300 text-xs">
+                  ⚠️ Without our bot, server verification and analytics features won't work properly.
+                </p>
+              </div>
             </div>
 
             <div className="space-y-3">
               <Button
-                onClick={() => window.open(botInviteUrl, '_blank')}
+                onClick={() => {
+                  window.open(botInviteUrl, '_blank');
+                  setShowBotModal(false);
+                }}
                 className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-3"
                 data-testid="button-invite-bot-to-server"
               >
-                <Bot className="w-4 h-4 mr-2" />
-                Invite Bot to Server
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Invite Bot Now
               </Button>
               
               <Button
@@ -323,9 +331,11 @@ export default function YourServers() {
               </Button>
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              After inviting the bot, try clicking "Advertise Server" again.
-            </p>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">
+                💡 <strong>Tip:</strong> After inviting the bot, wait a few moments then try "Advertise Server" again.
+              </p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

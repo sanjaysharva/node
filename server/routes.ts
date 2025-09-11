@@ -315,9 +315,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have access to this guild" });
       }
 
-      // For demonstration, simulate 30% chance bot is already present
-      // In production, use bot token to check: GET /guilds/{guildId}/members/{botId}
-      const botPresent = Math.random() > 0.7; // 30% chance bot is present
+      // Try to check if bot is actually in the guild using bot token
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      let botPresent = false;
+      
+      if (botToken) {
+        try {
+          // Check if bot is a member of the guild
+          const botMemberResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${botId}`, {
+            headers: { 'Authorization': `Bot ${botToken}` },
+          });
+          
+          botPresent = botMemberResponse.ok;
+        } catch (error) {
+          console.error('Bot member check error:', error);
+          // Fallback: assume bot is not present
+          botPresent = false;
+        }
+      } else {
+        // If no bot token, simulate for demonstration (mostly false to show modal)
+        botPresent = Math.random() > 0.8; // 20% chance bot is present
+      }
       
       res.json({ 
         botPresent,
