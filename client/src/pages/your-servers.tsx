@@ -33,25 +33,44 @@ export default function YourServers() {
     try {
       console.log(`Checking bot presence for server: ${server.name} (${server.id})`);
       const response = await fetch(`/api/discord/bot-check/${server.id}`);
-      if (!response.ok) throw new Error("Failed to check bot presence");
       
-      const data = await response.json();
-      console.log(`Bot check result:`, data);
-      
-      if (data.botPresent) {
-        // Bot is present, redirect to advertise page
-        console.log(`Bot is present in ${server.name}, redirecting to add-server`);
-        window.location.href = '/add-server';
+      let data;
+      if (response.ok) {
+        data = await response.json();
+        console.log(`Bot check result:`, data);
+        
+        if (data.botPresent) {
+          // Bot is present, redirect to advertise page
+          console.log(`✅ Bot is present in ${server.name}, redirecting to add-server`);
+          window.location.href = '/add-server';
+          return;
+        }
       } else {
-        // Bot is not present, show modal
-        console.log(`Bot is NOT present in ${server.name}, showing invite modal`);
-        setSelectedServer(server);
-        setBotInviteUrl(data.inviteUrl);
-        setShowBotModal(true);
+        // Handle HTTP errors
+        const errorData = await response.json();
+        console.error(`Bot check HTTP error (${response.status}):`, errorData);
+        data = {
+          botPresent: false,
+          checkMethod: "http_error",
+          errorDetails: errorData.message,
+          inviteUrl: `https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.id}`
+        };
       }
+      
+      // Bot is not present or there was an error, show modal with details
+      console.log(`❌ Bot is NOT present in ${server.name} (${data.checkMethod}), showing invite modal`);
+      if (data.errorDetails) {
+        console.log(`Error details: ${data.errorDetails}`);
+      }
+      
+      setSelectedServer(server);
+      setBotInviteUrl(data.inviteUrl);
+      setShowBotModal(true);
+      
     } catch (error) {
       console.error('Error checking bot presence:', error);
       // Fallback: show modal to invite bot
+      console.log(`❌ Fallback: showing invite modal for ${server.name}`);
       setSelectedServer(server);
       setBotInviteUrl(`https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.id}`);
       setShowBotModal(true);
