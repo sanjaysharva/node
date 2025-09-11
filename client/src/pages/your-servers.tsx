@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -7,18 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Users, Settings, ExternalLink, Crown, Bot } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Plus, Users, Settings, ExternalLink, Crown, Bot, Megaphone } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import type { Server } from "@shared/schema";
 
 export default function YourServers() {
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [showBotModal, setShowBotModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const [botInviteUrl, setBotInviteUrl] = useState("");
 
   // Fetch user's servers where they have admin powers
-  const { data: userServers, isLoading } = useQuery({
+  const { data: userServers, isLoading, refetch } = useQuery({
     queryKey: ["/api/servers/user", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -27,6 +32,36 @@ export default function YourServers() {
       return response.json();
     },
     enabled: !!user?.id,
+  });
+
+  // Bump settings mutation
+  const updateBumpSettings = useMutation({
+    mutationFn: async ({ serverId, bumpEnabled }: { serverId: string; bumpEnabled: boolean }) => {
+      const response = await fetch(`/api/servers/${serverId}/bump-settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bumpEnabled }),
+      });
+      if (!response.ok) throw new Error('Failed to update bump settings');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings Updated",
+        description: "Bump settings have been updated successfully.",
+      });
+      refetch();
+      setShowSettingsModal(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update settings",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleAdvertiseClick = async (server: Server) => {
@@ -285,6 +320,10 @@ export default function YourServers() {
                         variant="outline" 
                         size="sm"
                         className="border-purple-400/30 hover:border-purple-400/50 hover:bg-purple-500/10"
+                        onClick={() => {
+                          setSelectedServer(server);
+                          setShowSettingsModal(true);
+                        }}
                         data-testid={`button-manage-${server.id}`}
                       >
                         <Settings className="w-4 h-4" />
@@ -396,6 +435,98 @@ export default function YourServers() {
               </p>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Server Settings Modal */}
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent className="max-w-md mx-auto bg-card border border-purple-400/30 backdrop-blur-sm">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">
+              Server Settings
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedServer && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                  {selectedServer.icon ? (
+                    <img 
+                      src={`https://cdn.discordapp.com/icons/${selectedServer.id}/${selectedServer.icon}.png`} 
+                      alt={selectedServer.name}
+                      className="w-full h-full rounded-xl object-cover"
+                    />
+                  ) : (
+                    selectedServer.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">{selectedServer.name}</h3>
+                  <p className="text-sm text-muted-foreground">Server ID: {selectedServer.id}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="bump-enabled" className="text-sm font-medium flex items-center gap-2">
+                        <Megaphone className="w-4 h-4 text-purple-400" />
+                        Enable Bump System
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Allow your server to be bumped to other servers using /bump command
+                      </p>
+                    </div>
+                    <Switch
+                      id="bump-enabled"
+                      checked={selectedServer.bumpEnabled || false}
+                      onCheckedChange={(checked) => {
+                        updateBumpSettings.mutate({
+                          serverId: selectedServer.id,
+                          bumpEnabled: checked
+                        });
+                      }}
+                      disabled={updateBumpSettings.isPending}
+                    />
+                  </div>
+                </div>
+
+                {selectedServer.bumpEnabled && (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5"></div>
+                      <div className="text-xs text-green-300">
+                        <p className="font-medium">Bump System Active</p>
+                        <p>Users can now use /bump command to promote this server across the network</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-foreground">Bump Commands:</h4>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>• <code>/bump</code> - Bump server to all bump channels</p>
+                    <p>• <code>/bumpchannel</code> - Set bump channel for this server</p>
+                    <p>• <code>/bumptools</code> - View all bump commands</p>
+                    <p>• <code>/setbump</code> - Get server bump link (admin only)</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowSettingsModal(false)}
+                  variant="outline"
+                  className="flex-1 border-purple-400/30 hover:border-purple-400/50 hover:bg-purple-500/10"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

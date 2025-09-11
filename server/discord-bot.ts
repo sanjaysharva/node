@@ -1,4 +1,3 @@
-
 import { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder, ChannelType, PermissionsBitField } from 'discord.js';
 import { storage } from './storage';
 
@@ -18,11 +17,11 @@ const commands = [
   new SlashCommandBuilder()
     .setName('bump')
     .setDescription('Bump your server to all bump channels'),
-  
+
   new SlashCommandBuilder()
     .setName('bumptools')
     .setDescription('Get information about bump tools and settings'),
-  
+
   new SlashCommandBuilder()
     .setName('bumpchannel')
     .setDescription('Set or manage the bump channel for this server')
@@ -41,7 +40,7 @@ const commands = [
         .setName('info')
         .setDescription('Show current bump channel settings')
     ),
-  
+
   new SlashCommandBuilder()
     .setName('setbump')
     .setDescription('Get your server management link (only visible to you)')
@@ -49,23 +48,23 @@ const commands = [
 
 client.once(Events.ClientReady, async () => {
   console.log(`✅ Discord bot logged in as ${client.user?.tag}!`);
-  
+
   // Register slash commands
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN!);
-  
+
   try {
     console.log('Started refreshing application (/) commands.');
-    
+
     await rest.put(
       Routes.applicationCommands(client.user!.id),
       { body: commands }
     );
-    
+
     console.log('Successfully reloaded application (/) commands.');
   } catch (error) {
     console.error('Error registering slash commands:', error);
   }
-  
+
   // Cache existing invites for all guilds
   for (const guild of client.guilds.cache.values()) {
     try {
@@ -80,9 +79,9 @@ client.once(Events.ClientReady, async () => {
 // Handle slash command interactions
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
-  
+
   const { commandName } = interaction;
-  
+
   try {
     switch (commandName) {
       case 'bump':
@@ -108,11 +107,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 async function handleBumpCommand(interaction: any) {
   await interaction.deferReply();
-  
+
   try {
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
-    
+
     // Check if server has bump enabled
     const serverData = await storage.getServerByDiscordId(guildId);
     if (!serverData || !serverData.bumpEnabled) {
@@ -121,11 +120,11 @@ async function handleBumpCommand(interaction: any) {
       });
       return;
     }
-    
+
     // Check cooldown (2 hours between bumps)
     const lastBump = await storage.getLastBump(guildId);
     const cooldownTime = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-    
+
     if (lastBump && Date.now() - lastBump.getTime() < cooldownTime) {
       const remainingTime = Math.ceil((cooldownTime - (Date.now() - lastBump.getTime())) / (60 * 1000));
       await interaction.editReply({
@@ -133,12 +132,12 @@ async function handleBumpCommand(interaction: any) {
       });
       return;
     }
-    
+
     // Get all bump channels from all servers
     const bumpChannels = await storage.getAllBumpChannels();
     let successCount = 0;
     let errorCount = 0;
-    
+
     // Create bump embed
     const bumpEmbed = new EmbedBuilder()
       .setTitle(`🚀 ${interaction.guild.name}`)
@@ -151,12 +150,12 @@ async function handleBumpCommand(interaction: any) {
       .setThumbnail(interaction.guild.iconURL() || null)
       .setFooter({ text: 'Powered by Smart Serve', iconURL: client.user?.avatarURL() || undefined })
       .setTimestamp();
-    
+
     // Send bump to all channels
     for (const channelData of bumpChannels) {
       try {
         if (channelData.guildId === guildId) continue; // Don't bump to own server
-        
+
         const channel = await client.channels.fetch(channelData.channelId);
         if (channel && channel.type === ChannelType.GuildText) {
           await (channel as any).send({ embeds: [bumpEmbed] });
@@ -167,14 +166,14 @@ async function handleBumpCommand(interaction: any) {
         console.error(`Failed to send bump to channel ${channelData.channelId}:`, error);
       }
     }
-    
+
     // Update last bump time
     await storage.updateLastBump(guildId);
-    
+
     await interaction.editReply({
       content: `✅ Successfully bumped to ${successCount} servers! ${errorCount > 0 ? `(${errorCount} failed)` : ''}`
     });
-    
+
   } catch (error) {
     console.error('Bump command error:', error);
     await interaction.editReply({
@@ -197,13 +196,13 @@ async function handleBumpToolsCommand(interaction: any) {
     )
     .setFooter({ text: 'Powered by Smart Serve' })
     .setTimestamp();
-  
+
   await interaction.reply({ embeds: [embed] });
 }
 
 async function handleBumpChannelCommand(interaction: any) {
   const subcommand = interaction.options.getSubcommand();
-  
+
   // Check if user has manage channels permission
   if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
     await interaction.reply({
@@ -212,7 +211,7 @@ async function handleBumpChannelCommand(interaction: any) {
     });
     return;
   }
-  
+
   switch (subcommand) {
     case 'set':
       try {
@@ -227,7 +226,7 @@ async function handleBumpChannelCommand(interaction: any) {
         });
       }
       break;
-      
+
     case 'remove':
       try {
         await storage.removeBumpChannel(interaction.guild.id);
@@ -241,7 +240,7 @@ async function handleBumpChannelCommand(interaction: any) {
         });
       }
       break;
-      
+
     case 'info':
       try {
         const bumpChannel = await storage.getBumpChannel(interaction.guild.id);
@@ -274,9 +273,9 @@ async function handleSetBumpCommand(interaction: any) {
     });
     return;
   }
-  
+
   const serverManageUrl = `${process.env.APP_URL || 'https://smartserve.com'}/your-servers`;
-  
+
   const embed = new EmbedBuilder()
     .setTitle('⚙️ Server Management')
     .setDescription('Manage your server settings on Smart Serve')
@@ -286,7 +285,7 @@ async function handleSetBumpCommand(interaction: any) {
       { name: '📝 What you can do:', value: '• Enable/disable bump feature\n• Update server description\n• Manage advertising\n• View analytics', inline: false }
     )
     .setFooter({ text: 'This link is only visible to you' });
-  
+
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
@@ -296,25 +295,25 @@ client.on(Events.GuildMemberAdd, async (member) => {
     const guild = member.guild;
     const cachedInvites = inviteCache.get(guild.id) || new Map();
     const newInvites = await guild.invites.fetch();
-    
+
     // Find which invite was used
     const usedInvite = newInvites.find(invite => {
       const cachedUses = cachedInvites.get(invite.code) || 0;
       return (invite.uses || 0) > cachedUses;
     });
-    
+
     if (usedInvite && usedInvite.inviter) {
       console.log(`${member.user.tag} joined using invite by ${usedInvite.inviter.tag}`);
-      
+
       // Award coins to the inviter
       const inviterUser = await storage.getUserByDiscordId(usedInvite.inviter.id);
       if (inviterUser) {
         const coinsToAward = 5; // 5 coins for successful invite
         const newBalance = (inviterUser.coins || 0) + coinsToAward;
         await storage.updateUserCoins(inviterUser.id, newBalance);
-        
+
         console.log(`Awarded ${coinsToAward} coins to ${usedInvite.inviter.tag} for inviting ${member.user.tag}`);
-        
+
         // Optionally send a DM to the inviter
         try {
           await usedInvite.inviter.send(
@@ -324,14 +323,14 @@ client.on(Events.GuildMemberAdd, async (member) => {
           console.log(`Could not send DM to ${usedInvite.inviter.tag}`);
         }
       }
-      
+
       // Award welcome bonus to new member
       const newMemberUser = await storage.getUserByDiscordId(member.id);
       if (newMemberUser) {
         const welcomeBonus = 2; // 2 coins welcome bonus
         const newMemberBalance = (newMemberUser.coins || 0) + welcomeBonus;
         await storage.updateUserCoins(newMemberUser.id, newMemberBalance);
-        
+
         try {
           await member.send(
             `Welcome to ${guild.name}! 🎉 You received ${welcomeBonus} coins as a welcome bonus!`
@@ -341,10 +340,10 @@ client.on(Events.GuildMemberAdd, async (member) => {
         }
       }
     }
-    
+
     // Update cached invites
     inviteCache.set(guild.id, new Map(newInvites.map(invite => [invite.code, invite.uses || 0])));
-    
+
   } catch (error) {
     console.error('Error tracking invite usage:', error);
   }
@@ -370,7 +369,7 @@ export async function startDiscordBot() {
     console.error('❌ DISCORD_BOT_TOKEN not found in environment variables');
     return;
   }
-  
+
   try {
     await client.login(botToken);
   } catch (error) {

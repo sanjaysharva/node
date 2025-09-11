@@ -91,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const tokenData = await tokenResponse.json();
-      
+
       console.log('Token Response Status:', tokenResponse.status);
       // Sensitive token data logging removed for security
 
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const discordUser = await userResponse.json();
-      
+
       console.log('User Response Status:', userResponse.status);
       // Sensitive user data logging removed for security
 
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // SECURITY: Verify ownership or admin access
     const isOwner = req.user.id === req.params.userId;
     const isAdmin = (req.user as any).isAdmin;
-    
+
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: "You can only access your own Discord servers" });
     }
@@ -250,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const guilds = await guildsResponse.json();
-      
+
       // Filter guilds where user has admin permissions
       // Discord permission value 8 = ADMINISTRATOR, 32 = MANAGE_GUILD
       const adminGuilds = guilds.filter((guild: any) => {
@@ -293,10 +293,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { guildId } = req.params;
       const botId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      
+
       console.log(`Bot check for guild ${guildId} with bot ID ${botId}`);
       console.log(`Bot token available: ${botToken ? 'Yes' : 'No'}`);
-      
+
       // Validate bot token format
       if (!botToken) {
         console.error('❌ No bot token configured in environment variables');
@@ -336,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const guilds = await guildsResponse.json();
       const guild = guilds.find((g: any) => g.id === guildId);
-      
+
       if (!guild) {
         return res.status(403).json({ message: "You don't have access to this guild" });
       }
@@ -344,17 +344,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let botPresent = false;
       let checkMethod = "none";
       let errorDetails = "";
-      
+
       try {
         console.log(`Checking bot presence in guild ${guildId} using bot token`);
-        
+
         // Method 1: Check bot as guild member (most reliable)
         const botMemberResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${botId}`, {
           headers: { 'Authorization': `Bot ${botToken}` },
         });
-        
+
         console.log(`Bot member response status: ${botMemberResponse.status}`);
-        
+
         if (botMemberResponse.ok) {
           const memberData = await botMemberResponse.json();
           console.log(`Bot member check successful`);
@@ -378,14 +378,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const errorData = await botMemberResponse.json();
           errorDetails = `API Error: ${errorData.message || 'Unknown error'}`;
           console.log(`❌ Bot check failed with status ${botMemberResponse.status}: ${errorDetails}`);
-          
+
           // Fallback: Try guild info method
           const guildInfoResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
             headers: { 'Authorization': `Bot ${botToken}` },
           });
-          
+
           console.log(`Guild info response status: ${guildInfoResponse.status}`);
-          
+
           if (guildInfoResponse.ok) {
             botPresent = true;
             checkMethod = "guild_info";
@@ -402,12 +402,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         checkMethod = "error";
         errorDetails = error instanceof Error ? error.message : 'Unknown error';
       }
-      
+
       console.log(`Final bot presence result: ${botPresent} (method: ${checkMethod})`);
       if (errorDetails) {
         console.log(`Error details: ${errorDetails}`);
       }
-      
+
       res.json({ 
         botPresent,
         checkMethod,
@@ -443,31 +443,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/servers/:id", async (req, res) => {
+  // Use requireAuth middleware for protected routes that require authentication
+  const requireAuth = (req: Request, res: any, next: any) => {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
+    next();
+  };
 
+  // Update server
+  app.patch("/api/servers/:id", requireAuth, async (req, res) => {
     try {
-      const server = await storage.getServer(req.params.id);
+      const { id } = req.params;
+      const updates = req.body;
+
+      const server = await storage.getServerById(id);
       if (!server) {
         return res.status(404).json({ message: "Server not found" });
       }
 
-      if (server.ownerId !== req.user.id) {
-        return res.status(403).json({ message: "You can only edit your own servers" });
+      // Check if user owns this server
+      if (server.ownerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized to update this server" });
       }
 
-      const serverData = insertServerSchema.partial().parse(req.body);
-      const updatedServer = await storage.updateServer(req.params.id, serverData);
+      const updatedServer = await storage.updateServer(id, updates);
       res.json(updatedServer);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
+      console.error("Error updating server:", error);
       res.status(500).json({ message: "Failed to update server" });
     }
   });
+
+  // Update server bump settings
+  app.patch("/api/servers/:id/bump-settings", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { bumpEnabled } = req.body;
+
+      const server = await storage.getServerById(id);
+      if (!server) {
+        return res.status(404).json({ message: "Server not found" });
+      }
+
+      // Check if user owns this server
+      if (server.ownerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized to update this server" });
+      }
+
+      const updatedServer = await storage.updateServer(id, { bumpEnabled });
+      res.json(updatedServer);
+    } catch (error) {
+      console.error("Error updating bump settings:", error);
+      res.status(500).json({ message: "Failed to update bump settings" });
+    }
+  });
+
 
   app.delete("/api/servers/:id", async (req, res) => {
     if (!req.user) {
@@ -550,7 +581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get invite information
       const inviteResponse = await fetch(`https://discord.com/api/v10/invites/${code}?with_counts=true`);
-      
+
       if (!inviteResponse.ok) {
         return res.status(400).json({ message: "Invalid invite code" });
       }
@@ -560,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if our bot is in the server
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      
+
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
       }
@@ -784,7 +815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Server join error:", error);
-      
+
       // Handle specific error cases with user-friendly messages
       if (error instanceof Error) {
         if (error.message.includes("already earned coins")) {
@@ -797,7 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Server not found" });
         }
       }
-      
+
       res.status(500).json({ message: "Failed to process server join" });
     }
   });
@@ -889,7 +920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
-      
+
       // Default quests with progress tracking
       const defaultQuests = [
         {
