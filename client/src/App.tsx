@@ -9,6 +9,8 @@ import AddServer from "@/pages/add-server";
 import AddBot from "@/pages/add-bot";
 import AdminPage from "@/pages/admin";
 import Events from "@/pages/events";
+import Explore from "@/pages/explore";
+import JoinMembers from "@/pages/join-members";
 import YourServers from "@/pages/your-servers";
 import NotFound from "@/pages/not-found";
 
@@ -22,6 +24,8 @@ function Router() {
       <Route path="/add-server" component={AddServer} />
       <Route path="/your-servers" component={YourServers} />
       <Route path="/events" component={Events} />
+      <Route path="/explore" component={Explore} />
+      <Route path="/join-members" component={JoinMembers} />
       <Route path="/admin">
           {user?.isAdmin ? <AdminPage /> : <NotFound />}
         </Route>

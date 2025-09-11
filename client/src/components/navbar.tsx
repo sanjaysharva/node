@@ -97,6 +97,15 @@ export default function Navbar() {
               >
                 Events
               </Link>
+              <Link
+                href="/join-members"
+                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
+                  location === "/join-members" ? "text-primary" : "text-muted-foreground"
+                }`}
+                data-testid="link-join-members"
+              >
+                Join Members
+              </Link>
 
               {/* Three dots dropdown */}
               <DropdownMenu>
@@ -130,7 +139,7 @@ export default function Navbar() {
                         Support
                       </DropdownMenuItem>
                       <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-feedback">
-                        <i className="fas fa-comment mr-2 h-4 w-4 text-blue-400"></i>
+                        <i className="fas fa-comment mr-2 h-4 w-4 text-green-400"></i>
                         Feedback
                       </DropdownMenuItem>
                       <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-submit-ticket">
@@ -146,17 +155,6 @@ export default function Navbar() {
                   </DropdownMenu>
                 </DropdownMenuContent>
               </DropdownMenu>
-              {/* Add Server Link */}
-              <Link href="/add-server">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                  Add Server
-                </Button>
-              </Link>
-              <Link href="/your-servers">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                  Your Servers
-                </Button>
-              </Link>
             </div>
           </div>
 
