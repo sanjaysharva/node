@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, Edit } from "lucide-react";
+import { Trash2, Plus, Edit, Calendar, Clock, Upload, Image, Play, Pause } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Ad {
@@ -18,6 +18,26 @@ interface Ad {
   imageUrl?: string;
   linkUrl?: string;
   position: string;
+  targetPages: string[];
+  startDate?: string;
+  endDate?: string;
+  scheduledTimes?: string[];
+  isActive: boolean;
+  impressions?: number;
+  clicks?: number;
+  createdAt?: string;
+}
+
+interface Slideshow {
+  id: string;
+  title: string;
+  images: string[];
+  autoplay: boolean;
+  duration: number;
+  position: string;
+  targetPages: string[];
+  startDate?: string;
+  endDate?: string;
   isActive: boolean;
 }
 
@@ -25,14 +45,34 @@ export default function AdminPage() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [ads, setAds] = useState<Ad[]>([]);
+  const [slideshows, setSlideshows] = useState<Slideshow[]>([]);
+  const [activeTab, setActiveTab] = useState<'ads' | 'slideshows'>('ads');
   const [showForm, setShowForm] = useState(false);
+  const [showSlideshowForm, setShowSlideshowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
+  const [editingSlideshow, setEditingSlideshow] = useState<Slideshow | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     imageUrl: "",
     linkUrl: "",
     position: "header",
+    targetPages: ["all"],
+    startDate: "",
+    endDate: "",
+    scheduledTimes: [],
+    isActive: true,
+  });
+  
+  const [slideshowFormData, setSlideshowFormData] = useState({
+    title: "",
+    images: [""],
+    autoplay: true,
+    duration: 5,
+    position: "hero",
+    targetPages: ["all"],
+    startDate: "",
+    endDate: "",
     isActive: true,
   });
 
@@ -48,9 +88,22 @@ export default function AdminPage() {
     }
   };
 
+  const fetchSlideshows = async () => {
+    try {
+      const response = await fetch("/api/slideshows");
+      if (response.ok) {
+        const data = await response.json();
+        setSlideshows(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch slideshows:", error);
+    }
+  };
+
   useEffect(() => {
     if (user?.isAdmin) {
       fetchAds();
+      fetchSlideshows();
     }
   }, [user]);
 
@@ -82,6 +135,10 @@ export default function AdminPage() {
           imageUrl: "",
           linkUrl: "",
           position: "header",
+          targetPages: ["all"],
+          startDate: "",
+          endDate: "",
+          scheduledTimes: [],
           isActive: true,
         });
         fetchAds();
@@ -105,6 +162,10 @@ export default function AdminPage() {
       imageUrl: ad.imageUrl || "",
       linkUrl: ad.linkUrl || "",
       position: ad.position,
+      targetPages: ad.targetPages || ["all"],
+      startDate: ad.startDate || "",
+      endDate: ad.endDate || "",
+      scheduledTimes: ad.scheduledTimes || [],
       isActive: ad.isActive,
     });
     setShowForm(true);
@@ -132,6 +193,116 @@ export default function AdminPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleSlideshowSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const url = editingSlideshow ? `/api/slideshows/${editingSlideshow.id}` : "/api/slideshows";
+      const method = editingSlideshow ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(slideshowFormData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: editingSlideshow ? "Slideshow updated" : "Slideshow created",
+          description: "The slideshow has been saved successfully.",
+        });
+        setShowSlideshowForm(false);
+        setEditingSlideshow(null);
+        setSlideshowFormData({
+          title: "",
+          images: [""],
+          autoplay: true,
+          duration: 5,
+          position: "hero",
+          targetPages: ["all"],
+          startDate: "",
+          endDate: "",
+          isActive: true,
+        });
+        fetchSlideshows();
+      } else {
+        throw new Error("Failed to save slideshow");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save the slideshow.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSlideshowEdit = (slideshow: Slideshow) => {
+    setEditingSlideshow(slideshow);
+    setSlideshowFormData({
+      title: slideshow.title,
+      images: slideshow.images,
+      autoplay: slideshow.autoplay,
+      duration: slideshow.duration,
+      position: slideshow.position,
+      targetPages: slideshow.targetPages,
+      startDate: slideshow.startDate || "",
+      endDate: slideshow.endDate || "",
+      isActive: slideshow.isActive,
+    });
+    setShowSlideshowForm(true);
+  };
+
+  const handleSlideshowDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/slideshows/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Slideshow deleted",
+          description: "The slideshow has been removed.",
+        });
+        fetchSlideshows();
+      } else {
+        throw new Error("Failed to delete slideshow");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete the slideshow.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addImageToSlideshow = () => {
+    setSlideshowFormData({
+      ...slideshowFormData,
+      images: [...slideshowFormData.images, ""]
+    });
+  };
+
+  const removeImageFromSlideshow = (index: number) => {
+    const newImages = slideshowFormData.images.filter((_, i) => i !== index);
+    setSlideshowFormData({
+      ...slideshowFormData,
+      images: newImages.length > 0 ? newImages : [""]
+    });
+  };
+
+  const updateSlideshowImage = (index: number, value: string) => {
+    const newImages = [...slideshowFormData.images];
+    newImages[index] = value;
+    setSlideshowFormData({
+      ...slideshowFormData,
+      images: newImages
+    });
   };
 
   if (!isAuthenticated || !user?.isAdmin) {
@@ -243,6 +414,10 @@ export default function AdminPage() {
                       imageUrl: "",
                       linkUrl: "",
                       position: "header",
+                      targetPages: ["all"],
+                      startDate: "",
+                      endDate: "",
+                      scheduledTimes: [],
                       isActive: true,
                     });
                   }}

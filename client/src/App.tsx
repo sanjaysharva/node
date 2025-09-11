@@ -15,6 +15,8 @@ import Store from "@/pages/store";
 import Quest from "@/pages/quest";
 import YourServers from "@/pages/your-servers";
 import Advertise from "@/pages/advertise";
+import Profile from "@/pages/profile";
+import AddEvent from "@/pages/add-event";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,8 +34,10 @@ function Router() {
       <Route path="/join-members" component={JoinMembers} />
       <Route path="/store" component={Store} />
       <Route path="/quest" component={Quest} />
+      <Route path="/profile" component={Profile} />
+      <Route path="/add-event" component={AddEvent} />
       <Route path="/admin">
-          {user?.isAdmin ? <AdminPage /> : <NotFound />}
+          {user?.username === "aetherflux_02" ? <AdminPage /> : <NotFound />}
         </Route>
       <Route component={NotFound} />
     </Switch>

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, Plus, LogOut, Server, Bot } from "lucide-react";
+import { User, Settings, Plus, LogOut, Server, Bot, Calendar, Gift } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -191,14 +191,22 @@ export default function Navbar() {
                     />
                     <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
-                  <span data-testid="text-username">{user?.username}</span>
+                  <span data-testid="text-displayname">{user?.username?.replace(/^.*_/, '') || user?.username}</span>
                   <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem data-testid="button-profile">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" data-testid="button-profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/add-event" data-testid="button-add-event">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Add Event
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/your-servers" data-testid="button-your-servers">
@@ -217,9 +225,9 @@ export default function Navbar() {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                {user?.isAdmin && (
+                {user?.username === "aetherflux_02" && (
                   <DropdownMenuItem asChild>
-                    <Link href="/admin">
+                    <Link href="/admin" data-testid="button-admin-panel">
                       <Settings className="mr-2 h-4 w-4" />
                       Admin Panel
                     </Link>

@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServerSchema, insertBotSchema, insertAdSchema, insertServerJoinSchema } from "@shared/schema";
+import { insertServerSchema, insertBotSchema, insertAdSchema, insertServerJoinSchema, insertEventSchema } from "@shared/schema";
 import { z } from "zod";
 
 declare global {
@@ -683,6 +683,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(events);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  // Event creation route
+  app.post("/api/events", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const eventData = insertEventSchema.parse(req.body);
+      const newEvent = await storage.createEvent({
+        ...eventData,
+        ownerId: req.user.id,
+      });
+      res.status(201).json(newEvent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid event data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Event creation error:", error);
+      res.status(500).json({ message: "Failed to create event" });
     }
   });
 

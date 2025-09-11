@@ -73,12 +73,20 @@ export const events = pgTable("events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  imageUrl: text("image_url"),
+  eventType: text("event_type").notNull(), // Type of event (tournament, giveaway, community, etc.)
+  imageUrl: text("image_url"), // Poster of event
+  serverLink: text("server_link"), // Discord server link
+  rewards: text("rewards"), // Event rewards description
+  requirements: text("requirements"), // Event requirements/rules
+  maxParticipants: integer("max_participants"), // Maximum number of participants
+  registrationDeadline: timestamp("registration_deadline"), // Registration deadline
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   location: text("location"),
   ownerId: varchar("owner_id").references(() => users.id).notNull(),
   featured: boolean("featured").default(false),
+  isActive: boolean("is_active").default(true),
+  registrationCount: integer("registration_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

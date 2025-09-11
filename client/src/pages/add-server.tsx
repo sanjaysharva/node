@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { insertServerSchema } from "@shared/schema";
-import { Plus } from "lucide-react";
+import { Plus, Server, Users, Hash, Link2, Image, Globe, CheckCircle } from "lucide-react";
 
 const serverFormSchema = insertServerSchema.extend({
   tags: z.string().optional(),
@@ -49,10 +49,10 @@ export default function AdvertiseServer() {
   const [serverPreview, setServerPreview] = useState<any>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
 
   // Create server mutation
   const createServerMutation = useMutation({
@@ -120,14 +120,13 @@ export default function AdvertiseServer() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Authentication Required</h1>
-          <p className="text-muted-foreground mb-8">
-            You need to be logged in with Discord to add a server.
-          </p>
-          <Button onClick={() => setLocation("/")} data-testid="button-back-home">
-            Go Back Home
-          </Button>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="border-purple-400/20 bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+              <p>You need to be logged in to add a server.</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -156,6 +155,7 @@ export default function AdvertiseServer() {
   };
 
   const onSubmit = (data: ServerFormData) => {
+    setIsSubmitting(true);
     const serverData = {
       ...data,
       tags: selectedTags.join(',')
@@ -166,239 +166,278 @@ export default function AdvertiseServer() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              Advertise Your Discord Server
-            </CardTitle>
-            <p className="text-muted-foreground">
-              Promote your Discord server to reach thousands of potential members
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text mb-2">
+              Add Your Discord Server
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Promote your Discord server to reach thousands of potential members and grow your community.
             </p>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Discord Invite Link */}
-                <FormField
-                  control={form.control}
-                  name="inviteCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Discord Invite Link *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://discord.gg/your-invite-code"
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            const value = e.target.value;
-                            if (value) {
-                              // Extract invite code from URL
-                              const code = value.split('/').pop() || value;
-                              handleInviteValidation(code);
-                            }
-                          }}
-                          data-testid="input-invite-code"
-                        />
-                      </FormControl>
-                      <p className="text-sm text-muted-foreground">
-                        We'll automatically fetch your server information
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          </div>
 
-                {/* Server Preview */}
-                {serverPreview && (
-                  <div className="glass-card rounded-lg p-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center">
-                        {serverPreview.icon ? (
-                          <img
-                            src={serverPreview.icon}
-                            alt="Server Icon"
-                            className="w-full h-full rounded-xl object-cover"
-                          />
-                        ) : (
-                          <i className="fas fa-server text-muted-foreground text-2xl"></i>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold" data-testid="text-server-preview-name">
-                          {serverPreview.name || "Server Name"}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {serverPreview.memberCount || 0} members • {serverPreview.onlineCount || 0} online
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Server Name */}
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Server Name *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Your Server Name"
-                          {...field}
-                          data-testid="input-server-name"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Description */}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          rows={4}
-                          placeholder="Describe your server and what makes it special..."
-                          {...field}
-                          data-testid="textarea-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-
-                {/* Tags Section */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Server Tags
-                    </label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Select tags that describe your server (maximum 10 tags)
-                    </p>
-                  </div>
-
-                  {/* Selected Tags */}
-                  {selectedTags.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-purple-400">Selected Tags ({selectedTags.length}/10)</p>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedTags.map((tag, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 cursor-pointer transition-colors"
-                            onClick={() => toggleTag(tag)}
-                            data-testid={`badge-selected-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                          >
-                            {tag} ×
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Custom Tag Input */}
+          <Card className="border-purple-400/20 bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Server className="w-6 h-6 text-purple-500" />
+                Server Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Discord Invite Link */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">Add Custom Tag</label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="text"
-                        placeholder="Enter custom tag..."
-                        value={customTag}
-                        onChange={(e) => setCustomTag(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            addCustomTag();
-                          }
-                        }}
-                        className="flex-1 bg-background/50 border-purple-400/30 focus:border-purple-400/50"
-                        data-testid="input-custom-tag"
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Link2 className="w-4 h-4" />
+                      Discord Invite Link *
+                    </label>
+                    <FormField
+                      control={form.control}
+                      name="inviteCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="https://discord.gg/your-invite-code"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                const value = e.target.value;
+                                if (value) {
+                                  const code = value.split('/').pop() || value;
+                                  handleInviteValidation(code);
+                                }
+                              }}
+                              data-testid="input-invite-code"
+                            />
+                          </FormControl>
+                          <p className="text-sm text-muted-foreground">
+                            We'll automatically fetch your server information
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Server Preview */}
+                  {serverPreview && (
+                    <Card className="border-green-400/20 bg-green-400/5">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <CheckCircle className="w-5 h-5 text-green-400" />
+                          <span className="text-sm font-medium text-green-400">Server Verified</span>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center">
+                            {serverPreview.icon ? (
+                              <img
+                                src={serverPreview.icon}
+                                alt="Server Icon"
+                                className="w-full h-full rounded-xl object-cover"
+                              />
+                            ) : (
+                              <Server className="w-8 h-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold" data-testid="text-server-preview-name">
+                              {serverPreview.name || "Server Name"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground flex items-center gap-2">
+                              <Users className="w-4 h-4" />
+                              {serverPreview.memberCount || 0} members • {serverPreview.onlineCount || 0} online
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        Server Name *
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder="Your Server Name"
+                                {...field}
+                                data-testid="input-server-name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={addCustomTag}
-                        disabled={!customTag.trim() || selectedTags.length >= 10}
-                        className="border-purple-400/30 hover:border-purple-400/50 hover:bg-purple-500/10"
-                        data-testid="button-add-custom-tag"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Image className="w-4 h-4" />
+                        Server Icon URL
+                      </label>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/icon.png"
+                        className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                      />
                     </div>
                   </div>
 
-                  {/* Available Tags */}
-                  <div className="space-y-3">
-                    {Object.entries(PREDEFINED_TAGS).map(([category, tags]) => (
-                      <div key={category} className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {tags.map((tag) => {
-                            const isSelected = selectedTags.includes(tag);
-                            const isDisabled = !isSelected && selectedTags.length >= 10;
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Server Description *</label>
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              rows={4}
+                              placeholder="Describe your server and what makes it special..."
+                              {...field}
+                              data-testid="textarea-description"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                            return (
-                              <Badge
-                                key={tag}
-                                variant={isSelected ? "default" : "outline"}
-                                className={`cursor-pointer transition-all duration-200 ${
-                                  isSelected
-                                    ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
-                                    : isDisabled
-                                    ? "opacity-50 cursor-not-allowed border-muted-foreground/20 text-muted-foreground"
-                                    : "border-purple-400/30 text-muted-foreground hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300"
-                                }`}
-                                onClick={() => !isDisabled && toggleTag(tag)}
-                                data-testid={`badge-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                              >
-                                {tag}
-                              </Badge>
-                            );
-                          })}
+                  {/* Tags Section */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium leading-none flex items-center gap-2">
+                        <Hash className="w-4 h-4" />
+                        Server Tags
+                      </label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Select tags that describe your server (maximum 10 tags)
+                      </p>
+                    </div>
+
+                    {/* Selected Tags */}
+                    {selectedTags.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-purple-400">Selected Tags ({selectedTags.length}/10)</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedTags.map((tag, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 cursor-pointer transition-colors"
+                              onClick={() => toggleTag(tag)}
+                              data-testid={`badge-selected-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                            >
+                              {tag} ×
+                            </Badge>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    )}
 
-                {/* Submit Buttons */}
-                <div className="flex space-x-4 pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setLocation("/")}
-                    className="flex-1"
-                    data-testid="button-cancel"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createServerMutation.isPending}
-                    className="flex-1"
-                    data-testid="button-publish"
-                  >
-                    {createServerMutation.isPending ? "Publishing..." : "Publish Server"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </main>
+                    {/* Custom Tag Input */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Add Custom Tag</label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          placeholder="Enter custom tag..."
+                          value={customTag}
+                          onChange={(e) => setCustomTag(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addCustomTag();
+                            }
+                          }}
+                          className="flex-1 bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                          data-testid="input-custom-tag"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={addCustomTag}
+                          disabled={!customTag.trim() || selectedTags.length >= 10}
+                          className="border-purple-400/30 hover:border-purple-400/50 hover:bg-purple-500/10"
+                          data-testid="button-add-custom-tag"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Available Tags */}
+                    <div className="space-y-3">
+                      {Object.entries(PREDEFINED_TAGS).map(([category, tags]) => (
+                        <div key={category} className="space-y-2">
+                          <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {tags.map((tag) => {
+                              const isSelected = selectedTags.includes(tag);
+                              const isDisabled = !isSelected && selectedTags.length >= 10;
+
+                              return (
+                                <Badge
+                                  key={tag}
+                                  variant={isSelected ? "default" : "outline"}
+                                  className={`cursor-pointer transition-all duration-200 ${
+                                    isSelected
+                                      ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
+                                      : isDisabled
+                                      ? "opacity-50 cursor-not-allowed border-muted-foreground/20 text-muted-foreground"
+                                      : "border-purple-400/30 text-muted-foreground hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300"
+                                  }`}
+                                  onClick={() => !isDisabled && toggleTag(tag)}
+                                  data-testid={`badge-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                                >
+                                  {tag}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Submit Buttons */}
+                  <div className="flex gap-4 pt-6">
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || createServerMutation.isPending}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white flex-1"
+                      data-testid="button-publish"
+                    >
+                      {isSubmitting || createServerMutation.isPending ? "Publishing..." : "Publish Server"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setLocation("/")}
+                      className="border-purple-400/30 hover:bg-purple-400/10"
+                      data-testid="button-cancel"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

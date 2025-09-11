@@ -46,6 +46,7 @@ export interface IStorage {
 
   // Event operations
   getEvents(options?: { search?: string; limit?: number; offset?: number }): Promise<Event[]>;
+  createEvent(event: InsertEvent): Promise<Event>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -268,6 +269,11 @@ export class DatabaseStorage implements IStorage {
     const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
 
     return await finalQuery;
+  }
+
+  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    const [event] = await db.insert(events).values(insertEvent).returning();
+    return event;
   }
 
   // ATOMIC SERVER JOIN: Prevents race conditions and double-awarding of coins
