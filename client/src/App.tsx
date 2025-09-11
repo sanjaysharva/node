@@ -14,6 +14,7 @@ import JoinMembers from "@/pages/join-members";
 import Store from "@/pages/store";
 import Quest from "@/pages/quest";
 import YourServers from "@/pages/your-servers";
+import Advertise from "@/pages/advertise";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/advertise" component={Advertise} />
       <Route path="/advertise-server" component={AddServer} />
       <Route path="/add-bot" component={AddBot} />
       <Route path="/add-server" component={AddServer} />
