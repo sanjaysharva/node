@@ -4,15 +4,9 @@ import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import { storage } from "./storage";
 
-// Set default environment variables if not provided
+// Set default Discord Client ID if not provided
 if (!process.env.DISCORD_CLIENT_ID) {
   process.env.DISCORD_CLIENT_ID = "1372226433191247983";
-}
-if (!process.env.DISCORD_CLIENT_SECRET) {
-  process.env.DISCORD_CLIENT_SECRET = "HcTo5WQbahuxCzWirKq3yJcg_CRW9fLu";
-}
-if (!process.env.DISCORD_BOT_TOKEN) {
-  process.env.DISCORD_BOT_TOKEN = "MTM3MjIyNjQzMzE5MTI0Nzk4Mw.GqJ8wq.pls_provide_your_bot_token";
 }
 
 const app = express();
