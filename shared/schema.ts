@@ -50,6 +50,9 @@ export const servers = pgTable("servers", {
   isAdvertising: boolean("is_advertising").default(false),
   advertisingMembersNeeded: integer("advertising_members_needed").default(0),
   advertisingUserId: varchar("advertising_user_id").references(() => users.id),
+  bumpEnabled: boolean("bump_enabled").default(false),
+  lastBumpAt: timestamp("last_bump_at"),
+  discordId: text("discord_id").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -120,6 +123,14 @@ export const serverJoins = pgTable("server_joins", {
   userServerUnique: sql`UNIQUE (${table.userId}, ${table.serverId})`
 }));
 
+export const bumpChannels = pgTable("bump_channels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  guildId: text("guild_id").notNull().unique(),
+  channelId: text("channel_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   servers: many(servers),
@@ -165,6 +176,10 @@ export const serverJoinsRelations = relations(serverJoins, ({ one }) => ({
   }),
 }));
 
+export const bumpChannelsRelations = relations(bumpChannels, ({ one }) => ({
+  // No direct relations needed for now
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -207,6 +222,12 @@ export const insertServerJoinSchema = createInsertSchema(serverJoins).omit({
   createdAt: true,
 });
 
+export const insertBumpChannelSchema = createInsertSchema(bumpChannels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -222,3 +243,5 @@ export type Slideshow = typeof slideshows.$inferSelect;
 export type InsertSlideshow = z.infer<typeof insertSlideshowSchema>;
 export type ServerJoin = typeof serverJoins.$inferSelect;
 export type InsertServerJoin = z.infer<typeof insertServerJoinSchema>;
+export type BumpChannel = typeof bumpChannels.$inferSelect;
+export type InsertBumpChannel = z.infer<typeof insertBumpChannelSchema>;

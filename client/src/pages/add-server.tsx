@@ -20,6 +20,7 @@ import { Plus, Server, Users, Hash, Link2, Image, Globe, CheckCircle } from "luc
 
 const serverFormSchema = insertServerSchema.extend({
   tags: z.string().optional(),
+  bumpEnabled: z.boolean().optional(),
 });
 
 type ServerFormData = z.infer<typeof serverFormSchema>;
@@ -112,6 +113,7 @@ export default function AdvertiseServer() {
       onlineCount: 0,
       verified: false,
       featured: false,
+      bumpEnabled: false,
     },
   });
 
@@ -158,7 +160,8 @@ export default function AdvertiseServer() {
     setIsSubmitting(true);
     const serverData = {
       ...data,
-      tags: selectedTags.join(',')
+      tags: selectedTags.join(','),
+      discordId: serverPreview?.serverId || null
     };
     createServerMutation.mutate(serverData);
   };
@@ -411,6 +414,62 @@ export default function AdvertiseServer() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Bump Settings Section */}
+                  <Card className="border-blue-400/20 bg-blue-400/5">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-blue-400">
+                        <i className="fas fa-megaphone w-5 h-5"></i>
+                        Bump Settings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <label className="text-sm font-medium">Enable Server Bumping</label>
+                            <p className="text-xs text-muted-foreground">
+                              Allow your server to be promoted across the Smart Serve network
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              onChange={(e) => form.setValue('bumpEnabled', e.target.checked)}
+                            />
+                            <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                        
+                        <div className="bg-card/50 rounded-lg p-4 border border-blue-400/20">
+                          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <i className="fas fa-info-circle text-blue-400"></i>
+                            How Bump Works
+                          </h4>
+                          <ul className="text-xs text-muted-foreground space-y-1">
+                            <li>• Your server will be promoted to other Discord servers with our bot</li>
+                            <li>• Use <code className="bg-muted px-1 rounded">/bump</code> command in your server</li>
+                            <li>• 2-hour cooldown between bumps</li>
+                            <li>• Requires Smart Serve bot to be in your server</li>
+                          </ul>
+                        </div>
+                        
+                        <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-3">
+                          <div className="flex items-start gap-2">
+                            <i className="fas fa-exclamation-triangle text-yellow-400 mt-0.5"></i>
+                            <div>
+                              <p className="text-xs font-medium text-yellow-400">Bot Required</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Our bot must be added to your server to enable bumping.
+                                {!serverPreview && " Add your invite link above to check bot status."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   {/* Submit Buttons */}
                   <div className="flex gap-4 pt-6">

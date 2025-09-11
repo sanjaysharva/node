@@ -1,6 +1,6 @@
-import { users, servers, bots, ads, serverJoins, slideshows, events, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, ilike, or, and, inArray, sql } from "drizzle-orm";
+import { eq, desc, and, ilike, sql, isNull, count } from 'drizzle-orm';
 
 export interface IStorage {
   // User operations
@@ -23,7 +23,7 @@ export interface IStorage {
   getPopularBots(limit?: number): Promise<Bot[]>;
   getBot(id: string): Promise<Bot | undefined>;
   getBotsByOwner(ownerId: string): Promise<Bot[]>;
-  createBot(bot: InsertBot): Promise<Bot>;
+  createBot(insertBot: InsertBot): Promise<Bot>;
   updateBot(id: string, bot: Partial<InsertBot>): Promise<Bot | undefined>;
   deleteBot(id: string): Promise<boolean>;
 
@@ -52,6 +52,16 @@ export interface IStorage {
   incrementUserInviteCount(userId: string): Promise<User | undefined>;
   incrementUserReferralCount(userId: string): Promise<User | undefined>;
   updateDailyLoginStreak(userId: string): Promise<User | undefined>;
+
+  // Bump operations
+  getServerByDiscordId(discordId: string): Promise<Server | null>;
+  setBumpChannel(guildId: string, channelId: string): Promise<void>;
+  removeBumpChannel(guildId: string): Promise<void>;
+  getBumpChannel(guildId: string): Promise<BumpChannel | null>;
+  getAllBumpChannels(): Promise<BumpChannel[]>;
+  getLastBump(guildId: string): Promise<Date | null>;
+  updateLastBump(guildId: string): Promise<void>;
+  updateServerBumpSettings(serverId: string, bumpEnabled: boolean): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -412,6 +422,68 @@ export class DatabaseStorage implements IStorage {
         advertisingComplete 
       };
     });
+  }
+
+  // Bump functionality methods
+  async getServerByDiscordId(discordId: string): Promise<Server | null> {
+    const result = await this.db
+      .select()
+      .from(servers)
+      .where(eq(servers.discordId, discordId))
+      .limit(1);
+    return result[0] || null;
+  }
+
+  async setBumpChannel(guildId: string, channelId: string): Promise<void> {
+    await this.db
+      .insert(bumpChannels)
+      .values({ guildId, channelId })
+      .onConflictDoUpdate({
+        target: bumpChannels.guildId,
+        set: { channelId, updatedAt: new Date() }
+      });
+  }
+
+  async removeBumpChannel(guildId: string): Promise<void> {
+    await this.db
+      .delete(bumpChannels)
+      .where(eq(bumpChannels.guildId, guildId));
+  }
+
+  async getBumpChannel(guildId: string): Promise<BumpChannel | null> {
+    const result = await this.db
+      .select()
+      .from(bumpChannels)
+      .where(eq(bumpChannels.guildId, guildId))
+      .limit(1);
+    return result[0] || null;
+  }
+
+  async getAllBumpChannels(): Promise<BumpChannel[]> {
+    return await this.db.select().from(bumpChannels);
+  }
+
+  async getLastBump(guildId: string): Promise<Date | null> {
+    const result = await this.db
+      .select({ lastBumpAt: servers.lastBumpAt })
+      .from(servers)
+      .where(eq(servers.discordId, guildId))
+      .limit(1);
+    return result[0]?.lastBumpAt || null;
+  }
+
+  async updateLastBump(guildId: string): Promise<void> {
+    await this.db
+      .update(servers)
+      .set({ lastBumpAt: new Date() })
+      .where(eq(servers.discordId, guildId));
+  }
+
+  async updateServerBumpSettings(serverId: string, bumpEnabled: boolean): Promise<void> {
+    await this.db
+      .update(servers)
+      .set({ bumpEnabled })
+      .where(eq(servers.id, serverId));
   }
 }
 
