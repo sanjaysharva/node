@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   email: text("email"),
   isAdmin: boolean("is_admin").default(false),
   discordAccessToken: text("discord_access_token"),
+  coins: integer("coins").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -40,6 +41,9 @@ export const servers = pgTable("servers", {
   tags: text("tags").array().default([]),
   verified: boolean("verified").default(false),
   featured: boolean("featured").default(false),
+  isAdvertising: boolean("is_advertising").default(false),
+  advertisingMembersNeeded: integer("advertising_members_needed").default(0),
+  advertisingUserId: varchar("advertising_user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -65,24 +69,82 @@ export const bots = pgTable("bots", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const events = pgTable("events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  location: text("location"),
+  ownerId: varchar("owner_id").references(() => users.id).notNull(),
+  featured: boolean("featured").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const slideshows = pgTable("slideshows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  imageUrl: text("image_url").notNull(),
+  linkUrl: text("link_url"),
+  position: integer("position").default(0),
+  page: text("page").notNull(), // 'explore', 'events'
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const serverJoins = pgTable("server_joins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  serverId: varchar("server_id").references(() => servers.id).notNull(),
+  coinsEarned: integer("coins_earned").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   servers: many(servers),
   bots: many(bots),
+  events: many(events),
+  serverJoins: many(serverJoins),
 }));
 
-
-export const serversRelations = relations(servers, ({ one }) => ({
+export const serversRelations = relations(servers, ({ one, many }) => ({
   owner: one(users, {
     fields: [servers.ownerId],
     references: [users.id],
   }),
+  advertiser: one(users, {
+    fields: [servers.advertisingUserId],
+    references: [users.id],
+  }),
+  joins: many(serverJoins),
 }));
 
 export const botsRelations = relations(bots, ({ one }) => ({
   owner: one(users, {
     fields: [bots.ownerId],
     references: [users.id],
+  }),
+}));
+
+export const eventsRelations = relations(events, ({ one }) => ({
+  owner: one(users, {
+    fields: [events.ownerId],
+    references: [users.id],
+  }),
+}));
+
+export const serverJoinsRelations = relations(serverJoins, ({ one }) => ({
+  user: one(users, {
+    fields: [serverJoins.userId],
+    references: [users.id],
+  }),
+  server: one(servers, {
+    fields: [serverJoins.serverId],
+    references: [servers.id],
   }),
 }));
 
@@ -111,6 +173,23 @@ export const insertAdSchema = createInsertSchema(ads).omit({
   updatedAt: true,
 });
 
+export const insertEventSchema = createInsertSchema(events).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSlideshowSchema = createInsertSchema(slideshows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertServerJoinSchema = createInsertSchema(serverJoins).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -120,3 +199,9 @@ export type Bot = typeof bots.$inferSelect;
 export type InsertBot = z.infer<typeof insertBotSchema>;
 export type Ad = typeof ads.$inferSelect;
 export type InsertAd = z.infer<typeof insertAdSchema>;
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type Slideshow = typeof slideshows.$inferSelect;
+export type InsertSlideshow = z.infer<typeof insertSlideshowSchema>;
+export type ServerJoin = typeof serverJoins.$inferSelect;
+export type InsertServerJoin = z.infer<typeof insertServerJoinSchema>;
