@@ -67,44 +67,84 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      
-
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <HeroSearch onSearch={handleSearch} />
+      {/* Extended Purple Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Purple gradient background that extends full width */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/60 via-purple-800/40 to-blue-900/60">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.3),transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.2),transparent_50%)]"></div>
+        </div>
         
-        <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span>10K+ Active Servers</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-300"></div>
-            <span>5K+ Trusted Bots</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-700"></div>
-            <span>1M+ Members</span>
-          </div>
+        {/* Animated particles */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full animate-float opacity-60"></div>
+          <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-blue-400 rounded-full animate-float opacity-40" style={{animationDelay: '2s'}}></div>
+          <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-pink-400 rounded-full animate-float opacity-50" style={{animationDelay: '4s'}}></div>
+          <div className="absolute top-1/2 right-1/3 w-1 h-1 bg-cyan-400 rounded-full animate-float opacity-30" style={{animationDelay: '6s'}}></div>
         </div>
 
-        {/* Header Ad */}
-        <AdBanner position="header" className="mt-8" />
-      </section>
+        <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          {/* Hero Content */}
+          <div className="text-center mb-12">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-transparent bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text animate-gradient-x bg-300%">
+              Smart Serve
+            </h1>
+            <p className="text-xl md:text-2xl text-purple-100 max-w-3xl mx-auto mb-8 leading-relaxed">
+              Discover amazing Discord communities, powerful bots, and connect with millions of users worldwide
+            </p>
+            <div className="flex items-center justify-center space-x-4 mb-8">
+              <div className="px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full">
+                <span className="text-purple-200 text-sm font-medium">🚀 Join the revolution</span>
+              </div>
+            </div>
+          </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <HeroSearch onSearch={handleSearch} />
+          
+          <div className="mt-12 flex items-center justify-center space-x-8 text-sm text-purple-200/80">
+            <div className="flex items-center space-x-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>10K+ Active Servers</span>
+            </div>
+            <div className="flex items-center space-x-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-300"></div>
+              <span>5K+ Trusted Bots</span>
+            </div>
+            <div className="flex items-center space-x-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-700"></div>
+              <span>1M+ Members</span>
+            </div>
+          </div>
+
+          {/* Header Ad */}
+          <AdBanner position="header" className="mt-12" />
+        </section>
+      </div>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
         {/* Popular Servers Showcase */}
         <section className="mb-16">
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-sm animate-pulse"></div>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+                  <div className="w-6 h-6 bg-white rounded-lg animate-pulse"></div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-400 rounded-2xl blur-lg opacity-50 -z-10"></div>
               </div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-                Popular Servers
-              </h2>
+              <div>
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
+                  Popular Servers
+                </h2>
+                <p className="text-muted-foreground mt-1">Discover trending Discord communities</p>
+              </div>
             </div>
-            <Button variant="ghost" className="text-primary hover:text-secondary transition-all duration-300 hover:scale-105">
+            <Button 
+              variant="ghost" 
+              className="text-primary hover:text-secondary transition-all duration-300 hover:scale-105 border border-primary/20 hover:border-primary/40 px-6 py-2"
+            >
               View All
+              <i className="fas fa-arrow-right ml-2"></i>
             </Button>
           </div>
 
@@ -144,30 +184,32 @@ export default function Home() {
         </section>
 
         {/* Content and Filters */}
-        <section>
+        <section className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
-              <Button
-                variant={contentType === "servers" ? "default" : "ghost"}
-                onClick={() => setContentType("servers")}
-                className="flex items-center space-x-2"
-                data-testid="button-filter-servers"
-              >
-                <i className="fas fa-server"></i>
-                <span>Discord Servers</span>
-              </Button>
-              <Button
-                variant={contentType === "bots" ? "default" : "ghost"}
-                onClick={() => setContentType("bots")}
-                className="flex items-center space-x-2"
-                data-testid="button-filter-bots"
-              >
-                <i className="fas fa-robot"></i>
-                <span>Discord Bots</span>
-              </Button>
+              <div className="bg-muted/50 p-1 rounded-xl border border-border/50">
+                <Button
+                  variant={contentType === "servers" ? "default" : "ghost"}
+                  onClick={() => setContentType("servers")}
+                  className="flex items-center space-x-2 rounded-lg"
+                  data-testid="button-filter-servers"
+                >
+                  <i className="fas fa-server"></i>
+                  <span>Discord Servers</span>
+                </Button>
+                <Button
+                  variant={contentType === "bots" ? "default" : "ghost"}
+                  onClick={() => setContentType("bots")}
+                  className="flex items-center space-x-2 rounded-lg"
+                  data-testid="button-filter-bots"
+                >
+                  <i className="fas fa-robot"></i>
+                  <span>Discord Bots</span>
+                </Button>
+              </div>
             </div>
             <Select onValueChange={setSortBy} defaultValue="members">
-              <SelectTrigger className="w-48" data-testid="select-sort">
+              <SelectTrigger className="w-48 border-border/50 bg-background/50" data-testid="select-sort">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
