@@ -153,7 +153,7 @@ export default function ServerDetail() {
       <div className="max-w-4xl mx-auto px-4 pt-8">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={() => window.history.back()}
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />

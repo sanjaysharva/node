@@ -15,9 +15,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [contentType, setContentType] = useState<"servers" | "bots">("servers");
   const [sortBy, setSortBy] = useState("members");
-  const [languageFilter, setLanguageFilter] = useState("");
-  const [timezoneFilter, setTimezoneFilter] = useState("");
-  const [activityFilter, setActivityFilter] = useState("");
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
 
@@ -28,16 +25,13 @@ export default function Home() {
 
   // Fetch all servers with filters
   const { data: allServers, isLoading: loadingServers } = useQuery({
-    queryKey: ["/api/servers", searchQuery, sortBy, languageFilter, timezoneFilter, activityFilter],
+    queryKey: ["/api/servers", searchQuery, sortBy],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
-      if (languageFilter) params.set("language", languageFilter);
-      if (timezoneFilter) params.set("timezone", timezoneFilter);
-      if (activityFilter) params.set("activity", activityFilter);
       params.set("limit", "20");
       params.set("offset", "0");
-
+      
       const response = await fetch(`/api/servers?${params}`);
       if (!response.ok) throw new Error("Failed to fetch servers");
       return response.json();
@@ -69,61 +63,15 @@ export default function Home() {
     }
   };
 
-  const handleViewServer = (serverId: string) => {
-    window.location.href = `/server/${serverId}`;
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-
-      {/* Hero Section with Gradient Background */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-blue-900/50 via-cyan-900/50 to-blue-900/50 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text animate-gradient-x bg-300%">
-                Discord Communities
-              </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-3xl mx-auto">
-              Discover and join the best Discord servers and bots. Find your community, connect with like-minded people, and explore new experiences.
-            </p>
-            <div className="mt-10 flex justify-center">
-              <HeroSearch onSearch={handleSearch} />
-            </div>
-          </div>
-        </div>
-        <div className="absolute inset-0 -z-10 opacity-70 mix-blend-multiply">
-          <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800">
-            <defs>
-              <radialGradient id="grad1" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
-                <stop offset="0%" style={{stopColor: 'rgb(76, 29, 140)', stopOpacity: 1}}/>
-                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
-              </radialGradient>
-              <radialGradient id="grad2" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
-                <stop offset="0%" style={{stopColor: 'rgb(37, 99, 235)', stopOpacity: 1}}/>
-                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
-              </radialGradient>
-              <radialGradient id="grad3" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
-                <stop offset="0%" style={{stopColor: 'rgb(168, 85, 247)', stopOpacity: 1}}/>
-                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
-              </radialGradient>
-              <radialGradient id="grad4" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
-                <stop offset="0%" style={{stopColor: 'rgb(59, 130, 246)', stopOpacity: 1}}/>
-                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
-              </radialGradient>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grad1)"/>
-            <rect width="100%" height="100%" fill="url(#grad2)" opacity="0.7"/>
-            <rect width="100%" height="100%" fill="url(#grad3)" opacity="0.5"/>
-            <rect width="100%" height="100%" fill="url(#grad4)" opacity="0.3"/>
-          </svg>
-        </div>
-      </section>
+      
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <HeroSearch onSearch={handleSearch} />
-
+        
         <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -189,7 +137,6 @@ export default function Home() {
                   key={server.id}
                   server={server}
                   onJoin={handleJoinServer}
-                  onView={handleViewServer}
                 />
               ))}
             </div>
@@ -198,102 +145,37 @@ export default function Home() {
 
         {/* Content and Filters */}
         <section>
-          <div className="flex flex-col gap-4 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant={contentType === "servers" ? "default" : "ghost"}
-                  onClick={() => setContentType("servers")}
-                  className="flex items-center space-x-2"
-                  data-testid="button-filter-servers"
-                >
-                  <i className="fas fa-server"></i>
-                  <span>Discord Servers</span>
-                </Button>
-                <Button
-                  variant={contentType === "bots" ? "default" : "ghost"}
-                  onClick={() => setContentType("bots")}
-                  className="flex items-center space-x-2"
-                  data-testid="button-filter-bots"
-                >
-                  <i className="fas fa-robot"></i>
-                  <span>Discord Bots</span>
-                </Button>
-              </div>
-              <Select onValueChange={setSortBy} defaultValue="members">
-                <SelectTrigger className="w-48" data-testid="select-sort">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="members">Sort by Members</SelectItem>
-                  <SelectItem value="rating">Sort by Rating</SelectItem>
-                  <SelectItem value="newest">Sort by Newest</SelectItem>
-                  <SelectItem value="name">Sort by Name</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant={contentType === "servers" ? "default" : "ghost"}
+                onClick={() => setContentType("servers")}
+                className="flex items-center space-x-2"
+                data-testid="button-filter-servers"
+              >
+                <i className="fas fa-server"></i>
+                <span>Discord Servers</span>
+              </Button>
+              <Button
+                variant={contentType === "bots" ? "default" : "ghost"}
+                onClick={() => setContentType("bots")}
+                className="flex items-center space-x-2"
+                data-testid="button-filter-bots"
+              >
+                <i className="fas fa-robot"></i>
+                <span>Discord Bots</span>
+              </Button>
             </div>
-
-            {/* Advanced Filters */}
-            <div className="flex flex-wrap gap-4 p-4 bg-card/50 rounded-lg border border-border/50">
-              <Select onValueChange={setLanguageFilter} value={languageFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Languages</SelectItem>
-                  <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="Spanish">Spanish</SelectItem>
-                  <SelectItem value="French">French</SelectItem>
-                  <SelectItem value="German">German</SelectItem>
-                  <SelectItem value="Japanese">Japanese</SelectItem>
-                  <SelectItem value="Korean">Korean</SelectItem>
-                  <SelectItem value="Chinese">Chinese</SelectItem>
-                  <SelectItem value="Russian">Russian</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select onValueChange={setTimezoneFilter} value={timezoneFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Timezones</SelectItem>
-                  <SelectItem value="UTC">UTC</SelectItem>
-                  <SelectItem value="EST">EST</SelectItem>
-                  <SelectItem value="PST">PST</SelectItem>
-                  <SelectItem value="GMT">GMT</SelectItem>
-                  <SelectItem value="CET">CET</SelectItem>
-                  <SelectItem value="JST">JST</SelectItem>
-                  <SelectItem value="AEST">AEST</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select onValueChange={setActivityFilter} value={activityFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Activity Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Activity</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {(languageFilter || timezoneFilter || activityFilter) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setLanguageFilter("");
-                    setTimezoneFilter("");
-                    setActivityFilter("");
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
+            <Select onValueChange={setSortBy} defaultValue="members">
+              <SelectTrigger className="w-48" data-testid="select-sort">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="members">Sort by Members</SelectItem>
+                <SelectItem value="newest">Sort by Newest</SelectItem>
+                <SelectItem value="name">Sort by Name</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -327,7 +209,6 @@ export default function Home() {
                       key={server.id}
                       server={server}
                       onJoin={handleJoinServer}
-                      onView={handleViewServer}
                     />
                   ))}
                 </div>

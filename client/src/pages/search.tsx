@@ -57,7 +57,9 @@ export default function SearchPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setSearchParams({ q: searchQuery });
+      const url = new URL(window.location.href);
+      url.searchParams.set("q", searchQuery.trim());
+      window.history.pushState({}, "", url.toString());
     }
   };
 
@@ -87,7 +89,7 @@ export default function SearchPage() {
           <div className="flex items-center gap-4 mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate(-1)}
+              onClick={() => window.history.back()}
               className="text-muted-foreground hover:text-foreground"
               data-testid="button-back"
             >

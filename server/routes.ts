@@ -36,6 +36,7 @@ declare global {
         discordId: string;
         username: string;
         avatar?: string;
+        isAdmin?: boolean;
       };
     }
   }
@@ -511,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = req.body;
 
-      const server = await storage.getServerById(id);
+      const server = await storage.getServer(id);
       if (!server) {
         return res.status(404).json({ message: "Server not found" });
       }
@@ -535,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { bumpEnabled } = req.body;
 
-      const server = await storage.getServerById(id);
+      const server = await storage.getServer(id);
       if (!server) {
         return res.status(404).json({ message: "Server not found" });
       }
@@ -1051,10 +1052,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Define quest rewards
       const questRewards = {
-        invite_members: { reward: 15, requirement: user.inviteCount >= 3 },
-        join_servers: { reward: 10, requirement: user.serversJoined >= 5 },
-        daily_login: { reward: 20, requirement: user.dailyLoginStreak >= 7 },
-        referral_bonus: { reward: 50, requirement: user.referralCount >= 10 },
+        invite_members: { reward: 15, requirement: (user.inviteCount ?? 0) >= 3 },
+        join_servers: { reward: 10, requirement: (user.serversJoined ?? 0) >= 5 },
+        daily_login: { reward: 20, requirement: (user.dailyLoginStreak ?? 0) >= 7 },
+        referral_bonus: { reward: 50, requirement: (user.referralCount ?? 0) >= 10 },
       };
 
       const quest = questRewards[questId as keyof typeof questRewards];

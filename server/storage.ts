@@ -1,6 +1,6 @@
 import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, ilike, sql, isNull, count } from 'drizzle-orm';
+import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
 
 export interface IStorage {
   // User operations
@@ -426,7 +426,7 @@ export class DatabaseStorage implements IStorage {
 
   // Bump functionality methods
   async getServerByDiscordId(discordId: string): Promise<Server | null> {
-    const result = await this.db
+    const result = await db
       .select()
       .from(servers)
       .where(eq(servers.discordId, discordId))
@@ -435,7 +435,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setBumpChannel(guildId: string, channelId: string): Promise<void> {
-    await this.db
+    await db
       .insert(bumpChannels)
       .values({ guildId, channelId })
       .onConflictDoUpdate({
@@ -445,13 +445,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeBumpChannel(guildId: string): Promise<void> {
-    await this.db
+    await db
       .delete(bumpChannels)
       .where(eq(bumpChannels.guildId, guildId));
   }
 
   async getBumpChannel(guildId: string): Promise<BumpChannel | null> {
-    const result = await this.db
+    const result = await db
       .select()
       .from(bumpChannels)
       .where(eq(bumpChannels.guildId, guildId))
@@ -460,11 +460,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBumpChannels(): Promise<BumpChannel[]> {
-    return await this.db.select().from(bumpChannels);
+    return await db.select().from(bumpChannels);
   }
 
   async getLastBump(guildId: string): Promise<Date | null> {
-    const result = await this.db
+    const result = await db
       .select({ lastBumpAt: servers.lastBumpAt })
       .from(servers)
       .where(eq(servers.discordId, guildId))
@@ -473,14 +473,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLastBump(guildId: string): Promise<void> {
-    await this.db
+    await db
       .update(servers)
       .set({ lastBumpAt: new Date() })
       .where(eq(servers.discordId, guildId));
   }
 
   async updateServerBumpSettings(serverId: string, bumpEnabled: boolean): Promise<void> {
-    await this.db
+    await db
       .update(servers)
       .set({ bumpEnabled })
       .where(eq(servers.id, serverId));
