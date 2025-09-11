@@ -262,15 +262,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const servers = adminGuilds.map((guild: any) => ({
         id: guild.id,
         name: guild.name,
-        description: `Discord server: ${guild.name}`,
+        description: guild.description || `${guild.name} Discord Server`,
         inviteCode: '', // We don't have invite codes from guilds API
         icon: guild.icon,
         memberCount: guild.approximate_member_count || 0,
         onlineCount: guild.approximate_presence_count || 0,
         ownerId: req.params.userId,
-        tags: guild.features || [],
-        verified: guild.verified || false,
-        featured: guild.features?.includes('VERIFIED') || false,
+        tags: [], // Don't use Discord features as tags
+        verified: guild.features?.includes('VERIFIED') || guild.features?.includes('PARTNERED') || false,
+        featured: guild.features?.includes('FEATURED') || guild.features?.includes('DISCOVERABLE') || false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }));

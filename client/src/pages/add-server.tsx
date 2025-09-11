@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { insertServerSchema } from "@shared/schema";
+import { Plus } from "lucide-react";
 
 const serverFormSchema = insertServerSchema.extend({
   tags: z.string().optional(),
@@ -26,19 +27,19 @@ type ServerFormData = z.infer<typeof serverFormSchema>;
 // Predefined tags organized by topic
 const PREDEFINED_TAGS = {
   "Gaming": [
-    "FPS", "MOBA", "RPG", "MMO", "Strategy", "Indie", "Competitive", "Casual", 
+    "FPS", "MOBA", "RPG", "MMO", "Strategy", "Indie", "Competitive", "Casual",
     "Co-op", "PvP", "Minecraft", "Fortnite", "League of Legends", "Valorant", "CS2"
   ],
   "Community": [
-    "Social", "Friendship", "Study", "Education", "Art", "Music", "Anime", "Movies", 
+    "Social", "Friendship", "Study", "Education", "Art", "Music", "Anime", "Movies",
     "Books", "Technology", "Programming", "Fitness", "Cooking", "Travel", "Photography"
   ],
   "Bot Features": [
-    "Moderation", "Music Bot", "Economy", "Leveling", "Reaction Roles", "Tickets", 
+    "Moderation", "Music Bot", "Economy", "Leveling", "Reaction Roles", "Tickets",
     "Polls", "Giveaways", "Welcome Bot", "Auto Mod", "Custom Commands", "Logs"
   ],
   "Server Type": [
-    "Public", "Private", "SFW", "NSFW", "International", "English Only", "Multilingual", 
+    "Public", "Private", "SFW", "NSFW", "International", "English Only", "Multilingual",
     "Active", "Chill", "Serious", "Meme", "Support", "Trading", "Events"
   ]
 };
@@ -47,6 +48,7 @@ export default function AdvertiseServer() {
   const [, setLocation] = useLocation();
   const [serverPreview, setServerPreview] = useState<any>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [customTag, setCustomTag] = useState<string>("");
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -138,14 +140,19 @@ export default function AdvertiseServer() {
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => {
-      if (prev.includes(tag)) {
-        return prev.filter(t => t !== tag);
-      } else if (prev.length < 10) { // Limit to 10 tags
-        return [...prev, tag];
-      }
-      return prev;
-    });
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else if (selectedTags.length < 10) {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
+
+  const addCustomTag = () => {
+    const trimmedTag = customTag.trim();
+    if (trimmedTag && !selectedTags.includes(trimmedTag) && selectedTags.length < 10) {
+      setSelectedTags([...selectedTags, trimmedTag]);
+      setCustomTag("");
+    }
   };
 
   const onSubmit = (data: ServerFormData) => {
@@ -302,69 +309,68 @@ export default function AdvertiseServer() {
                     </div>
                   )}
 
-                  {/* Tag Categories */}
-                  {Object.entries(PREDEFINED_TAGS).map(([category, tags]) => (
-                    <div key={category} className="space-y-3">
-                      <h4 className="text-sm font-semibold text-foreground">{category}</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {tags.map((tag) => {
-                          const isSelected = selectedTags.includes(tag);
-                          const isDisabled = !isSelected && selectedTags.length >= 10;
-
-                          return (
-                            <Badge
-                              key={tag}
-                              variant={isSelected ? "default" : "outline"}
-                              className={`cursor-pointer transition-all duration-200 ${
-                                isSelected
-                                  ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
-                                  : isDisabled
-                                  ? "opacity-50 cursor-not-allowed border-muted-foreground/20 text-muted-foreground"
-                                  : "border-purple-400/30 text-muted-foreground hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300"
-                              }`}
-                              onClick={() => !isDisabled && toggleTag(tag)}
-                              data-testid={`badge-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                            >
-                              {tag}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Custom Tags Input */}
+                  {/* Custom Tag Input */}
                   <div className="space-y-2">
-                    <h4 className="text-sm font-semibold text-foreground">Custom Tags</h4>
-                    <FormField
-                      control={form.control}
-                      name="tags"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="Add custom tags separated by commas..."
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                // Auto-add custom tags when user types
-                                const customTags = e.target.value
-                                  .split(',')
-                                  .map(tag => tag.trim())
-                                  .filter(tag => tag && !selectedTags.includes(tag));
+                    <label className="text-sm font-medium text-muted-foreground">Add Custom Tag</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Enter custom tag..."
+                        value={customTag}
+                        onChange={(e) => setCustomTag(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addCustomTag();
+                          }
+                        }}
+                        className="flex-1 bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                        data-testid="input-custom-tag"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addCustomTag}
+                        disabled={!customTag.trim() || selectedTags.length >= 10}
+                        className="border-purple-400/30 hover:border-purple-400/50 hover:bg-purple-500/10"
+                        data-testid="button-add-custom-tag"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
 
-                                if (customTags.length > 0 && selectedTags.length + customTags.length <= 10) {
-                                  setSelectedTags(prev => [...prev, ...customTags]);
-                                  field.onChange(''); // Clear input
-                                }
-                              }}
-                              data-testid="input-custom-tags"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {/* Available Tags */}
+                  <div className="space-y-3">
+                    {Object.entries(PREDEFINED_TAGS).map(([category, tags]) => (
+                      <div key={category} className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {tags.map((tag) => {
+                            const isSelected = selectedTags.includes(tag);
+                            const isDisabled = !isSelected && selectedTags.length >= 10;
+
+                            return (
+                              <Badge
+                                key={tag}
+                                variant={isSelected ? "default" : "outline"}
+                                className={`cursor-pointer transition-all duration-200 ${
+                                  isSelected
+                                    ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
+                                    : isDisabled
+                                    ? "opacity-50 cursor-not-allowed border-muted-foreground/20 text-muted-foreground"
+                                    : "border-purple-400/30 text-muted-foreground hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300"
+                                }`}
+                                onClick={() => !isDisabled && toggleTag(tag)}
+                                data-testid={`badge-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                              >
+                                {tag}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

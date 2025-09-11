@@ -254,12 +254,14 @@ export default function YourServers() {
                       </div>
                     )}
 
-                    {/* Admin Badge */}
+                    {/* Server Status Badges */}
                     <div className="flex items-center space-x-2">
-                      <div className="flex items-center space-x-1 text-yellow-400">
-                        <Crown className="w-4 h-4" />
-                        <span className="text-sm font-medium">Admin</span>
-                      </div>
+                      {server.verified && (
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          <i className="fas fa-check-circle mr-1 text-xs"></i>
+                          Verified
+                        </Badge>
+                      )}
                       {server.featured && (
                         <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
                           Featured

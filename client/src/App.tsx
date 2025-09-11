@@ -20,7 +20,9 @@ function Router() {
       <Route path="/add-server" component={AddServer} />
       <Route path="/your-servers" component={YourServers} />
       <Route path="/events" component={Events} />
-      <Route path="/admin" component={AdminPage} />
+      <Route path="/admin">
+          {user?.isAdmin ? <Admin /> : <NotFound />}
+        </Route>
       <Route component={NotFound} />
     </Switch>
   );
