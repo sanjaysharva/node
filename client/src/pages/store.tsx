@@ -101,7 +101,7 @@ const CheckoutDialog = ({
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (isOpen && !clientSecret) {
+    if (isOpen && !clientSecret && stripePromise) {
       apiRequest("POST", "/api/create-payment-intent", { amount })
         .then((res) => res.json())
         .then((data) => {
@@ -245,14 +245,24 @@ export default function Store() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <CheckoutDialog 
-                    amount={pkg.price}
-                    description={`${pkg.coins} Coins Package`}
-                  >
-                    <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid={`button-buy-${pkg.coins}-coins`}>
-                      Buy Now - ${pkg.price}
+                  {stripePromise ? (
+                    <CheckoutDialog 
+                      amount={pkg.price}
+                      description={`${pkg.coins} Coins Package`}
+                    >
+                      <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid={`button-buy-${pkg.coins}-coins`}>
+                        Buy Now - ${pkg.price}
+                      </Button>
+                    </CheckoutDialog>
+                  ) : (
+                    <Button 
+                      disabled 
+                      className="w-full bg-gray-500 cursor-not-allowed" 
+                      data-testid={`button-buy-${pkg.coins}-coins`}
+                    >
+                      Payment Not Available
                     </Button>
-                  </CheckoutDialog>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -301,14 +311,24 @@ export default function Store() {
                       Priority placement in server listings
                     </p>
                   </div>
-                  <CheckoutDialog 
-                    amount={boost.price}
-                    description={`${boost.duration} Advertise Boost`}
-                  >
-                    <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid={`button-buy-boost-${boost.duration.replace(' ', '-')}`}>
-                      Purchase - ${boost.price}
+                  {stripePromise ? (
+                    <CheckoutDialog 
+                      amount={boost.price}
+                      description={`${boost.duration} Advertise Boost`}
+                    >
+                      <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid={`button-buy-boost-${boost.duration.replace(' ', '-')}`}>
+                        Purchase - ${boost.price}
+                      </Button>
+                    </CheckoutDialog>
+                  ) : (
+                    <Button 
+                      disabled 
+                      className="w-full bg-gray-500 cursor-not-allowed" 
+                      data-testid={`button-buy-boost-${boost.duration.replace(' ', '-')}`}
+                    >
+                      Payment Not Available
                     </Button>
-                  </CheckoutDialog>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -354,14 +374,24 @@ export default function Store() {
                     <div>🚀 Priority support</div>
                   </div>
                 </div>
-                <CheckoutDialog 
-                  amount={8}
-                  description="Premium Bot Tools"
-                >
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid="button-buy-premium-tools">
-                    Get Premium - $8
+                {stripePromise ? (
+                  <CheckoutDialog 
+                    amount={8}
+                    description="Premium Bot Tools"
+                  >
+                    <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid="button-buy-premium-tools">
+                      Get Premium - $8
+                    </Button>
+                  </CheckoutDialog>
+                ) : (
+                  <Button 
+                    disabled 
+                    className="w-full bg-gray-500 cursor-not-allowed" 
+                    data-testid="button-buy-premium-tools"
+                  >
+                    Payment Not Available
                   </Button>
-                </CheckoutDialog>
+                )}
               </CardContent>
             </Card>
           </div>

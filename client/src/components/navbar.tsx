@@ -225,7 +225,7 @@ export default function Navbar() {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                {user?.username === "aetherflux_002" && (
+                {user?.isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin" data-testid="button-admin-panel">
                       <Settings className="mr-2 h-4 w-4" />
