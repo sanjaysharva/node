@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServerSchema, insertBotSchema, insertAdSchema } from "@shared/schema";
+import { insertServerSchema, insertBotSchema, insertAdSchema, insertServerJoinSchema } from "@shared/schema";
 import { z } from "zod";
 
 declare global {
@@ -93,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tokenData = await tokenResponse.json();
       
       console.log('Token Response Status:', tokenResponse.status);
-      console.log('Token Response Data:', tokenData);
+      // Sensitive token data logging removed for security
 
       if (!tokenResponse.ok) {
         console.error('Discord token exchange failed:', tokenData);
@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const discordUser = await userResponse.json();
       
       console.log('User Response Status:', userResponse.status);
-      console.log('Discord User Data:', discordUser);
+      // Sensitive user data logging removed for security
 
       if (!userResponse.ok) {
         console.error('Discord user fetch failed:', discordUser);
@@ -346,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let errorDetails = "";
       
       try {
-        console.log(`Checking bot presence in guild ${guildId} using bot token (first 10 chars: ${botToken.substring(0, 10)}...)`);
+        console.log(`Checking bot presence in guild ${guildId} using bot token`);
         
         // Method 1: Check bot as guild member (most reliable)
         const botMemberResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${botId}`, {
@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (botMemberResponse.ok) {
           const memberData = await botMemberResponse.json();
-          console.log(`Bot member data:`, memberData);
+          console.log(`Bot member check successful`);
           botPresent = true;
           checkMethod = "member_check";
           console.log(`✅ Bot found in guild ${guildId} as member`);
@@ -657,6 +657,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete ad" });
+    }
+  });
+
+  // Slideshow routes
+  app.get("/api/slideshows", async (req, res) => {
+    try {
+      const { page } = req.query;
+      const slideshows = await storage.getSlideshows(page as string);
+      res.json(slideshows);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch slideshows" });
+    }
+  });
+
+  // Event routes
+  app.get("/api/events", async (req, res) => {
+    try {
+      const { search, limit = "20", offset = "0" } = req.query;
+      const events = await storage.getEvents({
+        search: search as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  // Wallet system routes
+  app.get("/api/servers/advertising", async (req, res) => {
+    try {
+      const advertisingServers = await storage.getAdvertisingServers();
+      res.json(advertisingServers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch advertising servers" });
+    }
+  });
+
+  app.post("/api/servers/:serverId/join", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { serverId } = req.params;
+      const userId = req.user.id;
+      const coinsToAward = 1;
+
+      // Get current user for Discord verification (lightweight check before heavy transaction)
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!currentUser.discordAccessToken) {
+        return res.status(400).json({ message: "Discord access required for verification" });
+      }
+
+      // DISCORD MEMBERSHIP VERIFICATION: Verify user is actually a member of the Discord server
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        // Check if user is a member of the guild using bot token
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverId}/members/${currentUser.discordId}`, {
+          headers: {
+            'Authorization': `Bot ${botToken}`,
+          },
+        });
+
+        if (!memberResponse.ok) {
+          if (memberResponse.status === 404) {
+            return res.status(400).json({ 
+              message: "You must be a member of this Discord server to earn coins" 
+            });
+          }
+          throw new Error(`Discord API error: ${memberResponse.status}`);
+        }
+      } catch (discordError) {
+        console.error("Discord membership verification failed:", discordError);
+        return res.status(500).json({ 
+          message: "Failed to verify Discord membership" 
+        });
+      }
+
+      // ATOMIC TRANSACTION: All validation and state checks are now inside the transaction
+      const result = await storage.atomicServerJoin({
+        userId,
+        serverId,
+        coinsToAward,
+      });
+
+      res.json({
+        message: "Successfully joined server and earned coins",
+        coinsEarned: coinsToAward,
+        newBalance: result.newBalance,
+      });
+    } catch (error) {
+      console.error("Server join error:", error);
+      
+      // Handle specific error cases with user-friendly messages
+      if (error instanceof Error) {
+        if (error.message.includes("already earned coins")) {
+          return res.status(400).json({ message: error.message });
+        }
+        if (error.message.includes("not currently advertising") || error.message.includes("quota exhausted")) {
+          return res.status(400).json({ message: "Server is not available for coin earning" });
+        }
+        if (error.message.includes("Server not found")) {
+          return res.status(404).json({ message: "Server not found" });
+        }
+      }
+      
+      res.status(500).json({ message: "Failed to process server join" });
+    }
+  });
+
+  app.post("/api/servers/:serverId/advertise", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { serverId } = req.params;
+      const { members } = req.body;
+      const userId = req.user.id;
+
+      if (!members || typeof members !== 'number' || members <= 0) {
+        return res.status(400).json({ message: "Valid members count required" });
+      }
+
+      const costPerMember = 2;
+      const totalCost = members * costPerMember;
+
+      // Get current user to check balance
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const currentCoins = currentUser.coins || 0;
+      if (currentCoins < totalCost) {
+        return res.status(400).json({ 
+          message: "Insufficient coins",
+          required: totalCost,
+          available: currentCoins,
+        });
+      }
+
+      // Verify the user owns/admins the server (using Discord API)
+      if (!currentUser.discordAccessToken) {
+        return res.status(400).json({ message: "Discord access required" });
+      }
+
+      // Fetch user's guilds to verify ownership
+      const guildsResponse = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+        headers: {
+          'Authorization': `Bearer ${currentUser.discordAccessToken}`,
+        },
+      });
+
+      if (!guildsResponse.ok) {
+        return res.status(400).json({ message: "Failed to verify server ownership" });
+      }
+
+      const guilds = await guildsResponse.json();
+      const userGuild = guilds.find((guild: any) => guild.id === serverId && (guild.permissions & 0x8) === 0x8); // ADMINISTRATOR permission
+
+      if (!userGuild) {
+        return res.status(403).json({ message: "You must be an admin of this server" });
+      }
+
+      // ATOMIC OPERATION: Deduct coins and set server as advertising
+      const newCoinBalance = currentCoins - totalCost;
+      await Promise.all([
+        storage.updateUserCoins(userId, newCoinBalance),
+        storage.updateServer(serverId, {
+          isAdvertising: true,
+          advertisingMembersNeeded: members,
+          advertisingUserId: userId,
+        }),
+      ]);
+
+      res.json({
+        message: "Successfully purchased advertising",
+        membersAdvertised: members,
+        costPaid: totalCost,
+        newBalance: newCoinBalance,
+      });
+    } catch (error) {
+      console.error("Server advertise error:", error);
+      res.status(500).json({ message: "Failed to process advertising purchase" });
     }
   });
 

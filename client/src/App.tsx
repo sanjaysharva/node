@@ -11,6 +11,8 @@ import AdminPage from "@/pages/admin";
 import Events from "@/pages/events";
 import Explore from "@/pages/explore";
 import JoinMembers from "@/pages/join-members";
+import Store from "@/pages/store";
+import Quest from "@/pages/quest";
 import YourServers from "@/pages/your-servers";
 import NotFound from "@/pages/not-found";
 
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/events" component={Events} />
       <Route path="/explore" component={Explore} />
       <Route path="/join-members" component={JoinMembers} />
+      <Route path="/store" component={Store} />
+      <Route path="/quest" component={Quest} />
       <Route path="/admin">
           {user?.isAdmin ? <AdminPage /> : <NotFound />}
         </Route>

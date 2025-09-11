@@ -101,7 +101,10 @@ export const serverJoins = pgTable("server_joins", {
   serverId: varchar("server_id").references(() => servers.id).notNull(),
   coinsEarned: integer("coins_earned").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Composite unique index prevents duplicate coin awards for same user+server
+  userServerUnique: sql`UNIQUE (${table.userId}, ${table.serverId})`
+}));
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({

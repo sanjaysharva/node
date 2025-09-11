@@ -47,7 +47,7 @@ export default function JoinMembers() {
       queryClient.invalidateQueries({ queryKey: ["/api/servers/advertising"] });
       toast({
         title: "Success!",
-        description: `You earned ${data.coinsEarned || 0.5} coins for joining the server!`,
+        description: `You earned ${data.coinsEarned || 1} coins for joining the server!`,
       });
     },
     onError: (error: any) => {
@@ -194,7 +194,7 @@ export default function JoinMembers() {
                 <div className="text-sm text-muted-foreground space-y-1">
                   <p className="flex items-center justify-between">
                     <span>Join Server Reward:</span>
-                    <Badge variant="secondary">+0.5 coins</Badge>
+                    <Badge variant="secondary">+1 coin</Badge>
                   </p>
                   <p className="flex items-center justify-between">
                     <span>Member Price:</span>
@@ -328,7 +328,7 @@ export default function JoinMembers() {
             Join Servers & Earn Coins
           </h1>
           <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto">
-            Join these amazing Discord servers and earn 0.5 coins for each server you join!
+            Join these amazing Discord servers and earn 1 coin for each server you join!
           </p>
         </div>
 
@@ -355,7 +355,7 @@ export default function JoinMembers() {
                 <div className="absolute top-4 right-4 z-10">
                   <Badge className="bg-green-500/90 text-white">
                     <Coins className="w-3 h-3 mr-1" />
-                    +0.5 coins
+                    +1 coin
                   </Badge>
                 </div>
                 

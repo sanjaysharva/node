@@ -106,6 +106,24 @@ export default function Navbar() {
               >
                 Join Members
               </Link>
+              <Link
+                href="/store"
+                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
+                  location === "/store" ? "text-primary" : "text-muted-foreground"
+                }`}
+                data-testid="link-store"
+              >
+                Store
+              </Link>
+              <Link
+                href="/quest"
+                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
+                  location === "/quest" ? "text-primary" : "text-muted-foreground"
+                }`}
+                data-testid="link-quest"
+              >
+                Quest
+              </Link>
 
               {/* Three dots dropdown */}
               <DropdownMenu>

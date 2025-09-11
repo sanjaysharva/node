@@ -1,6 +1,6 @@
-import { users, servers, bots, ads, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, ilike, or, and, inArray } from "drizzle-orm";
+import { eq, desc, ilike, or, and, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -33,6 +33,19 @@ export interface IStorage {
   createAd(ad: InsertAd): Promise<Ad>;
   updateAd(id: string, ad: Partial<InsertAd>): Promise<Ad | undefined>;
   deleteAd(id: string): Promise<boolean>;
+
+  // Wallet operations
+  getAdvertisingServers(): Promise<Server[]>;
+  createServerJoin(join: InsertServerJoin): Promise<ServerJoin>;
+  hasUserJoinedServer(userId: string, serverId: string): Promise<boolean>;
+  updateUserCoins(userId: string, coins: number): Promise<User | undefined>;
+  atomicServerJoin(params: { userId: string; serverId: string; coinsToAward: number; currentCoins: number; advertisingMembersNeeded: number }): Promise<{ newBalance: number; advertisingComplete: boolean }>;
+
+  // Slideshow operations
+  getSlideshows(page?: string): Promise<Slideshow[]>;
+
+  // Event operations
+  getEvents(options?: { search?: string; limit?: number; offset?: number }): Promise<Event[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -194,6 +207,148 @@ export class DatabaseStorage implements IStorage {
   async deleteAd(id: string): Promise<boolean> {
     const result = await db.delete(ads).where(eq(ads.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Wallet operations
+  async getAdvertisingServers(): Promise<Server[]> {
+    return await db.select().from(servers)
+      .where(eq(servers.isAdvertising, true))
+      .orderBy(desc(servers.memberCount));
+  }
+
+  async createServerJoin(join: InsertServerJoin): Promise<ServerJoin> {
+    const [serverJoin] = await db.insert(serverJoins).values(join).returning();
+    return serverJoin;
+  }
+
+  async hasUserJoinedServer(userId: string, serverId: string): Promise<boolean> {
+    const [join] = await db.select().from(serverJoins)
+      .where(and(eq(serverJoins.userId, userId), eq(serverJoins.serverId, serverId)));
+    return !!join;
+  }
+
+  async updateUserCoins(userId: string, coins: number): Promise<User | undefined> {
+    const [user] = await db.update(users)
+      .set({ coins })
+      .where(eq(users.id, userId))
+      .returning();
+    return user || undefined;
+  }
+
+  // Slideshow operations
+  async getSlideshows(page?: string): Promise<Slideshow[]> {
+    const conditions = [eq(slideshows.isActive, true)];
+    
+    if (page) {
+      conditions.push(eq(slideshows.page, page));
+    }
+
+    return await db.select().from(slideshows)
+      .where(and(...conditions))
+      .orderBy(slideshows.position, desc(slideshows.createdAt));
+  }
+
+  // Event operations
+  async getEvents(options?: { search?: string; limit?: number; offset?: number }): Promise<Event[]> {
+    const conditions = [];
+
+    if (options?.search) {
+      conditions.push(
+        or(
+          ilike(events.title, `%${options.search}%`),
+          ilike(events.description, `%${options.search}%`)
+        )
+      );
+    }
+
+    const baseQuery = db.select().from(events);
+    const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+    const withOrder = withWhere.orderBy(desc(events.startDate));
+    const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
+    const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
+
+    return await finalQuery;
+  }
+
+  // ATOMIC SERVER JOIN: Prevents race conditions and double-awarding of coins
+  async atomicServerJoin(params: { 
+    userId: string; 
+    serverId: string; 
+    coinsToAward: number;
+  }): Promise<{ newBalance: number; advertisingComplete: boolean }> {
+    const { userId, serverId, coinsToAward } = params;
+    
+    return await db.transaction(async (tx) => {
+      // Fetch current user and server state inside transaction for consistency
+      const [currentUser] = await tx.select({ coins: users.coins }).from(users)
+        .where(eq(users.id, userId));
+      
+      const [currentServer] = await tx.select({ 
+        advertisingMembersNeeded: servers.advertisingMembersNeeded,
+        isAdvertising: servers.isAdvertising 
+      }).from(servers)
+        .where(eq(servers.id, serverId));
+      
+      if (!currentUser) {
+        throw new Error("User not found");
+      }
+      if (!currentServer) {
+        throw new Error("Server not found");
+      }
+      if (!currentServer.isAdvertising || (currentServer.advertisingMembersNeeded || 0) <= 0) {
+        throw new Error("Server is not currently advertising or quota exhausted");
+      }
+
+      try {
+        // Insert server join record - unique constraint will prevent duplicates
+        await tx.insert(serverJoins).values({
+          userId,
+          serverId,
+          coinsEarned: coinsToAward,
+        });
+      } catch (error: any) {
+        // Handle unique constraint violation
+        if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+          throw new Error("You have already earned coins from this server");
+        }
+        throw error;
+      }
+
+      // Atomically increment user coins using SQL operation (prevents lost updates)
+      const [updatedUser] = await tx.update(users)
+        .set({ coins: sql`${users.coins} + ${coinsToAward}` })
+        .where(eq(users.id, userId))
+        .returning({ coins: users.coins });
+
+      if (!updatedUser) {
+        throw new Error("Failed to update user coins");
+      }
+
+      // Conditionally update advertising accounting with WHERE guards
+      const newMembersNeeded = Math.max(0, (currentServer.advertisingMembersNeeded || 0) - 1);
+      const advertisingComplete = newMembersNeeded <= 0;
+      
+      const serverUpdateResult = await tx.update(servers)
+        .set({ 
+          advertisingMembersNeeded: newMembersNeeded,
+          isAdvertising: !advertisingComplete,
+        })
+        .where(and(
+          eq(servers.id, serverId),
+          eq(servers.isAdvertising, true),
+          sql`${servers.advertisingMembersNeeded} > 0`
+        ))
+        .returning({ id: servers.id });
+
+      if (serverUpdateResult.length === 0) {
+        throw new Error("Server advertising quota was exhausted during transaction");
+      }
+
+      return { 
+        newBalance: updatedUser.coins || 0, 
+        advertisingComplete 
+      };
+    });
   }
 }
 
