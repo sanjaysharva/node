@@ -191,7 +191,7 @@ export default function Navbar() {
                     />
                     <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
-                  <span data-testid="text-displayname">{user?.username?.replace(/^.*_/, '') || user?.username}</span>
+                  <span data-testid="text-displayname">{user?.username?}</span>
                   <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
                 </Button>
               </DropdownMenuTrigger>
