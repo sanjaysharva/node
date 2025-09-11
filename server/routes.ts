@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Discord Callback - Client Secret:', clientSecret ? 'Set' : 'Not set');
 
       // Exchange code for access token
-      const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', {
+      const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -91,21 +91,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const tokenData = await tokenResponse.json();
+      
+      console.log('Token Response Status:', tokenResponse.status);
+      console.log('Token Response Data:', tokenData);
 
       if (!tokenResponse.ok) {
-        throw new Error(tokenData.error_description || 'Failed to get access token');
+        console.error('Discord token exchange failed:', tokenData);
+        throw new Error(tokenData.error_description || tokenData.error || 'Failed to get access token');
       }
 
       // Get user info from Discord
-      const userResponse = await fetch('https://discord.com/api/v10/users/@me', {
+      const userResponse = await fetch('https://discord.com/api/users/@me', {
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`,
         },
       });
 
       const discordUser = await userResponse.json();
+      
+      console.log('User Response Status:', userResponse.status);
+      console.log('Discord User Data:', discordUser);
 
       if (!userResponse.ok) {
+        console.error('Discord user fetch failed:', discordUser);
         throw new Error('Failed to get user info');
       }
 
