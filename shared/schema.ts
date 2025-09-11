@@ -27,14 +27,6 @@ export const ads = pgTable("ads", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const categories = pgTable("categories", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
-  description: text("description"),
-  icon: text("icon"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
 export const servers = pgTable("servers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -44,7 +36,6 @@ export const servers = pgTable("servers", {
   icon: text("icon"),
   memberCount: integer("member_count").default(0),
   onlineCount: integer("online_count").default(0),
-  categoryId: varchar("category_id").references(() => categories.id),
   ownerId: varchar("owner_id").references(() => users.id).notNull(),
   tags: text("tags").array().default([]),
   verified: boolean("verified").default(false),
@@ -61,7 +52,6 @@ export const bots = pgTable("bots", {
   inviteUrl: text("invite_url").notNull(),
   avatar: text("avatar"),
   serverCount: integer("server_count").default(0),
-  categoryId: varchar("category_id").references(() => categories.id),
   ownerId: varchar("owner_id").references(() => users.id).notNull(),
   tags: text("tags").array().default([]),
   verified: boolean("verified").default(false),
@@ -81,16 +71,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   bots: many(bots),
 }));
 
-export const categoriesRelations = relations(categories, ({ many }) => ({
-  servers: many(servers),
-  bots: many(bots),
-}));
 
 export const serversRelations = relations(servers, ({ one }) => ({
-  category: one(categories, {
-    fields: [servers.categoryId],
-    references: [categories.id],
-  }),
   owner: one(users, {
     fields: [servers.ownerId],
     references: [users.id],
@@ -98,10 +80,6 @@ export const serversRelations = relations(servers, ({ one }) => ({
 }));
 
 export const botsRelations = relations(bots, ({ one }) => ({
-  category: one(categories, {
-    fields: [bots.categoryId],
-    references: [categories.id],
-  }),
   owner: one(users, {
     fields: [bots.ownerId],
     references: [users.id],
@@ -114,10 +92,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 });
 
-export const insertCategorySchema = createInsertSchema(categories).omit({
-  id: true,
-  createdAt: true,
-});
 
 export const insertServerSchema = createInsertSchema(servers).omit({
   id: true,
@@ -140,8 +114,6 @@ export const insertAdSchema = createInsertSchema(ads).omit({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type Category = typeof categories.$inferSelect;
-export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Server = typeof servers.$inferSelect;
 export type InsertServer = z.infer<typeof insertServerSchema>;
 export type Bot = typeof bots.$inferSelect;

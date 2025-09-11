@@ -3,17 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
 import HeroSearch from "@/components/hero-search";
 import ServerCard from "@/components/server-card";
-import CategoryFilters from "@/components/category-filters";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import type { Server, Category } from "@shared/schema";
+import type { Server } from "@shared/schema";
 import { AdBanner } from "@/components/ad-banner";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [contentType, setContentType] = useState<"servers" | "bots">("servers");
   const [sortBy, setSortBy] = useState("members");
   const { toast } = useToast();
@@ -26,11 +25,10 @@ export default function Home() {
 
   // Fetch all servers with filters
   const { data: allServers, isLoading: loadingServers } = useQuery({
-    queryKey: ["/api/servers", searchQuery, selectedCategories.join(","), sortBy],
+    queryKey: ["/api/servers", searchQuery, sortBy],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
-      if (selectedCategories.length > 0) params.set("categoryId", selectedCategories[0]);
       params.set("limit", "20");
       params.set("offset", "0");
       
@@ -40,28 +38,8 @@ export default function Home() {
     },
   });
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-  };
-
-  const handleCategoryFilter = (category: string) => {
-    const categoryObj = categories.find((c: Category) => c.slug === category);
-    if (categoryObj) {
-      setSelectedCategories([categoryObj.id]);
-    }
-  };
-
-  const handleCategoryChange = (categoryId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCategories([...selectedCategories, categoryId]);
-    } else {
-      setSelectedCategories(selectedCategories.filter(id => id !== categoryId));
-    }
   };
 
   const handleJoinServer = (serverId: string) => {
@@ -120,7 +98,7 @@ export default function Home() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <HeroSearch onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
+        <HeroSearch onSearch={handleSearch} />
         
         <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
           <div className="flex items-center space-x-2">
@@ -193,18 +171,42 @@ export default function Home() {
           )}
         </section>
 
-        {/* Categories and Filters */}
+        {/* Content and Filters */}
         <section>
-          <CategoryFilters
-            categories={categories}
-            selectedCategories={selectedCategories}
-            onCategoryChange={handleCategoryChange}
-            onContentTypeChange={setContentType}
-            onSortChange={setSortBy}
-            contentType={contentType}
-          />
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant={contentType === "servers" ? "default" : "ghost"}
+                onClick={() => setContentType("servers")}
+                className="flex items-center space-x-2"
+                data-testid="button-filter-servers"
+              >
+                <i className="fas fa-server"></i>
+                <span>Discord Servers</span>
+              </Button>
+              <Button
+                variant={contentType === "bots" ? "default" : "ghost"}
+                onClick={() => setContentType("bots")}
+                className="flex items-center space-x-2"
+                data-testid="button-filter-bots"
+              >
+                <i className="fas fa-robot"></i>
+                <span>Discord Bots</span>
+              </Button>
+            </div>
+            <Select onValueChange={setSortBy} defaultValue="members">
+              <SelectTrigger className="w-48" data-testid="select-sort">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="members">Sort by Members</SelectItem>
+                <SelectItem value="newest">Sort by Newest</SelectItem>
+                <SelectItem value="name">Sort by Name</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <div className="lg:w-3/4 lg:ml-auto lg:-mt-16">
+          <div>
             {loadingServers ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 {[...Array(8)].map((_, i) => (
@@ -246,7 +248,7 @@ export default function Home() {
                     </div>
                     <h3 className="text-xl font-semibold mb-2">No servers found</h3>
                     <p className="text-muted-foreground">
-                      Try adjusting your search or category filters
+                      Try adjusting your search filters
                     </p>
                   </div>
                 )}
@@ -287,7 +289,6 @@ export default function Home() {
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="#" className="hover:text-primary transition-colors">Discord Servers</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">Discord Bots</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Categories</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">Popular</a></li>
               </ul>
             </div>

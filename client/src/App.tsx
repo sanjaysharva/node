@@ -15,7 +15,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/add-server" component={AddServer} />
+      <Route path="/advertise-server" component={AddServer} />
       <Route path="/add-bot" component={AddBot} />
       <Route path="/your-servers" component={YourServers} />
       <Route path="/admin" component={AdminPage} />

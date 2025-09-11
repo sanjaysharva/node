@@ -71,15 +71,6 @@ export default function Navbar() {
             </Link>
             <div className="hidden md:flex space-x-6 items-center">
               <Link
-                href="/categories"
-                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
-                  location === "/categories" ? "text-primary" : "text-muted-foreground"
-                }`}
-                data-testid="link-categories"
-              >
-                Categories
-              </Link>
-              <Link
                 href="/advertise"
                 className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
                   location === "/advertise" ? "text-primary" : "text-muted-foreground"

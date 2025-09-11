@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import Navbar from "@/components/navbar";
@@ -5,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Settings, ExternalLink, Crown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Users, Settings, ExternalLink, Crown, Bot } from "lucide-react";
 import { Link } from "wouter";
 import type { Server } from "@shared/schema";
 
 export default function YourServers() {
   const { user, isAuthenticated } = useAuth();
+  const [showBotModal, setShowBotModal] = useState(false);
+  const [selectedServer, setSelectedServer] = useState<Server | null>(null);
+  const [botInviteUrl, setBotInviteUrl] = useState("");
 
   // Fetch user's servers where they have admin powers
   const { data: userServers, isLoading } = useQuery({
@@ -23,6 +28,31 @@ export default function YourServers() {
     },
     enabled: !!user?.id,
   });
+
+  const handleAdvertiseClick = async (server: Server) => {
+    try {
+      const response = await fetch(`/api/discord/bot-check/${server.id}`);
+      if (!response.ok) throw new Error("Failed to check bot presence");
+      
+      const data = await response.json();
+      
+      if (data.botPresent) {
+        // Bot is present, redirect to advertise page
+        window.location.href = '/advertise-server';
+      } else {
+        // Bot is not present, show modal
+        setSelectedServer(server);
+        setBotInviteUrl(data.inviteUrl);
+        setShowBotModal(true);
+      }
+    } catch (error) {
+      console.error('Error checking bot presence:', error);
+      // Fallback: show modal to invite bot
+      setSelectedServer(server);
+      setBotInviteUrl(`https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.id}`);
+      setShowBotModal(true);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -211,20 +241,18 @@ export default function YourServers() {
                   </CardContent>
                 </Card>
                 
-                {/* Advertise Shadow */}
-                <div className="relative">
-                  <div className="absolute inset-x-0 top-2 h-8 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-purple-600/20 rounded-lg blur-sm"></div>
-                  <Link href="/add-server">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full mt-3 h-8 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-400/20 hover:from-purple-500/20 hover:to-blue-500/20 hover:border-purple-400/40 transition-all duration-300 text-purple-300 hover:text-purple-200"
-                      data-testid={`button-advertise-${server.id}`}
-                    >
-                      <i className="fas fa-megaphone mr-2 text-xs"></i>
-                      Advertise
-                    </Button>
-                  </Link>
+                {/* Advertise Button */}
+                <div className="relative mt-3">
+                  <Button
+                    onClick={() => handleAdvertiseClick(server)}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
+                    data-testid={`button-advertise-${server.id}`}
+                  >
+                    <i className="fas fa-megaphone mr-2"></i>
+                    Advertise Server
+                  </Button>
                 </div>
               </div>
             ))}
@@ -238,7 +266,7 @@ export default function YourServers() {
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
               You don't have any servers listed on Smart Serve yet. Add your first server to get started!
             </p>
-            <Link href="/add-server">
+            <Link href="/advertise-server">
               <Button 
                 className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
                 data-testid="button-add-first-server"
@@ -250,6 +278,57 @@ export default function YourServers() {
           </div>
         )}
       </div>
+
+      {/* Bot Invitation Modal */}
+      <Dialog open={showBotModal} onOpenChange={setShowBotModal}>
+        <DialogContent className="max-w-md mx-auto bg-card border border-purple-400/30 backdrop-blur-sm">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">
+              Invite Smart Serve Bot
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 text-center">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+              <Bot className="w-8 h-8 text-white" />
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">
+                Smart Serve Bot Required
+              </h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                To advertise <span className="font-semibold text-purple-400">{selectedServer?.name}</span>, 
+                you need to invite our Smart Serve bot to your Discord server first.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                onClick={() => window.open(botInviteUrl, '_blank')}
+                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-3"
+                data-testid="button-invite-bot-to-server"
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                Invite Bot to Server
+              </Button>
+              
+              <Button
+                onClick={() => setShowBotModal(false)}
+                variant="outline"
+                className="w-full border-purple-400/30 hover:border-purple-400/50 hover:bg-purple-500/10"
+                data-testid="button-cancel-bot-invite"
+              >
+                Cancel
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              After inviting the bot, try clicking "Advertise Server" again.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,18 +5,10 @@ import { Search } from "lucide-react";
 
 interface HeroSearchProps {
   onSearch: (query: string) => void;
-  onCategoryFilter: (category: string) => void;
 }
 
-const categories = [
-  "Gaming",
-  "Music",
-  "Tech",
-  "Community",
-  "Art",
-];
 
-export default function HeroSearch({ onSearch, onCategoryFilter }: HeroSearchProps) {
+export default function HeroSearch({ onSearch }: HeroSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -45,7 +37,7 @@ export default function HeroSearch({ onSearch, onCategoryFilter }: HeroSearchPro
           </div>
           <Input
             type="text"
-            placeholder="Search servers, bots, or categories..."
+            placeholder="Search servers and bots..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-4 bg-white/90 border-0 rounded-xl text-gray-900 placeholder-gray-500 search-glow focus:outline-none focus:ring-2 focus:ring-primary text-lg"
@@ -53,19 +45,6 @@ export default function HeroSearch({ onSearch, onCategoryFilter }: HeroSearchPro
           />
         </form>
 
-        {/* Quick Category Filters */}
-        <div className="flex flex-wrap gap-3 justify-center">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant="outline"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:scale-105 transition-all duration-300 category-chip"
-              onClick={() => onCategoryFilter(category.toLowerCase())}
-            >
-              {category}
-            </Button>
-          ))}
-        </div>
       </div>
     </section>
   );

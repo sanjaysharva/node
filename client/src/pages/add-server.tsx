@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -22,9 +23,30 @@ const serverFormSchema = insertServerSchema.extend({
 
 type ServerFormData = z.infer<typeof serverFormSchema>;
 
-export default function AddServer() {
+// Predefined tags organized by topic
+const PREDEFINED_TAGS = {
+  "Gaming": [
+    "FPS", "MOBA", "RPG", "MMO", "Strategy", "Indie", "Competitive", "Casual", 
+    "Co-op", "PvP", "Minecraft", "Fortnite", "League of Legends", "Valorant", "CS2"
+  ],
+  "Community": [
+    "Social", "Friendship", "Study", "Education", "Art", "Music", "Anime", "Movies", 
+    "Books", "Technology", "Programming", "Fitness", "Cooking", "Travel", "Photography"
+  ],
+  "Bot Features": [
+    "Moderation", "Music Bot", "Economy", "Leveling", "Reaction Roles", "Tickets", 
+    "Polls", "Giveaways", "Welcome Bot", "Auto Mod", "Custom Commands", "Logs"
+  ],
+  "Server Type": [
+    "Public", "Private", "SFW", "NSFW", "International", "English Only", "Multilingual", 
+    "Active", "Chill", "Serious", "Meme", "Support", "Trading", "Events"
+  ]
+};
+
+export default function AdvertiseServer() {
   const [, setLocation] = useLocation();
   const [serverPreview, setServerPreview] = useState<any>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -115,8 +137,23 @@ export default function AddServer() {
     }
   };
 
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(t => t !== tag);
+      } else if (prev.length < 10) { // Limit to 10 tags
+        return [...prev, tag];
+      }
+      return prev;
+    });
+  };
+
   const onSubmit = (data: ServerFormData) => {
-    createServerMutation.mutate(data);
+    const serverData = {
+      ...data,
+      tags: selectedTags.join(',')
+    };
+    createServerMutation.mutate(serverData);
   };
 
   return (
@@ -126,9 +163,11 @@ export default function AddServer() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Add Your Discord Server</CardTitle>
+            <CardTitle className="text-2xl bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Advertise Your Discord Server
+            </CardTitle>
             <p className="text-muted-foreground">
-              Share your Discord server with the community
+              Promote your Discord server to reach thousands of potential members
             </p>
           </CardHeader>
           <CardContent>
@@ -232,27 +271,102 @@ export default function AddServer() {
                 />
 
 
-                {/* Tags */}
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter tags separated by commas (e.g., friendly, active, newbie-friendly)"
-                          {...field}
-                          data-testid="input-tags"
-                        />
-                      </FormControl>
-                      <p className="text-sm text-muted-foreground">
-                        Add relevant tags to help users find your server
-                      </p>
-                      <FormMessage />
-                    </FormItem>
+                {/* Tags Section */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Server Tags
+                    </label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Select tags that describe your server (maximum 10 tags)
+                    </p>
+                  </div>
+
+                  {/* Selected Tags */}
+                  {selectedTags.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-purple-400">Selected Tags ({selectedTags.length}/10)</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedTags.map((tag, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 cursor-pointer transition-colors"
+                            onClick={() => toggleTag(tag)}
+                            data-testid={`badge-selected-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                          >
+                            {tag} ×
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                />
+
+                  {/* Tag Categories */}
+                  {Object.entries(PREDEFINED_TAGS).map(([category, tags]) => (
+                    <div key={category} className="space-y-3">
+                      <h4 className="text-sm font-semibold text-foreground">{category}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag) => {
+                          const isSelected = selectedTags.includes(tag);
+                          const isDisabled = !isSelected && selectedTags.length >= 10;
+                          
+                          return (
+                            <Badge
+                              key={tag}
+                              variant={isSelected ? "default" : "outline"}
+                              className={`cursor-pointer transition-all duration-200 ${
+                                isSelected
+                                  ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
+                                  : isDisabled
+                                  ? "opacity-50 cursor-not-allowed border-muted-foreground/20 text-muted-foreground"
+                                  : "border-purple-400/30 text-muted-foreground hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300"
+                              }`}
+                              onClick={() => !isDisabled && toggleTag(tag)}
+                              data-testid={`badge-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                            >
+                              {tag}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Custom Tags Input */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-foreground">Custom Tags</h4>
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="Add custom tags separated by commas..."
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                // Auto-add custom tags when user types
+                                const customTags = e.target.value
+                                  .split(',')
+                                  .map(tag => tag.trim())
+                                  .filter(tag => tag && !selectedTags.includes(tag));
+                                
+                                if (customTags.length > 0 && selectedTags.length + customTags.length <= 10) {
+                                  setSelectedTags(prev => [...prev, ...customTags]);
+                                  field.onChange(''); // Clear input
+                                }
+                              }}
+                              data-testid="input-custom-tags"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
 
                 {/* Submit Buttons */}
                 <div className="flex space-x-4 pt-4">

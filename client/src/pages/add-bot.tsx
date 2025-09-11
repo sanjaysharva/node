@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { insertBotSchema } from "@shared/schema";
-import type { Category } from "@shared/schema";
 
 const botFormSchema = insertBotSchema.extend({
   tags: z.string().optional(),
@@ -29,10 +28,6 @@ export default function AddBot() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
 
   // Create bot mutation
   const createBotMutation = useMutation({
@@ -67,7 +62,6 @@ export default function AddBot() {
       description: "",
       botId: "",
       inviteUrl: "",
-      categoryId: "",
       tags: "",
       prefix: "",
       serverCount: 0,
@@ -318,31 +312,6 @@ export default function AddBot() {
                   )}
                 />
 
-                {/* Category */}
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-category">
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category: Category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Tags */}
                 <FormField

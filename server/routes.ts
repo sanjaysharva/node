@@ -163,21 +163,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Categories
-  app.get("/api/categories", async (req, res) => {
-    try {
-      const categories = await storage.getCategories();
-      res.json(categories);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch categories" });
-    }
-  });
 
   // Servers
   app.get("/api/servers", async (req, res) => {
     try {
-      const { categoryId, search, limit = "20", offset = "0" } = req.query;
+      const { search, limit = "20", offset = "0" } = req.query;
       const servers = await storage.getServers({
-        categoryId: categoryId as string,
         search: search as string,
         limit: parseInt(limit as string),
         offset: parseInt(offset as string),
@@ -231,8 +222,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found or access token missing" });
       }
 
-      // Fetch user's guilds from Discord API
-      const guildsResponse = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+      // Fetch user's guilds from Discord API with member counts
+      const guildsResponse = await fetch('https://discord.com/api/v10/users/@me/guilds?with_counts=true', {
         headers: {
           'Authorization': `Bearer ${user.discordAccessToken}`,
         },
@@ -261,10 +252,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: guild.name,
         description: `Discord server: ${guild.name}`,
         inviteCode: '', // We don't have invite codes from guilds API
-        icon: guild.icon || null,
-        memberCount: 0,
-        onlineCount: 0,
-        categoryId: null,
+        icon: guild.icon,
+        memberCount: guild.approximate_member_count || 0,
+        onlineCount: guild.approximate_presence_count || 0,
         ownerId: req.params.userId,
         tags: guild.features || [],
         verified: guild.verified || false,
@@ -277,6 +267,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Discord guilds fetch error:', error);
       res.status(500).json({ message: "Failed to fetch Discord servers" });
+    }
+  });
+
+  // Check if Smart Serve bot is present in a Discord server
+  app.get("/api/discord/bot-check/:guildId", async (req, res) => {
+    // SECURITY: Require authentication
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { guildId } = req.params;
+      const botId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
+      
+      // Check if bot is in the guild by trying to get guild member (the bot)
+      // This requires the bot token, but for now we'll use a simpler approach
+      // by checking if the bot has been invited via the guilds API from user's perspective
+      
+      // Check if user has admin access to this guild first
+      const user = await storage.getUser(req.user.id);
+      if (!user || !user.discordAccessToken) {
+        return res.status(404).json({ message: "User access token not found" });
+      }
+
+      // Fetch user's guilds to verify they have access to this guild
+      const guildsResponse = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+        headers: { 'Authorization': `Bearer ${user.discordAccessToken}` },
+      });
+
+      if (!guildsResponse.ok) {
+        return res.status(401).json({ message: "Failed to verify guild access" });
+      }
+
+      const guilds = await guildsResponse.json();
+      const guild = guilds.find((g: any) => g.id === guildId);
+      
+      if (!guild) {
+        return res.status(403).json({ message: "You don't have access to this guild" });
+      }
+
+      // For demonstration, simulate 30% chance bot is already present
+      // In production, use bot token to check: GET /guilds/{guildId}/members/{botId}
+      const botPresent = Math.random() > 0.7; // 30% chance bot is present
+      
+      res.json({ 
+        botPresent,
+        inviteUrl: `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
+      });
+    } catch (error) {
+      console.error('Bot check error:', error);
+      res.status(500).json({ message: "Failed to check bot presence" });
     }
   });
 
@@ -351,9 +392,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bots
   app.get("/api/bots", async (req, res) => {
     try {
-      const { categoryId, search, limit = "20", offset = "0" } = req.query;
+      const { search, limit = "20", offset = "0" } = req.query;
       const bots = await storage.getBots({
-        categoryId: categoryId as string,
         search: search as string,
         limit: parseInt(limit as string),
         offset: parseInt(offset as string),

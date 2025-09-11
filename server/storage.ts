@@ -1,4 +1,4 @@
-import { users, servers, bots, categories, ads, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Category, type InsertCategory, type Ad, type InsertAd } from "@shared/schema";
+import { users, servers, bots, ads, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, ilike, or, and, inArray } from "drizzle-orm";
 
@@ -9,13 +9,8 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
 
-  // Category operations
-  getCategories(): Promise<Category[]>;
-  getCategory(id: string): Promise<Category | undefined>;
-  createCategory(category: InsertCategory): Promise<Category>;
-
   // Server operations
-  getServers(options?: { categoryId?: string; tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Server[]>;
+  getServers(options?: { tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Server[]>;
   getPopularServers(limit?: number): Promise<Server[]>;
   getServer(id: string): Promise<Server | undefined>;
   getServersByOwner(ownerId: string): Promise<Server[]>;
@@ -24,7 +19,7 @@ export interface IStorage {
   deleteServer(id: string): Promise<boolean>;
 
   // Bot operations
-  getBots(options?: { categoryId?: string; tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Bot[]>;
+  getBots(options?: { tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Bot[]>;
   getPopularBots(limit?: number): Promise<Bot[]>;
   getBot(id: string): Promise<Bot | undefined>;
   getBotsByOwner(ownerId: string): Promise<Bot[]>;
@@ -62,28 +57,9 @@ export class DatabaseStorage implements IStorage {
     return updatedUser || undefined;
   }
 
-  // Category operations
-  async getCategories(): Promise<Category[]> {
-    return await db.select().from(categories).orderBy(categories.name);
-  }
-
-  async getCategory(id: string): Promise<Category | undefined> {
-    const [category] = await db.select().from(categories).where(eq(categories.id, id));
-    return category || undefined;
-  }
-
-  async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const [category] = await db.insert(categories).values(insertCategory).returning();
-    return category;
-  }
-
   // Server operations
-  async getServers(options?: { categoryId?: string; tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Server[]> {
+  async getServers(options?: { tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Server[]> {
     const conditions = [];
-
-    if (options?.categoryId) {
-      conditions.push(eq(servers.categoryId, options.categoryId));
-    }
 
     if (options?.search) {
       conditions.push(
@@ -135,12 +111,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Bot operations
-  async getBots(options?: { categoryId?: string; tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Bot[]> {
+  async getBots(options?: { tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Bot[]> {
     const conditions = [];
-
-    if (options?.categoryId) {
-      conditions.push(eq(bots.categoryId, options.categoryId));
-    }
 
     if (options?.search) {
       conditions.push(
