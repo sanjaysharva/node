@@ -253,7 +253,7 @@ export class DatabaseStorage implements IStorage {
 
   async incrementUserInviteCount(userId: string) {
     const user = await this.getUser(userId);
-    if (!user) return null;
+    if (!user) return undefined;
 
     const [updatedUser] = await db.update(users)
       .set({ inviteCount: (user.inviteCount || 0) + 1 })
@@ -264,7 +264,7 @@ export class DatabaseStorage implements IStorage {
 
   async incrementUserReferralCount(userId: string) {
     const user = await this.getUser(userId);
-    if (!user) return null;
+    if (!user) return undefined;
 
     const [updatedUser] = await db.update(users)
       .set({ referralCount: (user.referralCount || 0) + 1 })
@@ -275,7 +275,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateDailyLoginStreak(userId: string) {
     const user = await this.getUser(userId);
-    if (!user) return null;
+    if (!user) return undefined;
 
     const today = new Date();
     const lastLogin = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
