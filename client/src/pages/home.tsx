@@ -87,6 +87,36 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
+      {/* Bot Invite Banner */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 rounded-2xl border border-purple-400/30 p-6 backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 animate-pulse"></div>
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                <i className="fas fa-robot text-white text-xl"></i>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-1">
+                  Invite Smart Serve Bot for Your Server
+                </h3>
+                <p className="text-purple-200 text-sm">
+                  Get moderation, analytics, and community tools all in one powerful bot
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => window.open('https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands', '_blank')}
+              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 whitespace-nowrap"
+              data-testid="button-invite-bot"
+            >
+              <i className="fas fa-plus mr-2"></i>
+              Invite Bot
+            </Button>
+          </div>
+        </div>
+      </section>
+
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <HeroSearch onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
         
