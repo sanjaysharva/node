@@ -18,6 +18,7 @@ function Router() {
       <Route path="/advertise-server" component={AddServer} />
       <Route path="/add-bot" component={AddBot} />
       <Route path="/add-server" component={AddServer} />
+      <Route path="/your-servers" component={YourServers} />
       <Route path="/events" component={Events} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />

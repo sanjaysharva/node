@@ -54,8 +54,8 @@ export default function Navbar() {
                       const distance = Math.sqrt((row - 3)**2 + (col - 3)**2);
                       const opacity = distance <= 3 ? Math.max(0.2, 1 - (distance / 3) * 0.8) : 0;
                       return (
-                        <div 
-                          key={i} 
+                        <div
+                          key={i}
                           className="w-0.5 h-0.5 bg-white rounded-full transition-all duration-300"
                           style={{ opacity }}
                         />
@@ -146,6 +146,17 @@ export default function Navbar() {
                   </DropdownMenu>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {/* Add Server Link */}
+              <Link href="/add-server">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                  Add Server
+                </Button>
+              </Link>
+              <Link href="/your-servers">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                  Your Servers
+                </Button>
+              </Link>
             </div>
           </div>
 
