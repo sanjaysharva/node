@@ -181,8 +181,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: parseInt(limit as string),
         offset: parseInt(offset as string),
       });
-      res.json(servers);
+      // Ensure we always return an array
+      res.json(Array.isArray(servers) ? servers : []);
     } catch (error) {
+      console.error("Failed to fetch servers:", error);
       res.status(500).json({ message: "Failed to fetch servers" });
     }
   });
@@ -191,8 +193,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit = "6" } = req.query;
       const servers = await storage.getPopularServers(parseInt(limit as string));
-      res.json(servers);
+      // Ensure we always return an array
+      res.json(Array.isArray(servers) ? servers : []);
     } catch (error) {
+      console.error("Failed to fetch popular servers:", error);
       res.status(500).json({ message: "Failed to fetch popular servers" });
     }
   });
@@ -422,13 +426,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      console.log("Creating server with data:", req.body);
       const serverData = insertServerSchema.parse({
         ...req.body,
         ownerId: req.user.id,
       });
       const server = await storage.createServer(serverData);
+      console.log("Server created successfully:", server);
       res.status(201).json(server);
     } catch (error) {
+      console.error("Server creation error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
@@ -590,7 +597,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         memberCount: guildMembersData.approximate_member_count || inviteData.approximate_member_count || 0,
         onlineCount: guildMembersData.approximate_presence_count || inviteData.approximate_presence_count || 0,
         valid: true,
-        serverId: serverId
+        serverId: serverId,
+        inviteCode: code // Include the actual invite code
       };
 
       res.json(serverData);
