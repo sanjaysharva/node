@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set user in session
       const session = req.session as any;
-      session.userId = user.id;
+      session.userId = user?.id;
 
       // Redirect to home
       res.redirect('/?auth=success');
@@ -199,6 +199,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(server);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch server" });
+    }
+  });
+
+  // Get servers by user/owner
+  app.get("/api/servers/user/:userId", async (req, res) => {
+    try {
+      const servers = await storage.getServersByOwner(req.params.userId);
+      res.json(servers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user servers" });
     }
   });
 

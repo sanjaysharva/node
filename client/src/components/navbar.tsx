@@ -183,9 +183,9 @@ export default function Navbar() {
                   Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/add-server" data-testid="button-add-server">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Server
+                  <Link href="/your-servers" data-testid="button-your-servers">
+                    <Server className="mr-2 h-4 w-4" />
+                    Your Servers
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -199,7 +199,7 @@ export default function Navbar() {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                {user.isAdmin && (
+                {user?.isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">
                       <Settings className="mr-2 h-4 w-4" />

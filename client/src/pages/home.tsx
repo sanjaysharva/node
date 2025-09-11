@@ -75,8 +75,10 @@ export default function Home() {
     }
 
     // Find the server and redirect to Discord invite
-    const server = allServers?.find((s: Server) => s.id === serverId) ||
-                  popularServers?.find((s: Server) => s.id === serverId);
+    const allServersArray = Array.isArray(allServers) ? allServers : [];
+    const popularServersArray = Array.isArray(popularServers) ? popularServers : [];
+    const server = allServersArray.find((s: Server) => s.id === serverId) ||
+                  popularServersArray.find((s: Server) => s.id === serverId);
 
     if (server?.inviteCode) {
       window.open(`https://discord.gg/${server.inviteCode}`, '_blank');
@@ -180,7 +182,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {popularServers?.map((server: Server) => (
+              {(Array.isArray(popularServers) ? popularServers : []).map((server: Server) => (
                 <ServerCard
                   key={server.id}
                   server={server}
@@ -228,7 +230,7 @@ export default function Home() {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  {allServers?.map((server: Server) => (
+                  {(allServers || []).map((server: Server) => (
                     <ServerCard
                       key={server.id}
                       server={server}
