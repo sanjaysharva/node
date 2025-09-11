@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/discord", (req, res) => {
     const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
     const redirectUri = `https://${req.get('host')}/api/auth/discord/callback`;
-    const scope = 'identify email';
+    const scope = 'identify email guilds';
 
     console.log('Discord OAuth - Client ID:', clientId);
     console.log('Discord OAuth - Redirect URI:', redirectUri);
@@ -64,14 +64,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
-      const clientSecret = "QYNmBin-dE6KkMEYA0a8w1i-xu0K3ldW";
+      const clientSecret = process.env.DISCORD_CLIENT_SECRET;
       const redirectUri = `https://${req.get('host')}/api/auth/discord/callback`;
+
+      if (!clientSecret) {
+        console.error('Discord client secret not configured');
+        return res.status(500).json({ message: "Discord client secret not configured" });
+      }
 
       console.log('Discord Callback - Client ID:', clientId);
       console.log('Discord Callback - Client Secret:', clientSecret ? 'Set' : 'Not set');
 
       // Exchange code for access token
-      const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+      const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -92,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get user info from Discord
-      const userResponse = await fetch('https://discord.com/api/users/@me', {
+      const userResponse = await fetch('https://discord.com/api/v10/users/@me', {
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`,
         },
@@ -107,8 +112,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user exists in database
       let user = await storage.getUserByDiscordId(discordUser.id);
 
-      // Check if this is the admin user
-      const isAdminUser = discordUser.username === 'aetherflux_002';
+      // Check if this is the admin user using Discord ID allowlist (more secure than username)
+      const ADMIN_DISCORD_IDS = ['1168137833026945169']; // Add more admin Discord IDs here
+      const isAdminUser = ADMIN_DISCORD_IDS.includes(discordUser.id);
 
       if (!user) {
         // Create new user
@@ -119,6 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           avatar: discordUser.avatar,
           email: discordUser.email,
           isAdmin: isAdminUser,
+          discordAccessToken: tokenData.access_token,
         });
       } else {
         // Update existing user
@@ -128,6 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           avatar: discordUser.avatar,
           email: discordUser.email,
           isAdmin: isAdminUser,
+          discordAccessToken: tokenData.access_token,
         });
       }
 
@@ -202,13 +210,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get servers by user/owner
+  // Get Discord guilds where user has admin permissions
   app.get("/api/servers/user/:userId", async (req, res) => {
+    // SECURITY: Require authentication
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // SECURITY: Verify ownership or admin access
+    const isOwner = req.user.id === req.params.userId;
+    const isAdmin = (req.user as any).isAdmin;
+    
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "You can only access your own Discord servers" });
+    }
+
     try {
-      const servers = await storage.getServersByOwner(req.params.userId);
+      const user = await storage.getUser(req.params.userId);
+      if (!user || !user.discordAccessToken) {
+        return res.status(404).json({ message: "User not found or access token missing" });
+      }
+
+      // Fetch user's guilds from Discord API
+      const guildsResponse = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+        headers: {
+          'Authorization': `Bearer ${user.discordAccessToken}`,
+        },
+      });
+
+      if (!guildsResponse.ok) {
+        if (guildsResponse.status === 401) {
+          console.error('Discord access token expired or invalid');
+          return res.status(401).json({ message: "Discord access token expired. Please re-authenticate." });
+        }
+        throw new Error(`Failed to fetch Discord guilds: ${guildsResponse.status}`);
+      }
+
+      const guilds = await guildsResponse.json();
+      
+      // Filter guilds where user has admin permissions
+      // Discord permission value 8 = ADMINISTRATOR, 32 = MANAGE_GUILD
+      const adminGuilds = guilds.filter((guild: any) => {
+        const permissions = parseInt(guild.permissions);
+        return (permissions & 8) === 8 || (permissions & 32) === 32 || guild.owner;
+      });
+
+      // Transform Discord guilds to our server format
+      const servers = adminGuilds.map((guild: any) => ({
+        id: guild.id,
+        name: guild.name,
+        description: `Discord server: ${guild.name}`,
+        inviteCode: '', // We don't have invite codes from guilds API
+        icon: guild.icon || null,
+        memberCount: 0,
+        onlineCount: 0,
+        categoryId: null,
+        ownerId: req.params.userId,
+        tags: guild.features || [],
+        verified: guild.verified || false,
+        featured: guild.features?.includes('VERIFIED') || false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
       res.json(servers);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch user servers" });
+      console.error('Discord guilds fetch error:', error);
+      res.status(500).json({ message: "Failed to fetch Discord servers" });
     }
   });
 

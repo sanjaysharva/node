@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   avatar: text("avatar"),
   email: text("email"),
   isAdmin: boolean("is_admin").default(false),
+  discordAccessToken: text("discord_access_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
