@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import { storage } from "./storage";
+import { startDiscordBot } from "./discord-bot";
 
 // Set default Discord Client ID if not provided
 if (!process.env.DISCORD_CLIENT_ID) {
@@ -76,6 +77,9 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+
+  // Start Discord bot for economy rewards
+  startDiscordBot();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

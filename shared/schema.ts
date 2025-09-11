@@ -13,6 +13,12 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   discordAccessToken: text("discord_access_token"),
   coins: integer("coins").default(0),
+  inviteCount: integer("invite_count").default(0),
+  serversJoined: integer("servers_joined").default(0),
+  dailyLoginStreak: integer("daily_login_streak").default(0),
+  referralCount: integer("referral_count").default(0),
+  questsClaimed: text("quests_claimed").array().default([]),
+  lastLoginDate: timestamp("last_login_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

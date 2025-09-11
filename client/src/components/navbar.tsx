@@ -191,7 +191,7 @@ export default function Navbar() {
                     />
                     <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
-                  <span data-testid="text-displayname">{user?.username?}</span>
+                  <span data-testid="text-displayname">{user?.username}</span>
                   <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
                 </Button>
               </DropdownMenuTrigger>
@@ -225,7 +225,7 @@ export default function Navbar() {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                {user?.username === "aetherflux_02" && (
+                {user?.username === "aetherflux_002" && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin" data-testid="button-admin-panel">
                       <Settings className="mr-2 h-4 w-4" />

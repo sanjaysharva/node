@@ -409,3 +409,244 @@ export default function Quest() {
     </div>
   );
 }
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import Navbar from "@/components/navbar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Coins, Users, Award, Trophy, Target, Gift } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  type: 'invite' | 'join_servers' | 'daily_login' | 'referral';
+  reward: number;
+  target: number;
+  progress: number;
+  completed: boolean;
+  claimable: boolean;
+}
+
+export default function QuestPage() {
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
+  // Fetch user's quest progress
+  const { data: quests, isLoading, refetch } = useQuery({
+    queryKey: ["/api/quests", user?.id],
+    queryFn: async () => {
+      const response = await fetch("/api/quests");
+      if (!response.ok) throw new Error("Failed to fetch quests");
+      return response.json();
+    },
+    enabled: !!user,
+  });
+
+  // Fetch user's current coin balance
+  const { data: userProfile } = useQuery({
+    queryKey: ["/api/auth/me"],
+    enabled: !!user,
+  });
+
+  const handleClaimReward = async (questId: string, reward: number) => {
+    try {
+      const response = await fetch(`/api/quests/${questId}/claim`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to claim reward");
+      }
+
+      toast({
+        title: "Reward Claimed! 🎉",
+        description: `You earned ${reward} coins!`,
+      });
+
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to claim reward",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Login Required</h1>
+          <p className="text-muted-foreground">Please login to view your quests.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Quest Hub
+              </h1>
+              <p className="text-muted-foreground">
+                Complete quests to earn coins and rewards
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 bg-card rounded-lg px-4 py-2 border">
+                <Coins className="w-5 h-5 text-yellow-500" />
+                <span className="font-semibold">{userProfile?.coins || 0} Coins</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quest Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <Target className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Quests</p>
+                  <p className="text-2xl font-bold">
+                    {quests?.filter((q: Quest) => !q.completed).length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-green-500/10 rounded-lg">
+                  <Trophy className="w-6 h-6 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold">
+                    {quests?.filter((q: Quest) => q.completed).length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-yellow-500/10 rounded-lg">
+                  <Gift className="w-6 h-6 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Claimable</p>
+                  <p className="text-2xl font-bold">
+                    {quests?.filter((q: Quest) => q.claimable).length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quests List */}
+        <div className="space-y-6">
+          {isLoading ? (
+            // Loading skeleton
+            Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-2 w-full" />
+                    </div>
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : quests && quests.length > 0 ? (
+            quests.map((quest: Quest) => (
+              <Card key={quest.id} className={quest.claimable ? "border-yellow-500/50 bg-yellow-500/5" : ""}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          {quest.type === 'invite' && <Users className="w-5 h-5 text-primary" />}
+                          {quest.type === 'join_servers' && <Award className="w-5 h-5 text-primary" />}
+                          {quest.type === 'daily_login' && <Target className="w-5 h-5 text-primary" />}
+                          {quest.type === 'referral' && <Gift className="w-5 h-5 text-primary" />}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{quest.title}</h3>
+                          <p className="text-muted-foreground text-sm">{quest.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>Progress: {quest.progress}/{quest.target}</span>
+                          <Badge variant="outline" className="flex items-center space-x-1">
+                            <Coins className="w-3 h-3" />
+                            <span>{quest.reward} coins</span>
+                          </Badge>
+                        </div>
+                        <Progress value={(quest.progress / quest.target) * 100} className="h-2" />
+                      </div>
+                    </div>
+
+                    <div className="ml-6">
+                      {quest.completed ? (
+                        quest.claimable ? (
+                          <Button 
+                            onClick={() => handleClaimReward(quest.id, quest.reward)}
+                            className="bg-yellow-500 hover:bg-yellow-600"
+                          >
+                            Claim Reward
+                          </Button>
+                        ) : (
+                          <Badge variant="secondary">Claimed</Badge>
+                        )
+                      ) : (
+                        <Badge variant="outline">In Progress</Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">No Quests Available</h3>
+                <p className="text-muted-foreground">Check back later for new quests!</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

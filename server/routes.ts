@@ -120,9 +120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user exists in database
       let user = await storage.getUserByDiscordId(discordUser.id);
 
-      // Check if this is the admin user using Discord ID allowlist (more secure than username)
-      const ADMIN_DISCORD_IDS = ['1168137833026945169']; // Add more admin Discord IDs here
-      const isAdminUser = ADMIN_DISCORD_IDS.includes(discordUser.id);
+      // Check if this is the admin user using username
+      const ADMIN_USERNAMES = ['aetherflux_002']; // Add more admin usernames here
+      const isAdminUser = ADMIN_USERNAMES.includes(discordUser.username);
 
       if (!user) {
         // Create new user
@@ -877,6 +877,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Server advertise error:", error);
       res.status(500).json({ message: "Failed to process advertising purchase" });
+    }
+  });
+
+  // Quest system routes
+  app.get("/api/quests", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Default quests with progress tracking
+      const defaultQuests = [
+        {
+          id: "invite_members",
+          title: "Invite New Members",
+          description: "Invite 3 people to Discord servers through Smart Serve",
+          type: "invite",
+          reward: 15,
+          target: 3,
+          progress: user?.inviteCount || 0,
+          completed: (user?.inviteCount || 0) >= 3,
+          claimable: (user?.inviteCount || 0) >= 3 && !(user?.questsClaimed || []).includes("invite_members"),
+        },
+        {
+          id: "join_servers",
+          title: "Join Server Communities",
+          description: "Join 5 different Discord servers",
+          type: "join_servers",
+          reward: 10,
+          target: 5,
+          progress: user?.serversJoined || 0,
+          completed: (user?.serversJoined || 0) >= 5,
+          claimable: (user?.serversJoined || 0) >= 5 && !(user?.questsClaimed || []).includes("join_servers"),
+        },
+        {
+          id: "daily_login",
+          title: "Daily Login Streak",
+          description: "Login to Smart Serve for 7 consecutive days",
+          type: "daily_login",
+          reward: 20,
+          target: 7,
+          progress: user?.dailyLoginStreak || 0,
+          completed: (user?.dailyLoginStreak || 0) >= 7,
+          claimable: (user?.dailyLoginStreak || 0) >= 7 && !(user?.questsClaimed || []).includes("daily_login"),
+        },
+        {
+          id: "referral_bonus",
+          title: "Referral Master",
+          description: "Successfully refer 10 users who join through your invites",
+          type: "referral",
+          reward: 50,
+          target: 10,
+          progress: user?.referralCount || 0,
+          completed: (user?.referralCount || 0) >= 10,
+          claimable: (user?.referralCount || 0) >= 10 && !(user?.questsClaimed || []).includes("referral_bonus"),
+        },
+      ];
+
+      res.json(defaultQuests);
+    } catch (error) {
+      console.error("Failed to fetch quests:", error);
+      res.status(500).json({ message: "Failed to fetch quests" });
+    }
+  });
+
+  app.post("/api/quests/:questId/claim", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { questId } = req.params;
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const questsClaimed = user.questsClaimed || [];
+      if (questsClaimed.includes(questId)) {
+        return res.status(400).json({ message: "Quest already claimed" });
+      }
+
+      // Define quest rewards
+      const questRewards = {
+        invite_members: { reward: 15, requirement: user.inviteCount >= 3 },
+        join_servers: { reward: 10, requirement: user.serversJoined >= 5 },
+        daily_login: { reward: 20, requirement: user.dailyLoginStreak >= 7 },
+        referral_bonus: { reward: 50, requirement: user.referralCount >= 10 },
+      };
+
+      const quest = questRewards[questId as keyof typeof questRewards];
+      if (!quest) {
+        return res.status(404).json({ message: "Quest not found" });
+      }
+
+      if (!quest.requirement) {
+        return res.status(400).json({ message: "Quest requirements not met" });
+      }
+
+      // Award coins and mark quest as claimed
+      const newCoinBalance = (user.coins || 0) + quest.reward;
+      const newQuestsClaimed = [...questsClaimed, questId];
+
+      await Promise.all([
+        storage.updateUserCoins(userId, newCoinBalance),
+        storage.updateUser(userId, { questsClaimed: newQuestsClaimed }),
+      ]);
+
+      res.json({
+        message: "Quest reward claimed successfully",
+        reward: quest.reward,
+        newBalance: newCoinBalance,
+      });
+    } catch (error) {
+      console.error("Failed to claim quest reward:", error);
+      res.status(500).json({ message: "Failed to claim quest reward" });
     }
   });
 

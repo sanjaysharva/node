@@ -30,7 +30,7 @@ export interface IStorage {
   // Ad operations
   getAds(position?: string): Promise<Ad[]>;
   getAd(id: string): Promise<Ad | undefined>;
-  createAd(ad: InsertAd): Promise<Ad>;
+  createAd(insertAd: InsertAd): Promise<Ad>;
   updateAd(id: string, ad: Partial<InsertAd>): Promise<Ad | undefined>;
   deleteAd(id: string): Promise<boolean>;
 
@@ -47,6 +47,11 @@ export interface IStorage {
   // Event operations
   getEvents(options?: { search?: string; limit?: number; offset?: number }): Promise<Event[]>;
   createEvent(event: InsertEvent): Promise<Event>;
+
+  // Quest operations
+  incrementUserInviteCount(userId: string): Promise<User | undefined>;
+  incrementUserReferralCount(userId: string): Promise<User | undefined>;
+  updateDailyLoginStreak(userId: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -180,7 +185,7 @@ export class DatabaseStorage implements IStorage {
   // Ad operations
   async getAds(position?: string): Promise<Ad[]> {
     const conditions = [eq(ads.isActive, true)];
-    
+
     if (position) {
       conditions.push(eq(ads.position, position));
     }
@@ -229,17 +234,69 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserCoins(userId: string, coins: number): Promise<User | undefined> {
-    const [user] = await db.update(users)
+    const [updatedUser] = await db.update(users)
       .set({ coins })
       .where(eq(users.id, userId))
       .returning();
-    return user || undefined;
+    return updatedUser;
+  }
+
+  async incrementUserInviteCount(userId: string) {
+    const user = await this.getUser(userId);
+    if (!user) return null;
+
+    const [updatedUser] = await db.update(users)
+      .set({ inviteCount: (user.inviteCount || 0) + 1 })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
+  async incrementUserReferralCount(userId: string) {
+    const user = await this.getUser(userId);
+    if (!user) return null;
+
+    const [updatedUser] = await db.update(users)
+      .set({ referralCount: (user.referralCount || 0) + 1 })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
+  async updateDailyLoginStreak(userId: string) {
+    const user = await this.getUser(userId);
+    if (!user) return null;
+
+    const today = new Date();
+    const lastLogin = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
+
+    let newStreak = 1;
+    if (lastLogin) {
+      const daysDiff = Math.floor((today.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff === 1) {
+        // Consecutive day
+        newStreak = (user.dailyLoginStreak || 0) + 1;
+      } else if (daysDiff === 0) {
+        // Same day, no change
+        return user;
+      }
+      // If daysDiff > 1, streak resets to 1
+    }
+
+    const [updatedUser] = await db.update(users)
+      .set({ 
+        dailyLoginStreak: newStreak,
+        lastLoginDate: today
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
   }
 
   // Slideshow operations
   async getSlideshows(page?: string): Promise<Slideshow[]> {
     const conditions = [eq(slideshows.isActive, true)];
-    
+
     if (page) {
       conditions.push(eq(slideshows.page, page));
     }
@@ -283,18 +340,18 @@ export class DatabaseStorage implements IStorage {
     coinsToAward: number;
   }): Promise<{ newBalance: number; advertisingComplete: boolean }> {
     const { userId, serverId, coinsToAward } = params;
-    
+
     return await db.transaction(async (tx) => {
       // Fetch current user and server state inside transaction for consistency
       const [currentUser] = await tx.select({ coins: users.coins }).from(users)
         .where(eq(users.id, userId));
-      
+
       const [currentServer] = await tx.select({ 
         advertisingMembersNeeded: servers.advertisingMembersNeeded,
         isAdvertising: servers.isAdvertising 
       }).from(servers)
         .where(eq(servers.id, serverId));
-      
+
       if (!currentUser) {
         throw new Error("User not found");
       }
@@ -333,7 +390,7 @@ export class DatabaseStorage implements IStorage {
       // Conditionally update advertising accounting with WHERE guards
       const newMembersNeeded = Math.max(0, (currentServer.advertisingMembersNeeded || 0) - 1);
       const advertisingComplete = newMembersNeeded <= 0;
-      
+
       const serverUpdateResult = await tx.update(servers)
         .set({ 
           advertisingMembersNeeded: newMembersNeeded,
