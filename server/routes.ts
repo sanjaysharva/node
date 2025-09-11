@@ -295,11 +295,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate bot token format
       if (!botToken) {
-        console.error('No bot token configured');
+        console.error('❌ No bot token configured in environment variables');
         return res.status(500).json({ 
-          message: "Bot token not configured", 
+          message: "Bot token not configured. Please set DISCORD_BOT_TOKEN in Secrets.", 
           botPresent: false,
           checkMethod: "no_token",
+          inviteUrl: `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
+        });
+      }
+
+      // Basic bot token format validation
+      if (!botToken.startsWith('MTM3MjIy') || botToken.length < 50) {
+        console.error('❌ Invalid bot token format detected');
+        return res.status(500).json({ 
+          message: "Invalid bot token format. Please check your DISCORD_BOT_TOKEN in Secrets.", 
+          botPresent: false,
+          checkMethod: "invalid_token_format",
           inviteUrl: `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
         });
       }

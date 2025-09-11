@@ -17,9 +17,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/advertise-server" component={AddServer} />
       <Route path="/add-bot" component={AddBot} />
-      <Route path="/your-servers" component={YourServers} />
-      <Route path="/admin" component={AdminPage} />
+      <Route path="/add-server" component={AddServer} />
       <Route path="/events" component={Events} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );

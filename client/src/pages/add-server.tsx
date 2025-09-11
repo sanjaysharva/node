@@ -310,7 +310,7 @@ export default function AdvertiseServer() {
                         {tags.map((tag) => {
                           const isSelected = selectedTags.includes(tag);
                           const isDisabled = !isSelected && selectedTags.length >= 10;
-                          
+
                           return (
                             <Badge
                               key={tag}
@@ -352,7 +352,7 @@ export default function AdvertiseServer() {
                                   .split(',')
                                   .map(tag => tag.trim())
                                   .filter(tag => tag && !selectedTags.includes(tag));
-                                
+
                                 if (customTags.length > 0 && selectedTags.length + customTags.length <= 10) {
                                   setSelectedTags(prev => [...prev, ...customTags]);
                                   field.onChange(''); // Clear input

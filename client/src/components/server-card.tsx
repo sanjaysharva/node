@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Zap, ArrowRight } from "lucide-react";
+import { Users, ArrowRight } from "lucide-react";
 import type { Server } from "@shared/schema";
 
 interface ServerCardProps {
@@ -27,58 +27,41 @@ export default function ServerCard({ server, onJoin }: ServerCardProps) {
             <div className="absolute bottom-2 right-4 w-8 h-8 border border-white/20 rounded-full animate-bounce"></div>
           </div>
 
-          <div className="absolute top-3 right-3 flex gap-2">
-            {server.verified && (
-              <Badge variant="secondary" className="bg-green-500/30 text-green-300 border-green-400/50 backdrop-blur-sm animate-neon-pulse">
-                <Zap className="w-3 h-3 mr-1" />
+          {/* Server Avatar */}
+          <div className="absolute -bottom-8 left-6">
+            <div className="w-16 h-16 bg-background border-4 border-background rounded-2xl flex items-center justify-center text-foreground font-bold text-xl shadow-2xl group-hover:scale-110 transition-transform duration-300">
+              {server.icon ? (
+                <img
+                  src={`https://cdn.discordapp.com/icons/${server.id}/${server.icon}.png`}
+                  alt={server.name}
+                  className="w-full h-full rounded-xl object-cover"
+                />
+              ) : (
+                server.name.charAt(0).toUpperCase()
+              )}
+            </div>
+          </div>
+
+          {/* Verified Badge */}
+          {server.verified && (
+            <div className="absolute top-4 right-4">
+              <Badge className="bg-green-500/90 text-white border-0 backdrop-blur-sm">
+                <i className="fas fa-check-circle mr-1"></i>
                 Verified
               </Badge>
-            )}
-            {server.featured && (
-              <Badge variant="secondary" className="bg-yellow-500/30 text-yellow-300 border-yellow-400/50 backdrop-blur-sm">
-                ⭐ Featured
-              </Badge>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        <div className="p-5">
-          <div className="flex items-start space-x-4 mb-4">
-            {/* Server Icon with neon effect */}
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 border-2 border-background relative -mt-10 z-20 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-              <i className="fas fa-server text-white text-xl drop-shadow-lg"></i>
-              <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
-
+        <div className="p-6 pt-10">
+          {/* Server Info */}
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0 pt-2">
               <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors duration-300 bg-gradient-to-r from-foreground to-foreground group-hover:from-purple-400 group-hover:to-pink-400 bg-clip-text group-hover:text-transparent">
                 {server.name}
               </h3>
-              <p className="text-sm text-muted-foreground line-clamp-2 mt-2 leading-relaxed">
-                {server.description}
-              </p>
             </div>
           </div>
-
-          {/* Tags with improved styling */}
-          {server.tags && server.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {server.tags.slice(0, 3).map((tag, index) => (
-                <Badge 
-                  key={index} 
-                  variant="secondary" 
-                  className="text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors duration-200 cursor-default"
-                >
-                  {tag}
-                </Badge>
-              ))}
-              {server.tags.length > 3 && (
-                <Badge variant="secondary" className="text-xs bg-muted/50 hover:bg-muted transition-colors duration-200">
-                  +{server.tags.length - 3} more
-                </Badge>
-              )}
-            </div>
-          )}
 
           {/* Enhanced Stats */}
           <div className="flex items-center justify-between text-sm mb-5 p-3 bg-card/50 rounded-lg border border-border/50">
