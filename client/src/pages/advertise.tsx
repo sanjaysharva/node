@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/navbar";
-import { Server, Bot, Building2, Star, Zap, TrendingUp } from "lucide-react";
+import { Server, Bot, Building2, Star, Zap, TrendingUp, CheckCircle } from "lucide-react";
 
 export default function Advertise() {
   const advertisingOptions = [
@@ -15,14 +15,11 @@ export default function Advertise() {
         "Category-specific promotion",
         "Member count boost visibility",
         "Custom server spotlight",
-        "Analytics dashboard"
+        "Analytics dashboard",
+        "Community growth tools"
       ],
-      pricing: [
-        { plan: "Basic", price: "$9.99", duration: "7 days", popular: false },
-        { plan: "Premium", price: "$24.99", duration: "30 days", popular: true },
-        { plan: "Spotlight", price: "$49.99", duration: "60 days", popular: false }
-      ],
-      gradient: "from-blue-500 to-cyan-400"
+      gradient: "from-blue-500 to-cyan-400",
+      cost: "Starting from $9.99"
     },
     {
       id: "discord-bot",
@@ -34,14 +31,11 @@ export default function Advertise() {
         "Command showcase display",
         "Installation count highlights",
         "Developer verification badge",
-        "Usage statistics tracking"
+        "Usage statistics tracking",
+        "Integration guides"
       ],
-      pricing: [
-        { plan: "Starter", price: "$14.99", duration: "14 days", popular: false },
-        { plan: "Growth", price: "$39.99", duration: "45 days", popular: true },
-        { plan: "Pro", price: "$69.99", duration: "90 days", popular: false }
-      ],
-      gradient: "from-purple-500 to-pink-400"
+      gradient: "from-purple-500 to-pink-400",
+      cost: "Starting from $14.99"
     },
     {
       id: "business",
@@ -53,14 +47,11 @@ export default function Advertise() {
         "Sponsored content placement",
         "Community partnership programs",
         "Brand verification status",
-        "Campaign performance metrics"
+        "Campaign performance metrics",
+        "Custom branding options"
       ],
-      pricing: [
-        { plan: "Small", price: "$29.99", duration: "1 week", popular: false },
-        { plan: "Business", price: "$79.99", duration: "1 month", popular: true },
-        { plan: "Enterprise", price: "$199.99", duration: "3 months", popular: false }
-      ],
-      gradient: "from-green-500 to-emerald-400"
+      gradient: "from-green-500 to-emerald-400",
+      cost: "Starting from $29.99"
     }
   ];
 
@@ -106,88 +97,69 @@ export default function Advertise() {
 
       {/* Advertising Options */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="space-y-16">
-          {advertisingOptions.map((option, index) => {
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Choose Your Advertising Option
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Select the advertising solution that best fits your needs and reach your target audience effectively
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {advertisingOptions.map((option) => {
             const IconComponent = option.icon;
             return (
-              <div key={option.id} className="space-y-8">
-                <div className="text-center space-y-4">
+              <Card 
+                key={option.id} 
+                className="glass-card h-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 group"
+              >
+                <CardHeader className="text-center space-y-4">
                   <div className="flex justify-center">
-                    <div className={`p-4 rounded-2xl bg-gradient-to-br ${option.gradient} shadow-lg`}>
+                    <div className={`p-4 rounded-2xl bg-gradient-to-br ${option.gradient} shadow-lg group-hover:scale-110 transition-all duration-300`}>
                       <IconComponent className="w-12 h-12 text-white" />
                     </div>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                    {option.title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                    {option.description}
-                  </p>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-8 items-start">
-                  {/* Features */}
-                  <Card className="glass-card h-full">
-                    <CardHeader>
-                      <CardTitle className="text-xl font-semibold">What's Included</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {option.features.map((feature, featureIndex) => (
-                        <div key={featureIndex} className="flex items-center space-x-3">
-                          <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
-                          <span className="text-muted-foreground">{feature}</span>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-
-                  {/* Pricing */}
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-center">Choose Your Plan</h3>
-                    <div className="grid gap-4">
-                      {option.pricing.map((plan, planIndex) => (
-                        <Card 
-                          key={planIndex} 
-                          className={`relative overflow-hidden transition-all duration-300 hover:scale-105 ${
-                            plan.popular 
-                              ? 'border-primary shadow-lg shadow-primary/20' 
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                        >
-                          {plan.popular && (
-                            <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-medium">
-                              Most Popular
-                            </div>
-                          )}
-                          <CardContent className="p-6">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h4 className="font-semibold text-lg">{plan.plan}</h4>
-                                <p className="text-sm text-muted-foreground">{plan.duration}</p>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-2xl font-bold text-primary">{plan.price}</div>
-                                <Button 
-                                  className="mt-2 w-full bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
-                                  data-testid={`button-select-${option.id}-${plan.plan.toLowerCase()}`}
-                                >
-                                  Select Plan
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-foreground mb-2">
+                      {option.title}
+                    </CardTitle>
+                    <p className="text-muted-foreground text-sm">
+                      {option.description}
+                    </p>
                   </div>
-                </div>
-              </div>
+                  <div className="text-primary font-bold text-lg">
+                    {option.cost}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-foreground">What's Included:</h4>
+                    {option.features.map((feature, featureIndex) => (
+                      <div key={featureIndex} className="flex items-center space-x-3">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                        <span className="text-muted-foreground text-sm">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Button 
+                      className="w-full bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
+                      data-testid={`button-learn-more-${option.id}`}
+                    >
+                      Learn More
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
 
-        {/* Call to Action */}
-        <div className="mt-24 text-center space-y-8">
+        {/* Contact Section */}
+        <div className="mt-16 text-center space-y-8">
           <Card className="glass-card max-w-4xl mx-auto">
             <CardContent className="p-12">
               <div className="space-y-6">
@@ -195,7 +167,7 @@ export default function Advertise() {
                   Ready to Get Started?
                 </h2>
                 <p className="text-lg text-muted-foreground">
-                  Join thousands of successful Discord communities and businesses that have grown with Smart Serve advertising.
+                  Contact our team to discuss your advertising needs and get a custom quote for your campaign.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
@@ -209,14 +181,47 @@ export default function Advertise() {
                     size="lg" 
                     variant="outline" 
                     className="border-primary text-primary hover:bg-primary/10 transition-all duration-300 hover:scale-105"
-                    data-testid="button-learn-more"
+                    data-testid="button-get-quote"
                   >
-                    Learn More
+                    Get Free Quote
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Benefits Section */}
+        <div className="mt-16 grid md:grid-cols-3 gap-8 text-center">
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+              <TrendingUp className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground">High Visibility</h3>
+            <p className="text-muted-foreground">
+              Get your content seen by thousands of active Discord users daily
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+              <Zap className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground">Quick Setup</h3>
+            <p className="text-muted-foreground">
+              Fast approval process and instant campaign activation
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+              <Star className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground">Premium Support</h3>
+            <p className="text-muted-foreground">
+              Dedicated support team to help optimize your campaigns
+            </p>
+          </div>
         </div>
       </div>
     </div>
