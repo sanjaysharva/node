@@ -18,6 +18,7 @@ import Advertise from "@/pages/advertise";
 import Profile from "@/pages/profile";
 import AddEvent from "@/pages/add-event";
 import SearchPage from "@/pages/search";
+import ServerDetail from "@/pages/server-detail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/add-event" component={AddEvent} />
       <Route path="/search" component={SearchPage} />
+      <Route path="/server/:serverId" component={ServerDetail} />
       <Route path="/admin">
           {user?.username === "aetherflux_02" ? <AdminPage /> : <NotFound />}
         </Route>

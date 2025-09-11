@@ -41,10 +41,14 @@ export const servers = pgTable("servers", {
   description: text("description").notNull(),
   inviteCode: text("invite_code").notNull(),
   icon: text("icon"),
+  banner: text("banner"),
   memberCount: integer("member_count").default(0),
   onlineCount: integer("online_count").default(0),
   ownerId: varchar("owner_id").references(() => users.id).notNull(),
   tags: text("tags").array().default([]),
+  language: text("language").default("English"),
+  timezone: text("timezone").default("UTC"),
+  activityLevel: text("activity_level").default("Medium"), // Low, Medium, High
   verified: boolean("verified").default(false),
   featured: boolean("featured").default(false),
   isAdvertising: boolean("is_advertising").default(false),
@@ -53,6 +57,8 @@ export const servers = pgTable("servers", {
   bumpEnabled: boolean("bump_enabled").default(false),
   lastBumpAt: timestamp("last_bump_at"),
   discordId: text("discord_id").unique(),
+  averageRating: integer("average_rating").default(0),
+  totalReviews: integer("total_reviews").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -76,6 +82,21 @@ export const bots = pgTable("bots", {
   type: text("type").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+
+
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").references(() => servers.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  review: text("review"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userServerUnique: sql`UNIQUE (${table.userId}, ${table.serverId})`
+}));
+
+
 });
 
 export const events = pgTable("events", {
@@ -149,6 +170,7 @@ export const serversRelations = relations(servers, ({ one, many }) => ({
     references: [users.id],
   }),
   joins: many(serverJoins),
+  reviews: many(reviews),
 }));
 
 export const botsRelations = relations(bots, ({ one }) => ({
@@ -167,6 +189,20 @@ export const eventsRelations = relations(events, ({ one }) => ({
 
 export const serverJoinsRelations = relations(serverJoins, ({ one }) => ({
   user: one(users, {
+
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  server: one(servers, {
+    fields: [reviews.serverId],
+    references: [servers.id],
+  }),
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+  }),
+}));
+
+
     fields: [serverJoins.userId],
     references: [users.id],
   }),
@@ -228,6 +264,12 @@ export const insertBumpChannelSchema = createInsertSchema(bumpChannels).omit({
   updatedAt: true,
 });
 
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -245,3 +287,5 @@ export type ServerJoin = typeof serverJoins.$inferSelect;
 export type InsertServerJoin = z.infer<typeof insertServerJoinSchema>;
 export type BumpChannel = typeof bumpChannels.$inferSelect;
 export type InsertBumpChannel = z.infer<typeof insertBumpChannelSchema>;
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;

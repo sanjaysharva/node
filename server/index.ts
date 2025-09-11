@@ -4,6 +4,12 @@ import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import { storage } from "./storage";
 import { startDiscordBot } from "./discord-bot";
+import { 
+  securityHeaders, 
+  sanitizeInput, 
+  apiLimiter,
+  errorHandler 
+} from "./middleware/security";
 
 // Set default Discord Client ID if not provided
 if (!process.env.DISCORD_CLIENT_ID) {
@@ -11,8 +17,20 @@ if (!process.env.DISCORD_CLIENT_ID) {
 }
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Security middleware
+  app.use(securityHeaders);
+  app.use(sanitizeInput);
+  app.use('/api/', apiLimiter);
+
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  setupAuth(app);
+  registerRoutes(app);
+
+  // Error handling
+  app.use(errorHandler);
+
 
 // Session middleware
 app.use(session({

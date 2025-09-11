@@ -15,6 +15,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [contentType, setContentType] = useState<"servers" | "bots">("servers");
   const [sortBy, setSortBy] = useState("members");
+  const [languageFilter, setLanguageFilter] = useState("");
+  const [timezoneFilter, setTimezoneFilter] = useState("");
+  const [activityFilter, setActivityFilter] = useState("");
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
 
@@ -25,10 +28,13 @@ export default function Home() {
 
   // Fetch all servers with filters
   const { data: allServers, isLoading: loadingServers } = useQuery({
-    queryKey: ["/api/servers", searchQuery, sortBy],
+    queryKey: ["/api/servers", searchQuery, sortBy, languageFilter, timezoneFilter, activityFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
+      if (languageFilter) params.set("language", languageFilter);
+      if (timezoneFilter) params.set("timezone", timezoneFilter);
+      if (activityFilter) params.set("activity", activityFilter);
       params.set("limit", "20");
       params.set("offset", "0");
       
@@ -61,6 +67,10 @@ export default function Home() {
     if (server?.inviteCode) {
       window.open(`https://discord.gg/${server.inviteCode}`, '_blank');
     }
+  };
+
+  const handleViewServer = (serverId: string) => {
+    window.location.href = `/server/${serverId}`;
   };
 
   return (
@@ -137,6 +147,7 @@ export default function Home() {
                   key={server.id}
                   server={server}
                   onJoin={handleJoinServer}
+                  onView={handleViewServer}
                 />
               ))}
             </div>
@@ -145,37 +156,102 @@ export default function Home() {
 
         {/* Content and Filters */}
         <section>
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant={contentType === "servers" ? "default" : "ghost"}
-                onClick={() => setContentType("servers")}
-                className="flex items-center space-x-2"
-                data-testid="button-filter-servers"
-              >
-                <i className="fas fa-server"></i>
-                <span>Discord Servers</span>
-              </Button>
-              <Button
-                variant={contentType === "bots" ? "default" : "ghost"}
-                onClick={() => setContentType("bots")}
-                className="flex items-center space-x-2"
-                data-testid="button-filter-bots"
-              >
-                <i className="fas fa-robot"></i>
-                <span>Discord Bots</span>
-              </Button>
+          <div className="flex flex-col gap-4 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant={contentType === "servers" ? "default" : "ghost"}
+                  onClick={() => setContentType("servers")}
+                  className="flex items-center space-x-2"
+                  data-testid="button-filter-servers"
+                >
+                  <i className="fas fa-server"></i>
+                  <span>Discord Servers</span>
+                </Button>
+                <Button
+                  variant={contentType === "bots" ? "default" : "ghost"}
+                  onClick={() => setContentType("bots")}
+                  className="flex items-center space-x-2"
+                  data-testid="button-filter-bots"
+                >
+                  <i className="fas fa-robot"></i>
+                  <span>Discord Bots</span>
+                </Button>
+              </div>
+              <Select onValueChange={setSortBy} defaultValue="members">
+                <SelectTrigger className="w-48" data-testid="select-sort">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="members">Sort by Members</SelectItem>
+                  <SelectItem value="rating">Sort by Rating</SelectItem>
+                  <SelectItem value="newest">Sort by Newest</SelectItem>
+                  <SelectItem value="name">Sort by Name</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select onValueChange={setSortBy} defaultValue="members">
-              <SelectTrigger className="w-48" data-testid="select-sort">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="members">Sort by Members</SelectItem>
-                <SelectItem value="newest">Sort by Newest</SelectItem>
-                <SelectItem value="name">Sort by Name</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* Advanced Filters */}
+            <div className="flex flex-wrap gap-4 p-4 bg-card/50 rounded-lg border border-border/50">
+              <Select onValueChange={setLanguageFilter} value={languageFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Languages</SelectItem>
+                  <SelectItem value="English">English</SelectItem>
+                  <SelectItem value="Spanish">Spanish</SelectItem>
+                  <SelectItem value="French">French</SelectItem>
+                  <SelectItem value="German">German</SelectItem>
+                  <SelectItem value="Japanese">Japanese</SelectItem>
+                  <SelectItem value="Korean">Korean</SelectItem>
+                  <SelectItem value="Chinese">Chinese</SelectItem>
+                  <SelectItem value="Russian">Russian</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select onValueChange={setTimezoneFilter} value={timezoneFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Timezones</SelectItem>
+                  <SelectItem value="UTC">UTC</SelectItem>
+                  <SelectItem value="EST">EST</SelectItem>
+                  <SelectItem value="PST">PST</SelectItem>
+                  <SelectItem value="GMT">GMT</SelectItem>
+                  <SelectItem value="CET">CET</SelectItem>
+                  <SelectItem value="JST">JST</SelectItem>
+                  <SelectItem value="AEST">AEST</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select onValueChange={setActivityFilter} value={activityFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Activity Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Activity</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(languageFilter || timezoneFilter || activityFilter) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setLanguageFilter("");
+                    setTimezoneFilter("");
+                    setActivityFilter("");
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
 
           <div>
@@ -209,6 +285,7 @@ export default function Home() {
                       key={server.id}
                       server={server}
                       onJoin={handleJoinServer}
+                      onView={handleViewServer}
                     />
                   ))}
                 </div>

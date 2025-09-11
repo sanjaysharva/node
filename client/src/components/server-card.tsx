@@ -7,11 +7,21 @@ import type { Server } from "@shared/schema";
 interface ServerCardProps {
   server: Server;
   onJoin: (serverId: string) => void;
+  onView?: (serverId: string) => void;
 }
 
-export default function ServerCard({ server, onJoin }: ServerCardProps) {
+export default function ServerCard({ server, onJoin, onView }: ServerCardProps) {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger if clicking the join button
+    if ((e.target as HTMLElement).closest('button')) return;
+    if (onView) onView(server.id);
+  };
+
   return (
-    <Card className="group hover:shadow-2xl transition-all duration-500 overflow-hidden border border-border hover:border-primary/50 relative neon-border hover:animate-card-hover glass-card">
+    <Card 
+      className="group hover:shadow-2xl transition-all duration-500 overflow-hidden border border-border hover:border-primary/50 relative neon-border hover:animate-card-hover glass-card cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Neon glow effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
 

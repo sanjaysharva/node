@@ -1,8 +1,17 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServerSchema, insertBotSchema, insertAdSchema, insertServerJoinSchema, insertEventSchema } from "@shared/schema";
+import { insertServerSchema, insertBotSchema, insertEventSchema, insertAdSchema, insertServerJoinSchema, insertEventSchema } from "@shared/schema";
 import { z } from "zod";
+import { servers, bots, events, users, ads, slideshows, reviews, insertServerSchema, insertBotSchema, insertEventSchema, serverJoins, bumpChannels, insertAdSchema, insertSlideshowSchema } from "@shared/schema";
+import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm";
+import { createDiscordBot } from "./discord-bot";
+import { 
+  strictLimiter, 
+  reviewLimiter, 
+  validateServerData, 
+  validateReview 
+} from "./middleware/security";
 
 declare global {
   namespace Express {
@@ -172,19 +181,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Categories
 
-  // Servers
+  // Server routes
   app.get("/api/servers", async (req, res) => {
     try {
-      const { search, limit = "20", offset = "0" } = req.query;
-      const servers = await storage.getServers({
-        search: search as string,
-        limit: parseInt(limit as string),
-        offset: parseInt(offset as string),
-      });
-      // Ensure we always return an array
-      res.json(Array.isArray(servers) ? servers : []);
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const offset = parseInt(req.query.offset as string) || 0;
+      const search = req.query.search as string;
+      const language = req.query.language as string;
+      const timezone = req.query.timezone as string;
+      const activity = req.query.activity as string;
+
+      let query = db.select().from(servers).limit(limit).offset(offset);
+
+      const conditions = [];
+
+      if (search) {
+        conditions.push(
+          or(
+            ilike(servers.name, `%${search}%`),
+            ilike(servers.description, `%${search}%`)
+          )
+        );
+      }
+
+      if (language) {
+        conditions.push(eq(servers.language, language));
+      }
+
+      if (timezone) {
+        conditions.push(eq(servers.timezone, timezone));
+      }
+
+      if (activity) {
+        conditions.push(eq(servers.activityLevel, activity));
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const serverList = await query;
+      res.json(serverList);
     } catch (error) {
-      console.error("Failed to fetch servers:", error);
+      console.error("Error fetching servers:", error);
       res.status(500).json({ message: "Failed to fetch servers" });
     }
   });
@@ -1031,6 +1070,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to claim quest reward" });
     }
   });
+
+  // Review routes
+  app.post("/api/servers/:serverId/reviews", reviewLimiter, validateReview, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { serverId } = req.params;
+      const { rating, comment } = req.body;
+      const userId = req.user.id;
+
+      // Check if the user has already reviewed this server
+      const existingReview = await storage.getReview(serverId, userId);
+      if (existingReview) {
+        return res.status(400).json({ message: "You have already reviewed this server." });
+      }
+
+      // Check if the user has joined the server (optional, but good for review integrity)
+      // This would require a more complex check, potentially involving serverJoin records or Discord API calls
+
+      const newReview = await storage.createReview({
+        serverId,
+        userId,
+        rating,
+        comment,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Update server's average rating
+      await storage.updateServerAverageRating(serverId);
+
+      res.status(201).json(newReview);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ message: "Failed to create review" });
+    }
+  });
+
+  app.get("/api/servers/:serverId/reviews", async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const reviews = await storage.getReviewsForServer(serverId);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  // Update review (only by the user who wrote it)
+  app.put("/api/reviews/:reviewId", reviewLimiter, validateReview, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { reviewId } = req.params;
+      const { rating, comment } = req.body;
+      const userId = req.user.id;
+
+      const review = await storage.getReviewById(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      if (review.userId !== userId) {
+        return res.status(403).json({ message: "You can only edit your own reviews" });
+      }
+
+      const updatedReview = await storage.updateReview(reviewId, {
+        rating,
+        comment,
+        updatedAt: new Date(),
+      });
+
+      // Update server's average rating
+      await storage.updateServerAverageRating(review.serverId);
+
+      res.json(updatedReview);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ message: "Failed to update review" });
+    }
+  });
+
+  // Delete review (only by the user who wrote it or admin)
+  app.delete("/api/reviews/:reviewId", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { reviewId } = req.params;
+      const userId = req.user.id;
+      const isAdmin = (req.user as any).isAdmin;
+
+      const review = await storage.getReviewById(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      if (review.userId !== userId && !isAdmin) {
+        return res.status(403).json({ message: "You can only delete your own reviews or as an admin" });
+      }
+
+      await storage.deleteReview(reviewId);
+
+      // Update server's average rating
+      await storage.updateServerAverageRating(review.serverId);
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ message: "Failed to delete review" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
