@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { insertServerSchema } from "@shared/schema";
-import type { Category } from "@shared/schema";
 
 const serverFormSchema = insertServerSchema.extend({
   tags: z.string().optional(),
@@ -30,10 +29,6 @@ export default function AddServer() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
 
   // Create server mutation
   const createServerMutation = useMutation({
@@ -88,7 +83,6 @@ export default function AddServer() {
       name: "",
       description: "",
       inviteCode: "",
-      categoryId: "",
       tags: "",
       memberCount: 0,
       onlineCount: 0,
@@ -237,31 +231,6 @@ export default function AddServer() {
                   )}
                 />
 
-                {/* Category */}
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-category">
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category: Category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Tags */}
                 <FormField
