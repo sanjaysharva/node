@@ -31,16 +31,20 @@ export default function YourServers() {
 
   const handleAdvertiseClick = async (server: Server) => {
     try {
+      console.log(`Checking bot presence for server: ${server.name} (${server.id})`);
       const response = await fetch(`/api/discord/bot-check/${server.id}`);
       if (!response.ok) throw new Error("Failed to check bot presence");
       
       const data = await response.json();
+      console.log(`Bot check result:`, data);
       
       if (data.botPresent) {
         // Bot is present, redirect to advertise page
+        console.log(`Bot is present in ${server.name}, redirecting to add-server`);
         window.location.href = '/add-server';
       } else {
         // Bot is not present, show modal
+        console.log(`Bot is NOT present in ${server.name}, showing invite modal`);
         setSelectedServer(server);
         setBotInviteUrl(data.inviteUrl);
         setShowBotModal(true);
@@ -51,6 +55,33 @@ export default function YourServers() {
       setSelectedServer(server);
       setBotInviteUrl(`https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.id}`);
       setShowBotModal(true);
+    }
+  };
+
+  const handleRetryBotCheck = async () => {
+    if (!selectedServer) return;
+    
+    try {
+      console.log(`Retrying bot check for server: ${selectedServer.name}`);
+      const response = await fetch(`/api/discord/bot-check/${selectedServer.id}`);
+      if (!response.ok) throw new Error("Failed to check bot presence");
+      
+      const data = await response.json();
+      console.log(`Retry bot check result:`, data);
+      
+      if (data.botPresent) {
+        console.log(`Bot is now present in ${selectedServer.name}!`);
+        setShowBotModal(false);
+        // Bot is now present, redirect to advertise page
+        window.location.href = '/add-server';
+      } else {
+        console.log(`Bot is still not present in ${selectedServer.name}`);
+        // Still not present, keep modal open but show a message
+        alert('Bot is still not detected. Please make sure the bot invitation was completed successfully and try again in a few moments.');
+      }
+    } catch (error) {
+      console.error('Error retrying bot check:', error);
+      alert('Failed to check bot presence. Please try again.');
     }
   };
 
@@ -310,15 +341,22 @@ export default function YourServers() {
 
             <div className="space-y-3">
               <Button
-                onClick={() => {
-                  window.open(botInviteUrl, '_blank');
-                  setShowBotModal(false);
-                }}
+                onClick={() => window.open(botInviteUrl, '_blank')}
                 className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-3"
                 data-testid="button-invite-bot-to-server"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Invite Bot Now
+              </Button>
+              
+              <Button
+                onClick={handleRetryBotCheck}
+                variant="outline"
+                className="w-full border-green-400/50 hover:border-green-400/70 hover:bg-green-500/10 text-green-400 hover:text-green-300"
+                data-testid="button-retry-bot-check"
+              >
+                <i className="fas fa-refresh mr-2"></i>
+                Check Again
               </Button>
               
               <Button
@@ -333,7 +371,7 @@ export default function YourServers() {
 
             <div className="bg-gray-800/50 rounded-lg p-3">
               <p className="text-xs text-muted-foreground">
-                💡 <strong>Tip:</strong> After inviting the bot, wait a few moments then try "Advertise Server" again.
+                💡 <strong>Tip:</strong> After inviting the bot, click "Check Again" to verify the bot is present, or wait a few moments and try "Advertise Server" again.
               </p>
             </div>
           </div>

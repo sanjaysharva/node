@@ -288,10 +288,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { guildId } = req.params;
       const botId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
+      const botToken = process.env.DISCORD_BOT_TOKEN;
       
-      // Check if bot is in the guild by trying to get guild member (the bot)
-      // This requires the bot token, but for now we'll use a simpler approach
-      // by checking if the bot has been invited via the guilds API from user's perspective
+      console.log(`Bot check for guild ${guildId} with bot ID ${botId}`);
       
       // Check if user has admin access to this guild first
       const user = await storage.getUser(req.user.id);
@@ -315,30 +314,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have access to this guild" });
       }
 
-      // Try to check if bot is actually in the guild using bot token
-      const botToken = process.env.DISCORD_BOT_TOKEN;
       let botPresent = false;
+      let checkMethod = "none";
       
       if (botToken) {
         try {
-          // Check if bot is a member of the guild
-          const botMemberResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${botId}`, {
+          console.log(`Checking bot presence in guild ${guildId} using bot token`);
+          
+          // Method 1: Try to get guild information (bot must be in guild to access this)
+          const guildInfoResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
             headers: { 'Authorization': `Bot ${botToken}` },
           });
           
-          botPresent = botMemberResponse.ok;
+          console.log(`Guild info response status: ${guildInfoResponse.status}`);
+          
+          if (guildInfoResponse.ok) {
+            botPresent = true;
+            checkMethod = "guild_info";
+            console.log(`Bot found in guild ${guildId} via guild info check`);
+          } else {
+            // Method 2: Try to get bot as guild member
+            const botMemberResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${botId}`, {
+              headers: { 'Authorization': `Bot ${botToken}` },
+            });
+            
+            console.log(`Bot member response status: ${botMemberResponse.status}`);
+            
+            if (botMemberResponse.ok) {
+              botPresent = true;
+              checkMethod = "member_check";
+              console.log(`Bot found in guild ${guildId} via member check`);
+            } else {
+              // Method 3: Try to get guild channels (requires bot to be in guild)
+              const channelsResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+                headers: { 'Authorization': `Bot ${botToken}` },
+              });
+              
+              console.log(`Channels response status: ${channelsResponse.status}`);
+              
+              if (channelsResponse.ok) {
+                botPresent = true;
+                checkMethod = "channels_check";
+                console.log(`Bot found in guild ${guildId} via channels check`);
+              } else {
+                botPresent = false;
+                checkMethod = "all_failed";
+                console.log(`Bot NOT found in guild ${guildId} - all checks failed`);
+              }
+            }
+          }
         } catch (error) {
-          console.error('Bot member check error:', error);
-          // Fallback: assume bot is not present
+          console.error('Bot presence check error:', error);
           botPresent = false;
+          checkMethod = "error";
         }
       } else {
-        // If no bot token, simulate for demonstration (mostly false to show modal)
-        botPresent = Math.random() > 0.8; // 20% chance bot is present
+        console.log('No bot token available for checking');
+        // If no bot token, we can't reliably check
+        botPresent = false;
+        checkMethod = "no_token";
       }
+      
+      console.log(`Final bot presence result: ${botPresent} (method: ${checkMethod})`);
       
       res.json({ 
         botPresent,
+        checkMethod,
         inviteUrl: `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
       });
     } catch (error) {
