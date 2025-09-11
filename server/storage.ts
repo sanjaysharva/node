@@ -79,7 +79,6 @@ export class DatabaseStorage implements IStorage {
 
   // Server operations
   async getServers(options?: { categoryId?: string; tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Server[]> {
-    let query = db.select().from(servers);
     const conditions = [];
 
     if (options?.categoryId) {
@@ -95,21 +94,14 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    // Build complete query with all conditions
+    const baseQuery = db.select().from(servers);
+    const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+    const withOrder = withWhere.orderBy(desc(servers.memberCount));
+    const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
+    const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
 
-    query = query.orderBy(desc(servers.memberCount));
-
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      query = query.offset(options.offset);
-    }
-
-    return await query;
+    return await finalQuery;
   }
 
   async getPopularServers(limit = 6): Promise<Server[]> {
@@ -144,7 +136,6 @@ export class DatabaseStorage implements IStorage {
 
   // Bot operations
   async getBots(options?: { categoryId?: string; tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Bot[]> {
-    let query = db.select().from(bots);
     const conditions = [];
 
     if (options?.categoryId) {
@@ -160,21 +151,14 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    // Build complete query with all conditions
+    const baseQuery = db.select().from(bots);
+    const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+    const withOrder = withWhere.orderBy(desc(bots.serverCount));
+    const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
+    const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
 
-    query = query.orderBy(desc(bots.serverCount));
-
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      query = query.offset(options.offset);
-    }
-
-    return await query;
+    return await finalQuery;
   }
 
   async getPopularBots(limit = 6): Promise<Bot[]> {
@@ -209,13 +193,15 @@ export class DatabaseStorage implements IStorage {
 
   // Ad operations
   async getAds(position?: string): Promise<Ad[]> {
-    let query = db.select().from(ads).where(eq(ads.isActive, true));
-
+    const conditions = [eq(ads.isActive, true)];
+    
     if (position) {
-      query = query.where(and(eq(ads.isActive, true), eq(ads.position, position)));
+      conditions.push(eq(ads.position, position));
     }
 
-    return await query.orderBy(desc(ads.createdAt));
+    return await db.select().from(ads)
+      .where(and(...conditions))
+      .orderBy(desc(ads.createdAt));
   }
 
   async getAd(id: string): Promise<Ad | undefined> {

@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
-      const clientSecret = process.env.DISCORD_CLIENT_SECRET || "HcTo5WQbahuxCzWirKq3yJcg_CRW9fLu";
+      const clientSecret = "QYNmBin-dE6KkMEYA0a8w1i-xu0K3ldW";
       const redirectUri = `https://${req.get('host')}/api/auth/discord/callback`;
 
       console.log('Discord Callback - Client ID:', clientId);
