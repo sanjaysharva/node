@@ -20,9 +20,11 @@ import {
 } from "@/components/ui/dialog";
 
 // Stripe is optional for now - payment integration will be added later
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
-  : null;
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+if (!stripePublicKey) {
+  console.warn("Stripe public key not configured. Store functionality will be limited.");
+}
+const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
 
 interface PaymentFormProps {
   amount: number;
@@ -38,9 +40,9 @@ const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!stripe || !elements) return;
-    
+
     setIsProcessing(true);
 
     const { error } = await stripe.confirmPayment({
@@ -63,7 +65,7 @@ const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
       });
       onSuccess();
     }
-    
+
     setIsProcessing(false);
   };
 
@@ -176,9 +178,10 @@ export default function Store() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 border-purple-400/30">
+      {/* Changed the gradient to reflect "Discord Communities" and removed purple emphasis */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900/70 via-purple-700/70 to-blue-900/70 border-blue-400/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
             <div className="space-y-4">
@@ -192,7 +195,7 @@ export default function Store() {
                 Purchase coins, boosts, and premium tools to enhance your Discord server experience!
               </p>
             </div>
-            
+
             {/* Current Balance */}
             <div className="mt-6">
               <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
@@ -207,7 +210,7 @@ export default function Store() {
           </div>
         </div>
       </div>
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         {/* Coins Section */}
@@ -221,7 +224,7 @@ export default function Store() {
             </h2>
             <p className="text-muted-foreground">Purchase coins to unlock premium features and rewards</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {coinPackages.map((pkg, index) => (
               <Card key={index} className={`relative bg-card border border-border rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 ${pkg.popular ? 'border-primary shadow-lg shadow-primary/20' : ''}`}>
@@ -269,7 +272,7 @@ export default function Store() {
             </h2>
             <p className="text-muted-foreground">Boost your server visibility and attract more members</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
             {advertiseBoosts.map((boost, index) => (
               <Card key={index} className={`bg-card border border-border rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 ${boost.popular ? 'border-primary shadow-lg shadow-primary/20' : ''}`}>
@@ -325,7 +328,7 @@ export default function Store() {
             </h2>
             <p className="text-muted-foreground">Unlock advanced bot features and management tools</p>
           </div>
-          
+
           <div className="max-w-md mx-auto">
             <Card className="bg-card border border-border rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 border-primary shadow-lg shadow-primary/20">
               <CardHeader className="text-center pb-4">
@@ -364,7 +367,7 @@ export default function Store() {
           </div>
         </section>
       </div>
-      
+
       {/* Footer */}
       <footer className="bg-card border-t border-border mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

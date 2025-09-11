@@ -37,7 +37,7 @@ export default function Home() {
       if (activityFilter) params.set("activity", activityFilter);
       params.set("limit", "20");
       params.set("offset", "0");
-      
+
       const response = await fetch(`/api/servers?${params}`);
       if (!response.ok) throw new Error("Failed to fetch servers");
       return response.json();
@@ -77,11 +77,53 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      
+
+      {/* Hero Section with Gradient Background */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-blue-900/50 via-cyan-900/50 to-blue-900/50 border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text animate-gradient-x bg-300%">
+                Discord Communities
+              </h1>
+            <p className="mt-6 text-lg text-muted-foreground max-w-3xl mx-auto">
+              Discover and join the best Discord servers and bots. Find your community, connect with like-minded people, and explore new experiences.
+            </p>
+            <div className="mt-10 flex justify-center">
+              <HeroSearch onSearch={handleSearch} />
+            </div>
+          </div>
+        </div>
+        <div className="absolute inset-0 -z-10 opacity-70 mix-blend-multiply">
+          <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800">
+            <defs>
+              <radialGradient id="grad1" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
+                <stop offset="0%" style={{stopColor: 'rgb(76, 29, 140)', stopOpacity: 1}}/>
+                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
+              </radialGradient>
+              <radialGradient id="grad2" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
+                <stop offset="0%" style={{stopColor: 'rgb(37, 99, 235)', stopOpacity: 1}}/>
+                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
+              </radialGradient>
+              <radialGradient id="grad3" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
+                <stop offset="0%" style={{stopColor: 'rgb(168, 85, 247)', stopOpacity: 1}}/>
+                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
+              </radialGradient>
+              <radialGradient id="grad4" cx="50%" cy="50%" fx="50%" fy="50%" r="30%">
+                <stop offset="0%" style={{stopColor: 'rgb(59, 130, 246)', stopOpacity: 1}}/>
+                <stop offset="100%" style={{stopColor: 'rgb(31, 41, 55)', stopOpacity: 1}}/>
+              </radialGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grad1)"/>
+            <rect width="100%" height="100%" fill="url(#grad2)" opacity="0.7"/>
+            <rect width="100%" height="100%" fill="url(#grad3)" opacity="0.5"/>
+            <rect width="100%" height="100%" fill="url(#grad4)" opacity="0.3"/>
+          </svg>
+        </div>
+      </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <HeroSearch onSearch={handleSearch} />
-        
+
         <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>

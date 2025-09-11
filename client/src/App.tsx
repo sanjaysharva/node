@@ -41,7 +41,7 @@ function Router() {
       <Route path="/search" component={SearchPage} />
       <Route path="/server/:serverId" component={ServerDetail} />
       <Route path="/admin">
-          {user?.username === "aetherflux_02" ? <AdminPage /> : <NotFound />}
+          {user?.username === "aetherflux_002" ? <AdminPage /> : <NotFound />}
         </Route>
       <Route component={NotFound} />
     </Switch>
