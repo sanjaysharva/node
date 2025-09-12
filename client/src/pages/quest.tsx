@@ -203,10 +203,10 @@ export default function Quest() {
                             quest.difficulty === 'Easy' ? 'default' :
                             quest.difficulty === 'Medium' ? 'secondary' :
                             'destructive'
-                          } size="sm">
+                          }>
                             {quest.difficulty}
                           </Badge>
-                          <Badge variant="outline" size="sm">
+                          <Badge variant="outline">
                             {quest.type}
                           </Badge>
                         </div>
