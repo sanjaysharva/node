@@ -1,8 +1,8 @@
+
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { 
   Coins, 
   Trophy, 
@@ -146,6 +146,7 @@ export default function Quest() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quests/server-status"] });
       refetch();
       toast({
         title: "Quest Completed!",
@@ -158,6 +159,25 @@ export default function Quest() {
         description: error.message || "Could not verify server join.",
         variant: "destructive",
       });
+    },
+  });
+
+  // Invite members mutation
+  const inviteMembersMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/quests/check-invites");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.newInvites > 0) {
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
+        refetch();
+        toast({
+          title: "Invites Rewarded!",
+          description: `You earned ${data.coinsEarned} coins for ${data.newInvites} new invites!`,
+        });
+      }
     },
   });
 
@@ -184,7 +204,7 @@ export default function Quest() {
       description: "Join our Discord server to get started with the community",
       reward: 2,
       icon: <Users className="w-8 h-8 text-primary" />,
-      action: isQuestCompleted("join-server") ? "Completed" : (serverStatus?.inServer ? "Join Now" : "Join Server"),
+      action: isQuestCompleted("join-server") ? "Completed" : (serverStatus?.inServer ? "Complete Quest" : "Join Server"),
       link: "https://discord.gg/Ept7zwYJH5",
       note: "Note: Leave and join again reduces reward by 1.5 coins",
       completed: isQuestCompleted("join-server")
@@ -321,14 +341,18 @@ export default function Quest() {
                       className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : ''}`}
                       onClick={() => {
                         if (!quest.completed) {
-                          window.open(quest.link, '_blank', 'noopener,noreferrer');
-                          // Auto-verify after a short delay
-                          setTimeout(() => {
+                          if (serverStatus?.inServer) {
                             joinServerMutation.mutate();
-                          }, 3000);
+                          } else {
+                            window.open(quest.link, '_blank', 'noopener,noreferrer');
+                            // Auto-verify after a short delay
+                            setTimeout(() => {
+                              joinServerMutation.mutate();
+                            }, 5000);
+                          }
                         }
                       }}
-                      disabled={quest.completed}
+                      disabled={quest.completed || joinServerMutation.isPending}
                       data-testid="button-join-server"
                     >
                       {quest.completed ? (
@@ -336,6 +360,8 @@ export default function Quest() {
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Completed
                         </>
+                      ) : joinServerMutation.isPending ? (
+                        "Verifying..."
                       ) : (
                         <>
                           <ExternalLink className="w-4 h-4 mr-2" />
@@ -474,6 +500,16 @@ export default function Quest() {
                           <div className="text-xs text-muted-foreground bg-primary/10 border border-primary/20 p-3 rounded">
                             <strong>Note:</strong> Earn 3 coins per member. If member leaves: -1.75 coins
                           </div>
+                          <Button 
+                            onClick={() => {
+                              inviteMembersMutation.mutate();
+                              setInviteDialogOpen(false);
+                            }}
+                            className="w-full"
+                            disabled={inviteMembersMutation.isPending}
+                          >
+                            {inviteMembersMutation.isPending ? "Checking..." : "Check My Invites"}
+                          </Button>
                         </div>
                       </DialogContent>
                     </Dialog>
