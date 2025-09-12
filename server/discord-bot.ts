@@ -1,44 +1,6 @@
 import { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder, ChannelType, PermissionsBitField, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { storage } from './storage';
 
-// Assuming 'db' and 'users' are imported from your database setup (e.g., drizzle ORM)
-// import { db } from './db'; // Placeholder for your actual DB import
-// import { users } from './db/schema'; // Placeholder for your actual schema import
-// import { eq } from 'drizzle-orm'; // Placeholder for your actual ORM functions
-
-// Mock database functions if not available, for demonstration purposes
-const db = {
-  query: {
-    users: {
-      findFirst: async (options: any) => {
-        // Mock user data - replace with actual database lookup
-        console.log("Mock DB: Finding user with Discord ID:", options.where.discordId);
-        // Example: return a mock user object if discordId matches '123'
-        if (options.where.discordId === '123') {
-          return {
-            id: 'mock-user-id',
-            discordId: '123',
-            coins: 10,
-            metadata: { questCompletions: [] }
-          };
-        }
-        return null;
-      }
-    }
-  },
-  update: (table: any) => ({
-    set: (data: any) => ({
-      where: async (condition: any) => {
-        console.log("Mock DB: Updating table", table, "with data:", data, "where:", condition);
-        // Simulate a successful update
-        return { count: 1 };
-      }
-    })
-  })
-};
-const users = { id: 'id', discordId: 'discordId', coins: 'coins', metadata: 'metadata' }; // Mock schema
-const eq = (column: any, value: any) => ({ column, value }); // Mock eq function
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -985,17 +947,22 @@ client.on('guildMemberAdd', async (member) => {
 
   try {
     // Find user by Discord ID
-    const user = await db.query.users.findFirst({
-      where: eq(users.discordId, member.user.id),
-    });
+    const user = await storage.getUserByDiscordId(member.user.id);
 
     if (!user) {
       console.log(`User ${member.user.tag} joined but not found in database`);
       return;
     }
 
-    const questData = user.metadata as any || {};
-    const completions = questData.questCompletions || [];
+    // Parse metadata safely
+    let questData = {};
+    try {
+      questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+    } catch (parseError) {
+      console.error('Error parsing user metadata:', parseError);
+      questData = {};
+    }
+    const completions = (questData as any).questCompletions || [];
 
     // Check if join-server quest already completed
     if (completions.some((c: any) => c.questId === "join-server")) {
@@ -1017,12 +984,10 @@ client.on('guildMemberAdd', async (member) => {
       questCompletions: [...completions, newCompletion]
     };
 
-    await db.update(users)
-      .set({
-        coins: newCoins,
-        metadata: newMetadata
-      })
-      .where(eq(users.id, user.id));
+    await storage.updateUser(user.id, {
+      coins: newCoins,
+      metadata: JSON.stringify(newMetadata)
+    });
 
     console.log(`✅ User ${user.discordId} completed join-server quest and earned ${coinsEarned} coins`);
 
@@ -1061,17 +1026,22 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 
     if (!wasBoosting && isBoosting) {
       // User started boosting
-      const user = await db.query.users.findFirst({
-        where: eq(users.discordId, newMember.user.id),
-      });
+      const user = await storage.getUserByDiscordId(newMember.user.id);
 
       if (!user) {
         console.log(`User ${newMember.user.tag} boosted but not found in database`);
         return;
       }
 
-      const questData = user.metadata as any || {};
-      const completions = questData.questCompletions || [];
+      // Parse metadata safely
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error('Error parsing user metadata:', parseError);
+        questData = {};
+      }
+      const completions = (questData as any).questCompletions || [];
 
       // Check if boost quest already completed
       if (completions.some((c: any) => c.questId === "boost-server")) {
@@ -1093,12 +1063,10 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
         questCompletions: [...completions, newCompletion]
       };
 
-      await db.update(users)
-        .set({
-          coins: newCoins,
-          metadata: newMetadata
-        })
-        .where(eq(users.id, user.id));
+      await storage.updateUser(user.id, {
+        coins: newCoins,
+        metadata: JSON.stringify(newMetadata)
+      });
 
       console.log(`✅ User ${user.discordId} completed boost-server quest and earned ${coinsEarned} coins`);
 
