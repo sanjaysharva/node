@@ -187,10 +187,10 @@ client.once(Events.ClientReady, async () => {
   }
 
   // Cache existing invites for all guilds
-  for (const guild of client.guilds.cache.values()) {
+  for (const guild of Array.from(client.guilds.cache.values())) {
     try {
       const invites = await guild.invites.fetch();
-      inviteCache.set(guild.id, new Map(invites.map(invite => [invite.code, invite.uses || 0])));
+      inviteCache.set(guild.id, new Map(invites.map((invite: any) => [invite.code, invite.uses || 0])));
     } catch (error) {
       console.error(`Failed to fetch invites for guild ${guild.name}:`, error);
     }
@@ -199,7 +199,7 @@ client.once(Events.ClientReady, async () => {
 
 // Handle slash command interactions
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (!interaction.isChatInputCommand()) return;
 
   const { commandName } = interaction;
 
@@ -320,12 +320,12 @@ client.on('interactionCreate', async (interaction) => {
           }
           const template = await response.json();
           const guild = interaction.guild!;
-          for (const channel of guild.channels.cache.values()) {
-            if (channel.type !== 4 && !channel.isSystemChannel()) {
+          for (const channel of Array.from(guild.channels.cache.values())) {
+            if (channel.type !== 4 && channel.id !== guild.systemChannelId) {
               try { await channel.delete(); } catch (error) { console.log(`Could not delete channel ${channel.name}`); }
             }
           }
-          for (const role of guild.roles.cache.values()) {
+          for (const role of Array.from(guild.roles.cache.values())) {
             if (role.name !== '@everyone' && !role.managed) {
               try { await role.delete(); } catch (error) { console.log(`Could not delete role ${role.name}`); }
             }
@@ -379,7 +379,7 @@ client.on('interactionCreate', async (interaction) => {
         let description = question + '\n\n';
         options.forEach((option, index) => { description += `${emojis[index]} ${option}\n`; });
         embed.setDescription(description);
-        const reply = await interaction.reply({ embeds: [embed] });
+        const reply = await interaction.reply({ embeds: [embed], fetchReply: true });
         for (let i = 0; i < options.length; i++) { await reply.react(emojis[i]); }
         break;
       }
@@ -397,7 +397,7 @@ client.on('interactionCreate', async (interaction) => {
           .setLabel('Verify')
           .setStyle(ButtonStyle.Success)
           .setEmoji('✅');
-        const row = new ActionRowBuilder().addComponents(button);
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
         await interaction.reply({ embeds: [embed], components: [row] });
         break;
       }
@@ -412,7 +412,7 @@ client.on('interactionCreate', async (interaction) => {
           .setTitle('🎭 Reaction Roles')
           .setDescription(`${message}\n\nReact with ${emoji} to get ${role}`)
           .setColor('#ff6b6b');
-        const reply = await interaction.reply({ embeds: [embed] });
+        const reply = await interaction.reply({ embeds: [embed], fetchReply: true });
         await reply.react(emoji);
         await storage.addReactionRole(interaction.guild.id, reply.id, emoji, role.id);
         break;
@@ -868,7 +868,7 @@ client.on('GuildMemberAdd', async (member) => {
     const newInvites = await guild.invites.fetch();
 
     // Find which invite was used
-    const usedInvite = newInvites.find(invite => {
+    const usedInvite = newInvites.find((invite: any) => {
       const cachedUses = cachedInvites.get(invite.code) || 0;
       return (invite.uses || 0) > cachedUses;
     });
@@ -913,7 +913,7 @@ client.on('GuildMemberAdd', async (member) => {
     }
 
     // Update cached invites
-    inviteCache.set(guild.id, new Map(newInvites.map(invite => [invite.code, invite.uses || 0])));
+    inviteCache.set(guild.id, new Map(newInvites.map((invite: any) => [invite.code, invite.uses || 0])));
 
   } catch (error) {
     console.error('Error tracking invite usage:', error);
@@ -945,7 +945,7 @@ client.on('GuildMemberAdd', async (member) => {
               title: "⚠️ Coin Deduction Notice",
               description: `You left **${member.guild.name}** within 3 days of joining and lost **${result.coinsDeducted} coins**.\n\nTo avoid coin penalties, stay in servers for at least 3 days after joining.\n\nNew balance: **${result.newBalance} coins**`,
               color: 0xff6b6b,
-              timestamp: new Date(),
+              timestamp: new Date().toISOString(),
               footer: {
                 text: "Smart Serve - Coin System",
                 icon_url: client.user?.displayAvatarURL()
