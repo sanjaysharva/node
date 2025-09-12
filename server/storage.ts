@@ -78,6 +78,15 @@ export interface IStorage {
   voteOnServer(serverId: string, userId: string, voteType: 'up' | 'down'): Promise<{ voteType: 'up' | 'down' | null }>;
   getUserVoteStatus(serverId: string, userId: string): Promise<{ voteType: 'up' | 'down' | null }>;
 
+  // Review operations
+  getReview(serverId: string, userId: string): Promise<any | undefined>;
+  createReview(reviewData: { serverId: string; userId: string; rating: number; review?: string }): Promise<any>;
+  updateReview(reviewId: string, reviewData: { rating?: number; review?: string }): Promise<any | undefined>;
+  deleteReview(reviewId: string): Promise<void>;
+  getReviewsForServer(serverId: string, options: { limit: number; offset: number }): Promise<any[]>;
+  getReviewById(reviewId: string): Promise<any | undefined>;
+  updateServerAverageRating(serverId: string): Promise<void>;
+
   // Support tickets
   createSupportTicket(ticketData: {
     userId?: string;
@@ -89,6 +98,11 @@ export interface IStorage {
   }): Promise<any>;
 
   getSupportTickets(): Promise<any[]>;
+
+  // Blog operations
+  getBlogPosts(options?: { limit?: number; offset?: number; featured?: boolean }): Promise<any[]>;
+  getFeaturedBlogPosts(limit?: number): Promise<any[]>;
+  createBlogPost(blogData: any): Promise<any>;
 
   // Partnerships
   getPartnerships(options: {
@@ -937,6 +951,75 @@ export class DatabaseStorage implements IStorage {
     // In a real implementation, you'd query the reactionRoles table
     console.log(`Getting reaction role: ${guildId} ${messageId} ${emoji}`);
     return null; // Placeholder
+  }
+
+  // Review operations implementation
+  async getReview(serverId: string, userId: string): Promise<any | undefined> {
+    const [review] = await db.select().from(reviews).where(and(eq(reviews.serverId, serverId), eq(reviews.userId, userId))).limit(1);
+    return review;
+  }
+
+  async createReview(reviewData: { serverId: string; userId: string; rating: number; review?: string }): Promise<any> {
+    const [newReview] = await db.insert(reviews).values(reviewData).returning();
+    await this.updateServerAverageRating(reviewData.serverId);
+    return newReview;
+  }
+
+  async updateReview(reviewId: string, reviewData: { rating?: number; review?: string }): Promise<any | undefined> {
+    const [updatedReview] = await db.update(reviews).set({ ...reviewData, updatedAt: sql`now()` }).where(eq(reviews.id, reviewId)).returning();
+    if (updatedReview) {
+      await this.updateServerAverageRating(updatedReview.serverId);
+    }
+    return updatedReview;
+  }
+
+  async deleteReview(reviewId: string): Promise<void> {
+    const review = await db.select().from(reviews).where(eq(reviews.id, reviewId)).limit(1);
+    await db.delete(reviews).where(eq(reviews.id, reviewId));
+    if (review[0]) {
+      await this.updateServerAverageRating(review[0].serverId);
+    }
+  }
+
+  async getReviewsForServer(serverId: string, options: { limit: number; offset: number }): Promise<any[]> {
+    return await db.select().from(reviews).where(eq(reviews.serverId, serverId))
+      .orderBy(desc(reviews.createdAt))
+      .limit(options.limit)
+      .offset(options.offset);
+  }
+
+  async getReviewById(reviewId: string): Promise<any | undefined> {
+    const [review] = await db.select().from(reviews).where(eq(reviews.id, reviewId)).limit(1);
+    return review;
+  }
+
+  async updateServerAverageRating(serverId: string): Promise<void> {
+    const result = await db.select({
+      avgRating: sql<number>`AVG(${reviews.rating})`,
+      count: sql<number>`COUNT(*)`
+    }).from(reviews).where(eq(reviews.serverId, serverId));
+    
+    const avgRating = result[0]?.avgRating || 0;
+    await db.update(servers).set({ 
+      averageRating: avgRating,
+      reviewCount: result[0]?.count || 0 
+    }).where(eq(servers.id, serverId));
+  }
+
+  // Blog operations implementation
+  async getBlogPosts(options: { limit?: number; offset?: number; featured?: boolean } = {}): Promise<any[]> {
+    // Mock implementation - no blog table exists yet
+    return [];
+  }
+
+  async getFeaturedBlogPosts(limit: number = 5): Promise<any[]> {
+    // Mock implementation - no blog table exists yet
+    return [];
+  }
+
+  async createBlogPost(blogData: any): Promise<any> {
+    // Mock implementation - no blog table exists yet
+    return { id: 'mock-blog-id', ...blogData };
   }
 }
 
