@@ -1103,8 +1103,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Get quest completions from user metadata
-      const questData = user.metadata as any || {};
+      // Get quest completions from user metadata - ensure it's properly parsed
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
       const completions = questData.questCompletions || [];
       const lastDailyReward = questData.lastDailyReward || null;
 
@@ -1177,7 +1184,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const questData = user.metadata as any || {};
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
       const lastDailyReward = questData.lastDailyReward;
 
       // Check if user can claim daily reward (strict 24-hour check)
@@ -1188,7 +1203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (hoursSinceLastClaim < 24) {
           const hoursRemaining = Math.ceil(24 - hoursSinceLastClaim);
-          const minutesRemaining = Math.ceil((24 - hoursSinceLastClaim) * 60) % 60;
+          const minutesRemaining = Math.ceil(((24 - hoursSinceLastClaim) % 1) * 60);
           return res.status(400).json({ 
             message: `Daily reward already claimed. Try again in ${hoursRemaining}h ${minutesRemaining}m.`,
             timeRemaining: { hours: hoursRemaining, minutes: minutesRemaining }
@@ -1208,11 +1223,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.update(users)
         .set({ 
           coins: newCoins,
-          metadata: newMetadata
+          metadata: JSON.stringify(newMetadata)
         })
         .where(eq(users.id, req.user.id));
 
-      console.log(`User ${user.discordId} claimed daily reward: ${coinsEarned} coins`);
+      console.log(`User ${user.discordId} claimed daily reward: ${coinsEarned} coins (new balance: ${newCoins})`);
       res.json({ coinsEarned, totalCoins: newCoins });
     } catch (error) {
       console.error("Error claiming daily reward:", error);
@@ -1231,7 +1246,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const questData = user.metadata as any || {};
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
       const completions = questData.questCompletions || [];
 
       // Check if already completed
@@ -1273,11 +1296,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await db.update(users)
           .set({ 
             coins: newCoins,
-            metadata: newMetadata
+            metadata: JSON.stringify(newMetadata)
           })
           .where(eq(users.id, req.user.id));
 
-        console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins`);
+        console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
         res.json({ coinsEarned, totalCoins: newCoins });
       } catch (discordError) {
         console.error("Discord verification error:", discordError);

@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,24 +47,26 @@ export default function Quest() {
   const [socialDialogOpen, setSocialDialogOpen] = useState(false);
   const inviteLink = "https://discord.gg/Ept7zwYJH5";
 
-  // Fetch user's quest data
-  const { data: userQuests, refetch } = useQuery<UserQuests>({
+  // Get user's quest progress and completions
+  const { data: userQuests, refetch: refetchQuests } = useQuery<UserQuests>({
     queryKey: ["/api/quests/user-progress"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/quests/user-progress");
       return res.json();
     },
     enabled: isAuthenticated,
+    refetchOnWindowFocus: true,
   });
 
   // Check server membership status
-  const { data: serverStatus } = useQuery({
+  const { data: serverStatus, refetch: refetchServerStatus } = useQuery({
     queryKey: ["/api/quests/server-status"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/quests/server-status");
       return res.json();
     },
     enabled: isAuthenticated,
+    refetchOnWindowFocus: true,
   });
 
   const copyToClipboard = async () => {
@@ -122,7 +123,7 @@ export default function Quest() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
-      refetch();
+      refetchQuests();
       toast({
         title: "Daily Reward Claimed!",
         description: `You earned ${data.coinsEarned} coins! Come back tomorrow for more.`,
@@ -147,7 +148,8 @@ export default function Quest() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quests/server-status"] });
-      refetch();
+      refetchQuests();
+      refetchServerStatus();
       toast({
         title: "Quest Completed!",
         description: `You earned ${data.coinsEarned} coins for joining the server!`,
@@ -172,7 +174,7 @@ export default function Quest() {
       if (data.newInvites > 0) {
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
-        refetch();
+        refetchQuests();
         toast({
           title: "Invites Rewarded!",
           description: `You earned ${data.coinsEarned} coins for ${data.newInvites} new invites!`,
