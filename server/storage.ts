@@ -1,4 +1,4 @@
-import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
 
@@ -818,13 +818,73 @@ export class DatabaseStorage implements IStorage {
     limit: number;
     offset: number;
   }) {
-    // No partnerships exist yet - return empty array
-    return [];
+    const conditions = [];
+    
+    if (options.search) {
+      conditions.push(or(
+        ilike(partnerships.title, `%${options.search}%`),
+        ilike(partnerships.description, `%${options.search}%`),
+        ilike(partnerships.serverName, `%${options.search}%`)
+      ));
+    }
+    
+    if (options.type && options.type !== 'all') {
+      conditions.push(eq(partnerships.partnershipType, options.type));
+    }
+
+    const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+
+    return await db
+      .select({
+        id: partnerships.id,
+        title: partnerships.title,
+        description: partnerships.description,
+        serverName: partnerships.serverName,
+        serverIcon: partnerships.serverIcon,
+        memberCount: partnerships.memberCount,
+        partnershipType: partnerships.partnershipType,
+        requirements: partnerships.requirements,
+        benefits: partnerships.benefits,
+        contactInfo: partnerships.contactInfo,
+        discordLink: partnerships.discordLink,
+        verified: partnerships.verified,
+        featured: partnerships.featured,
+        createdAt: partnerships.createdAt,
+        ownerUsername: users.username,
+      })
+      .from(partnerships)
+      .leftJoin(users, eq(partnerships.ownerId, users.id))
+      .where(whereCondition)
+      .orderBy(desc(partnerships.featured), desc(partnerships.createdAt))
+      .limit(options.limit)
+      .offset(options.offset);
   }
 
   async createPartnership(partnershipData: any) {
-    // Partnership creation not implemented yet
-    throw new Error('Partnership creation not available');
+    const [newPartnership] = await db
+      .insert(partnerships)
+      .values(partnershipData)
+      .returning();
+    return newPartnership;
+  }
+
+  async analyzePartnershipServer(serverLink: string) {
+    // Mock server analysis for now - in real implementation, this would use Discord API
+    // Extract invite code from the server link
+    const inviteCode = serverLink.match(/discord\.gg\/([a-zA-Z0-9]+)/)?.[1] || 
+                      serverLink.match(/discordapp\.com\/invite\/([a-zA-Z0-9]+)/)?.[1];
+    
+    if (!inviteCode) {
+      throw new Error('Invalid Discord invite link');
+    }
+
+    // Mock data - in real implementation, fetch from Discord API
+    return {
+      serverName: "Example Gaming Server",
+      serverIcon: "https://cdn.discordapp.com/icons/123456789/example.png",
+      memberCount: Math.floor(Math.random() * 10000) + 100,
+      verified: Math.random() > 0.7,
+    };
   }
 
   // Server Templates

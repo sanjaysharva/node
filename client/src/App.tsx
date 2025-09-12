@@ -26,6 +26,7 @@ import TermsOfService from "./pages/terms-of-service";
 import PrivacyPolicy from "./pages/privacy-policy";
 import Blog from "./pages/blog";
 import Partnership from "@/pages/partnership";
+import AddPartnership from "@/pages/add-partnership";
 import ServerTemplates from "@/pages/server-templates";
 import AddTemplate from "@/pages/add-template";
 import Login from "@/pages/login";
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/partnership" component={Partnership} />
+      <Route path="/add-partnership" component={AddPartnership} />
       <Route path="/server-templates" component={ServerTemplates} />
       <Route path="/add-template" component={AddTemplate} />
       <Route path="/login" component={Login} />

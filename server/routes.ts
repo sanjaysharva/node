@@ -1869,6 +1869,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/partnerships/analyze", requireAuth, async (req, res) => {
+    try {
+      const { serverLink } = req.body;
+      const analysis = await storage.analyzePartnershipServer(serverLink);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing server:", error);
+      res.status(500).json({ message: "Failed to analyze server" });
+    }
+  });
+
   // Templates routes
   app.get("/api/templates", async (req, res) => {
     try {
