@@ -1164,19 +1164,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       try {
         // Check if user is in the server
-        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`, {
+        const apiUrl = `https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`;
+        console.log(`Checking server membership: ${apiUrl}`);
+        console.log(`Discord ID: ${user.discordId}, Guild: ${serverGuildId}`);
+        
+        const memberResponse = await fetch(apiUrl, {
           headers: { 'Authorization': `Bot ${botToken}` },
         });
 
+        console.log(`Discord API Response Status: ${memberResponse.status}`);
+        
         const inServer = memberResponse.ok;
         
         // Check if user is boosting
         let isBoosting = false;
         if (inServer) {
           const memberData = await memberResponse.json();
+          console.log('Member data:', memberData);
           isBoosting = memberData.premium_since !== null;
+        } else {
+          // Log the error response
+          const errorText = await memberResponse.text();
+          console.log(`Discord API Error Response: ${errorText}`);
         }
 
+        console.log(`Server Status Result: inServer=${inServer}, isBoosting=${isBoosting}`);
+        
         res.json({
           inServer,
           isBoosting,
