@@ -60,7 +60,7 @@ app.use(async (req, res, next) => {
           discordId: user.discordId,
           username: user.username,
           avatar: user.avatar ?? undefined,
-          isAdmin: user.isAdmin
+          isAdmin: user.isAdmin ?? undefined
         };
       }
     } catch (error) {
