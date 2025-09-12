@@ -1,4 +1,4 @@
-import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
 
@@ -1002,7 +1002,7 @@ export class DatabaseStorage implements IStorage {
     const avgRating = result[0]?.avgRating || 0;
     await db.update(servers).set({ 
       averageRating: avgRating,
-      reviewCount: result[0]?.count || 0 
+      totalReviews: result[0]?.count || 0 
     }).where(eq(servers.id, serverId));
   }
 

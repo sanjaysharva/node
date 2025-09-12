@@ -269,7 +269,7 @@ export const comments = pgTable("comments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   serverId: varchar("server_id").references(() => servers.id).notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  parentId: varchar("parent_id").references(() => comments.id), // For replies
+  parentId: varchar("parent_id"), // For replies
   content: text("content").notNull(),
   likes: integer("likes").default(0),
   isEdited: boolean("is_edited").default(false),
