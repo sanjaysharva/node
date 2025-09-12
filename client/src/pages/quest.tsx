@@ -410,3 +410,204 @@ export default function Quest() {
   );
 }
 
+import { useState } from "react";
+import Navbar from "@/components/navbar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Trophy, Star, Target, Gift, Clock, CheckCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+
+export default function Quest() {
+  const { isAuthenticated } = useAuth();
+  const [completedQuests, setCompletedQuests] = useState([1, 3]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center max-w-md mx-auto">
+            <h1 className="text-3xl font-bold mb-4 text-foreground">Authentication Required</h1>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Please login with Discord to access Quests and earn rewards.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const quests = [
+    {
+      id: 1,
+      title: "First Server Join",
+      description: "Join your first Discord server through Smart Serve",
+      reward: "10 Coins + Welcome Badge",
+      progress: 100,
+      maxProgress: 100,
+      difficulty: "Easy",
+      type: "daily",
+      icon: Target,
+      completed: true
+    },
+    {
+      id: 2,
+      title: "Social Butterfly",
+      description: "Join 5 different Discord servers",
+      reward: "50 Coins + Social Badge",
+      progress: 2,
+      maxProgress: 5,
+      difficulty: "Medium",
+      type: "weekly",
+      icon: Star,
+      completed: false
+    },
+    {
+      id: 3,
+      title: "Template Creator",
+      description: "Create and publish your first server template",
+      reward: "100 Coins + Creator Badge",
+      progress: 100,
+      maxProgress: 100,
+      difficulty: "Hard",
+      type: "achievement",
+      icon: Trophy,
+      completed: true
+    },
+    {
+      id: 4,
+      title: "Community Builder",
+      description: "Get 100 members to join servers through your referrals",
+      reward: "500 Coins + Builder Badge",
+      progress: 23,
+      maxProgress: 100,
+      difficulty: "Legendary",
+      type: "achievement",
+      icon: Gift,
+      completed: false
+    }
+  ];
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy": return "bg-green-500";
+      case "Medium": return "bg-yellow-500";
+      case "Hard": return "bg-orange-500";
+      case "Legendary": return "bg-purple-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "daily": return "bg-blue-100 text-blue-800";
+      case "weekly": return "bg-green-100 text-green-800";
+      case "achievement": return "bg-purple-100 text-purple-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+            Quest Center
+          </h1>
+          <p className="text-muted-foreground text-lg mb-6">
+            Complete quests to earn coins, badges, and exclusive rewards
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">{completedQuests.length}</div>
+                <div className="text-sm text-muted-foreground">Completed</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Target className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">{quests.length - completedQuests.length}</div>
+                <div className="text-sm text-muted-foreground">In Progress</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Star className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">1,250</div>
+                <div className="text-sm text-muted-foreground">Total XP</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {quests.map((quest) => {
+            const IconComponent = quest.icon;
+            const isCompleted = completedQuests.includes(quest.id);
+            
+            return (
+              <Card key={quest.id} className={`hover:shadow-lg transition-all duration-300 ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-12 h-12 ${getDifficultyColor(quest.difficulty)} rounded-full flex items-center justify-center`}>
+                        <IconComponent className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="flex items-center space-x-2">
+                          <span>{quest.title}</span>
+                          {isCompleted && <CheckCircle className="w-5 h-5 text-green-500" />}
+                        </CardTitle>
+                        <CardDescription>{quest.description}</CardDescription>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end space-y-2">
+                      <Badge className={getTypeColor(quest.type)}>{quest.type}</Badge>
+                      <Badge className={`${getDifficultyColor(quest.difficulty)} text-white`}>{quest.difficulty}</Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {!isCompleted ? (
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{quest.progress}/{quest.maxProgress}</span>
+                      </div>
+                      <Progress value={(quest.progress / quest.maxProgress) * 100} className="h-2" />
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 text-green-600">
+                      <CheckCircle className="w-5 h-5" />
+                      <span className="font-medium">Quest Completed!</span>
+                    </div>
+                  )}
+                  
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Gift className="w-4 h-4 text-amber-500" />
+                      <span className="text-sm font-medium">Reward: {quest.reward}</span>
+                    </div>
+                  </div>
+
+                  {!isCompleted && (
+                    <Button className="w-full mt-4" variant="outline">
+                      View Details
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
