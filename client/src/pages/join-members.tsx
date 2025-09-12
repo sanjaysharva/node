@@ -148,7 +148,7 @@ export default function JoinMembers() {
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
               <Wallet className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl font-bold mb-4">Authentication Required</h1>
@@ -168,22 +168,22 @@ export default function JoinMembers() {
       {/* Wallet Section - Top Middle */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-center">
-          <Card className="w-full max-w-md border-2 border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50">
+          <Card className="w-full max-w-md border-2 border-primary/30 bg-gradient-to-br from-purple-50/50 to-primary/10 dark:from-primary/5 dark:to-primary/20">
             <CardHeader className="text-center pb-4">
               <div className="flex items-center justify-center mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
                   <Wallet className="w-6 h-6 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Your Wallet
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <div className="space-y-4">
                 <div>
-                  <div className="text-4xl font-bold text-amber-600 dark:text-amber-400 mb-1">
-                    <Coins className="inline w-8 h-8 mr-2" />
+                  <div className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+                    <Coins className="inline w-8 h-8 mr-2 text-primary" />
                     {(user as any)?.coins || 0}
                   </div>
                   <p className="text-sm text-muted-foreground">Available Coins</p>
@@ -200,8 +200,8 @@ export default function JoinMembers() {
                     <span>Member Price:</span>
                     <Badge variant="outline">2 coins each</Badge>
                   </p>
-                  <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
-                    <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                  <div className="mt-3 p-2 bg-primary/10 border border-primary/30 rounded-md">
+                    <p className="text-xs text-primary font-medium">
                       ⚠️ Leave Penalty: If you leave a server within 3 days of joining, you'll lose 0.75 coins
                     </p>
                   </div>
@@ -292,7 +292,7 @@ export default function JoinMembers() {
                         </Select>
 
                         {userServers.every(server => server.isAdvertising) && (
-                          <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400">
+                          <div className="flex items-center space-x-2 text-primary">
                             <AlertCircle className="w-4 h-4" />
                             <span className="text-sm">All your servers are currently being advertised</span>
                           </div>
