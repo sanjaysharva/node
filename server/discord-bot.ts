@@ -883,6 +883,11 @@ client.on('GuildMemberAdd', async (member) => {
         const newBalance = (inviterUser.coins || 0) + coinsToAward;
         await storage.updateUserCoins(inviterUser.id, newBalance);
 
+        // Update invite count for quest progress
+        await storage.updateUser(inviterUser.id, {
+          inviteCount: (inviterUser.inviteCount || 0) + 1
+        });
+
         console.log(`Awarded ${coinsToAward} coins to ${usedInvite.inviter.tag} for inviting ${member.user.tag}`);
 
         // Optionally send a DM to the inviter
@@ -894,21 +899,28 @@ client.on('GuildMemberAdd', async (member) => {
           console.log(`Could not send DM to ${usedInvite.inviter.tag}`);
         }
       }
+    }
 
-      // Award welcome bonus to new member
-      const newMemberUser = await storage.getUserByDiscordId(member.id);
-      if (newMemberUser) {
-        const welcomeBonus = 2; // 2 coins welcome bonus
-        const newMemberBalance = (newMemberUser.coins || 0) + welcomeBonus;
-        await storage.updateUserCoins(newMemberUser.id, newMemberBalance);
+    // Award welcome bonus and update quest progress for new member
+    const newMemberUser = await storage.getUserByDiscordId(member.id);
+    if (newMemberUser) {
+      const welcomeBonus = 2; // 2 coins welcome bonus
+      const newMemberBalance = (newMemberUser.coins || 0) + welcomeBonus;
+      
+      // Update coins and servers joined count for quest progress
+      await Promise.all([
+        storage.updateUserCoins(newMemberUser.id, newMemberBalance),
+        storage.updateUser(newMemberUser.id, {
+          serversJoined: (newMemberUser.serversJoined || 0) + 1
+        })
+      ]);
 
-        try {
-          await member.send(
-            `Welcome to ${guild.name}! 🎉 You received ${welcomeBonus} coins as a welcome bonus!`
-          );
-        } catch (dmError) {
-          console.log(`Could not send welcome DM to ${member.user.tag}`);
-        }
+      try {
+        await member.send(
+          `Welcome to ${guild.name}! 🎉 You received ${welcomeBonus} coins as a welcome bonus and completed the "Join Server" quest!`
+        );
+      } catch (dmError) {
+        console.log(`Could not send welcome DM to ${member.user.tag}`);
       }
     }
 

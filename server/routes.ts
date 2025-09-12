@@ -1118,6 +1118,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Daily reward route
+  app.post("/api/quests/daily-reward/claim", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user can claim daily reward (24 hours since last claim)
+      const lastLogin = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
+      const now = new Date();
+
+      if (lastLogin) {
+        const hoursSinceLastLogin = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLastLogin < 24) {
+          return res.status(400).json({ 
+            message: "Daily reward already claimed. Try again in 24 hours." 
+          });
+        }
+      }
+
+      const dailyReward = 20;
+      const newCoinBalance = (user.coins || 0) + dailyReward;
+
+      // Update user coins and last login date
+      await Promise.all([
+        storage.updateUserCoins(userId, newCoinBalance),
+        storage.updateUser(userId, { lastLoginDate: now }),
+      ]);
+
+      res.json({
+        message: "Daily reward claimed successfully",
+        reward: dailyReward,
+        newBalance: newCoinBalance,
+      });
+    } catch (error) {
+      console.error("Failed to claim daily reward:", error);
+      res.status(500).json({ message: "Failed to claim daily reward" });
+    }
+  });
+
   app.post("/api/quests/:questId/claim", async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -1140,7 +1187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Define quest rewards
       const questRewards = {
         invite_members: { reward: 15, requirement: (user.inviteCount ?? 0) >= 3 },
-        join_servers: { reward: 10, requirement: (user.serversJoined ?? 0) >= 5 },
+        join_servers: { reward: 10, requirement: (user.serversJoined ?? 0) >= 1 },
         daily_login: { reward: 20, requirement: (user.dailyLoginStreak ?? 0) >= 7 },
         referral_bonus: { reward: 50, requirement: (user.referralCount ?? 0) >= 10 },
       };
