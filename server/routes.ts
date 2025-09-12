@@ -418,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { guildId } = req.params;
-      const botId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
+      const botId = process.env.DISCORD_CLIENT_ID || "1371746742768500818";
       const botToken = process.env.DISCORD_BOT_TOKEN;
 
       console.log(`Bot check for guild ${guildId} with bot ID ${botId}`);
@@ -1156,7 +1156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
       
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
@@ -1296,7 +1296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify user is actually in the Discord server
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
       
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
@@ -1364,7 +1364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questData = {};
       }
 
-      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
       const botToken = process.env.DISCORD_BOT_TOKEN;
       
       if (!botToken) {
@@ -1451,7 +1451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify user is actually boosting the Discord server
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
       
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
