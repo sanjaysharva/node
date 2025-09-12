@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import session from "express-session";
+import cookieSession from "cookie-session";
 import { storage } from "./storage";
 import { startDiscordBot } from "./discord-bot";
 import { 
@@ -11,13 +11,14 @@ import {
   errorHandler 
 } from "./middleware/security";
 
-// Augment express-session types
-declare module 'express-session' {
-  interface SessionData {
+// Augment cookie-session types
+declare module 'cookie-session' {
+  interface CookieSessionObject {
     userId?: string;
     rememberMe?: boolean;
     loginTime?: number;
     oauthState?: string;
+    oauthTimestamp?: number;
     pendingRememberMe?: boolean;
   }
 }
@@ -49,20 +50,15 @@ if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
 // Configure trust proxy for proper protocol detection
 app.set('trust proxy', 1);
 
-// Session middleware with secure persistent login support
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production-' + Math.random(),
-  resave: true, // Changed to true to force session save
-  saveUninitialized: true, // Ensure session is created for OAuth state
-  cookie: {
-    secure: false, // Disabled for development - Replit uses HTTP in dev
-    maxAge: 7 * 24 * 60 * 60 * 1000, // Default: 7 days for regular sessions
-    httpOnly: true, // Better security - prevents XSS attacks
-    sameSite: 'lax' // CSRF protection
-  },
-  // Session store configuration for better persistence
-  name: 'smartserve.sid', // Custom session name
-  rolling: false, // Don't reset expiry on each request
+// Cookie-based session middleware for truly persistent login (survives server restarts)
+app.use(cookieSession({
+  name: 'smartserve.sid',
+  keys: [process.env.SESSION_SECRET || 'smartserve-static-secret-key-for-persistent-sessions-v1'],
+  maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year for truly persistent login
+  secure: process.env.NODE_ENV === 'production', // Auto-secure in production
+  httpOnly: true, // Better security - prevents XSS attacks  
+  sameSite: 'lax', // CSRF protection
+  overwrite: true // Allow overwriting
 }));
 
 // Enhanced user authentication middleware with auto-login
@@ -76,8 +72,7 @@ app.use(async (req, res, next) => {
           discordId: user.discordId,
           username: user.username,
           avatar: user.avatar ?? undefined,
-          isAdmin: user.isAdmin ?? undefined,
-          coins: user.coins ?? 0
+          isAdmin: user.isAdmin ?? undefined
         };
 
         // Update last activity for security tracking
@@ -85,20 +80,15 @@ app.use(async (req, res, next) => {
           req.session.loginTime = Date.now();
         }
 
-        // Extend session for persistent login if remember me was enabled
-        if (req.session.rememberMe) {
-          req.session.cookie.maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days for remember me
-        } else {
-          req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days for regular sessions
-        }
+        // Cookie-session handles expiration automatically via maxAge
       } else {
-        // User no longer exists, clear session
-        req.session.destroy(() => {});
+        // User no longer exists, clear session  
+        req.session = null;
       }
     } catch (error) {
       console.error('Error loading user:', error);
       // Clear invalid session on error
-      req.session.destroy(() => {});
+      req.session = null;
     }
   }
   next();

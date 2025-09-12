@@ -88,20 +88,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     session.oauthState = state;
     session.oauthTimestamp = Date.now(); // Add timestamp for debugging
     
-    console.log('Storing OAuth state in session:', { state, sessionId: req.sessionID });
+    console.log('Storing OAuth state in session:', { state });
 
-    // Force session save synchronously
-    req.session.save((saveErr: any) => {
-      if (saveErr) {
-        console.error('Session save error:', saveErr);
-        return res.status(500).json({ message: "Session error during OAuth setup" });
-      }
+    // Cookie-session automatically saves changes
+    console.log('OAuth state stored in session');
+    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
 
-      console.log('Session saved successfully with OAuth state');
-      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
-
-      res.redirect(discordAuthUrl);
-    });
+    res.redirect(discordAuthUrl);
   });
 
   app.get("/api/auth/discord/callback", async (req, res) => {
@@ -110,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('OAuth callback received:', { 
       code: code ? 'present' : 'missing', 
       state: state ? state.toString().substring(0, 8) + '...' : 'missing',
-      sessionId: req.sessionID
+      sessionExists: !!req.session
     });
 
     if (!code) {
@@ -242,41 +235,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Regenerate session ID to prevent session fixation attacks
-      const rememberMe = req.session.pendingRememberMe || false;
+      // Set user in session - cookie-session handles persistence automatically
+      const rememberMe = req.session?.pendingRememberMe || false;
+      
+      if (req.session) {
+        req.session.userId = user?.id;
+        req.session.loginTime = Date.now();
+        req.session.rememberMe = rememberMe;
+        
+        // Clear OAuth state
+        delete req.session.oauthState;
+        delete req.session.oauthTimestamp;
+        delete req.session.pendingRememberMe;
+      }
 
-      req.session.regenerate((err) => {
-        if (err) {
-          console.error('Session regeneration failed:', err);
-          return res.status(500).json({ message: "Authentication failed - session error" });
-        }
-
-        // Set user in session with persistent login settings
-        const session = req.session as any;
-        session.userId = user?.id;
-        session.loginTime = Date.now();
-        session.rememberMe = rememberMe;
-
-        // Set appropriate session duration based on remember me preference
-        if (session.rememberMe) {
-          session.cookie.maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days for remember me
-          console.log('User logged in with persistent session (90 days)');
-        } else {
-          session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days for regular session
-          console.log('User logged in with regular session (7 days)');
-        }
-
-        // Save session and redirect
-        session.save((saveErr: any) => {
-          if (saveErr) {
-            console.error('Session save failed:', saveErr);
-            return res.status(500).json({ message: "Authentication failed - session save error" });
-          }
-
-          // Redirect to home
-          res.redirect('/?auth=success');
-        });
-      });
+      console.log('User logged in with persistent session (1 year)');
+      
+      // Redirect to home - cookie-session automatically saves
+      res.redirect('/?auth=success');
 
 
     } catch (error) {
@@ -286,13 +262,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/logout", (req, res) => {
-    const session = req.session as any;
-    session.destroy((err: any) => {
-      if (err) {
-        console.error('Session destruction error:', err);
-      }
-      res.redirect('/');
-    });
+    // Clear session - cookie-session API
+    req.session = null;
+    res.redirect('/');
   });
 
   // Categories
