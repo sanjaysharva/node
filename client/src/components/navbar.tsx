@@ -11,11 +11,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { User, Server, Trophy, ShoppingCart, LogOut, Menu, Bot, Calendar, Plus, Users, Hash } from "lucide-react";
+import { User, Server, Trophy, ShoppingCart, LogOut, Menu, Bot, Calendar, Plus, Users, Hash, Settings } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
 
   if (isLoading) {
     return (
@@ -199,6 +199,18 @@ export default function Navbar() {
                 <DropdownMenuItem onClick={() => navigate('/server-templates')}>
                   <Hash className="mr-2 h-4 w-4" />
                   <span>Server Templates</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/store')}>
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  <span>Store</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/quest')}>
+                  <Trophy className="mr-2 h-4 w-4" />
+                  <span>Quest</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/join-members')}>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Join Members</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem data-testid="button-settings">
