@@ -108,18 +108,6 @@ const commands = [
         .setRequired(false)
     ),
 
-  new SlashCommandBuilder()
-    .setName('addtemplate')
-    .setDescription('Apply a server template from Smart Serve')
-    .addStringOption(option =>
-      option.setName('link')
-        .setDescription('Smart Serve template link')
-        .setRequired(true)
-    ),
-
-  new SlashCommandBuilder()
-    .setName('templateprocess')
-    .setDescription('Check template application progress'),
 
   new SlashCommandBuilder()
     .setName('poll')
