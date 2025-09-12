@@ -197,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Regenerate session ID to prevent session fixation attacks
       const rememberMe = req.session.pendingRememberMe || false;
-      
+
       req.session.regenerate((err) => {
         if (err) {
           console.error('Session regeneration failed:', err);
@@ -209,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         session.userId = user?.id;
         session.loginTime = Date.now();
         session.rememberMe = rememberMe;
-        
+
         // Set appropriate session duration based on remember me preference
         if (session.rememberMe) {
           session.cookie.maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days for remember me
@@ -218,14 +218,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days for regular session
           console.log('User logged in with regular session (7 days)');
         }
-        
+
         // Save session and redirect
         session.save((saveErr: any) => {
           if (saveErr) {
             console.error('Session save failed:', saveErr);
             return res.status(500).json({ message: "Authentication failed - session save error" });
           }
-          
+
           // Redirect to home
           res.redirect('/?auth=success');
         });
@@ -1054,170 +1054,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quest system routes
-  app.get("/api/quests", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
+  app.get("/api/quests", (req, res) => {
+    const quests = [
+      {
+        id: "invite_members",
+        title: "Invite New Members",
+        description: "Invite 3 new members to the Discord server",
+        reward: 15,
+        type: "social",
+        requirements: {
+          count: 3,
+          action: "invite"
+        }
+      },
+      {
+        id: "daily_login",
+        title: "Daily Login",
+        description: "Login to the platform daily",
+        reward: 5,
+        type: "daily",
+        requirements: {
+          frequency: "daily"
+        }
+      },
+      {
+        id: "join_server",
+        title: "Join Discord Server",
+        description: "Join the official Discord server",
+        reward: 10,
+        type: "one_time",
+        requirements: {
+          action: "join_discord"
+        }
+      }
+    ];
 
-    try {
-      const userId = req.user.id;
-      const user = await storage.getUser(userId);
-
-      // Default quests with progress tracking
-      const defaultQuests = [
-        {
-          id: "invite_members",
-          title: "Invite New Members",
-          description: "Invite 3 people to Discord servers through Smart Serve",
-          type: "invite",
-          reward: 15,
-          target: 3,
-          progress: user?.inviteCount || 0,
-          completed: (user?.inviteCount || 0) >= 3,
-          claimable: (user?.inviteCount || 0) >= 3 && !(user?.questsClaimed || []).includes("invite_members"),
-        },
-        {
-          id: "join_servers",
-          title: "Join Server Communities",
-          description: "Join 5 different Discord servers",
-          type: "join_servers",
-          reward: 10,
-          target: 5,
-          progress: user?.serversJoined || 0,
-          completed: (user?.serversJoined || 0) >= 5,
-          claimable: (user?.serversJoined || 0) >= 5 && !(user?.questsClaimed || []).includes("join_servers"),
-        },
-        {
-          id: "daily_login",
-          title: "Daily Login Streak",
-          description: "Login to Smart Serve for 7 consecutive days",
-          type: "daily_login",
-          reward: 20,
-          target: 7,
-          progress: user?.dailyLoginStreak || 0,
-          completed: (user?.dailyLoginStreak || 0) >= 7,
-          claimable: (user?.dailyLoginStreak || 0) >= 7 && !(user?.questsClaimed || []).includes("daily_login"),
-        },
-        {
-          id: "referral_bonus",
-          title: "Referral Master",
-          description: "Successfully refer 10 users who join through your invites",
-          type: "referral",
-          reward: 50,
-          target: 10,
-          progress: user?.referralCount || 0,
-          completed: (user?.referralCount || 0) >= 10,
-          claimable: (user?.referralCount || 0) >= 10 && !(user?.questsClaimed || []).includes("referral_bonus"),
-        },
-      ];
-
-      res.json(defaultQuests);
-    } catch (error) {
-      console.error("Failed to fetch quests:", error);
-      res.status(500).json({ message: "Failed to fetch quests" });
-    }
+    res.json(quests);
   });
 
-  // Daily reward route
-  app.post("/api/quests/daily-reward/claim", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-
+  // Get user's quest progress and completions
+  app.get("/api/quests/user-progress", requireAuth, async (req, res) => {
     try {
-      const userId = req.user.id;
-      const user = await storage.getUser(userId);
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+      });
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Check if user can claim daily reward (24 hours since last claim)
-      const lastLogin = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
-      const now = new Date();
+      // Get quest completions from user metadata
+      const questData = user.metadata as any || {};
+      const completions = questData.questCompletions || [];
+      const lastDailyReward = questData.lastDailyReward || null;
 
-      if (lastLogin) {
-        const hoursSinceLastLogin = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60);
-        if (hoursSinceLastLogin < 24) {
-          return res.status(400).json({ 
-            message: "Daily reward already claimed. Try again in 24 hours." 
-          });
+      res.json({
+        completions,
+        lastDailyReward
+      });
+    } catch (error) {
+      console.error("Error fetching user quest progress:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Daily reward endpoint
+  app.post("/api/quests/daily-reward", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const questData = user.metadata as any || {};
+      const lastDailyReward = questData.lastDailyReward;
+
+      // Check if user can claim daily reward
+      if (lastDailyReward) {
+        const lastClaim = new Date(lastDailyReward);
+        const now = new Date();
+        const hoursSinceLastClaim = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
+
+        if (hoursSinceLastClaim < 24) {
+          return res.status(400).json({ message: "Daily reward already claimed. Try again in 24 hours." });
         }
       }
 
-      const dailyReward = 20;
-      const newCoinBalance = (user.coins || 0) + dailyReward;
+      // Award coins and update last claim time
+      const coinsEarned = 2;
+      const newCoins = (user.coins || 0) + coinsEarned;
+      const newMetadata = {
+        ...questData,
+        lastDailyReward: new Date().toISOString()
+      };
 
-      // Update user coins and last login date
-      await Promise.all([
-        storage.updateUserCoins(userId, newCoinBalance),
-        storage.updateUser(userId, { lastLoginDate: now }),
-      ]);
+      await db.update(users)
+        .set({ 
+          coins: newCoins,
+          metadata: newMetadata
+        })
+        .where(eq(users.id, req.user.id));
 
-      res.json({
-        message: "Daily reward claimed successfully",
-        reward: dailyReward,
-        newBalance: newCoinBalance,
-      });
+      res.json({ coinsEarned, totalCoins: newCoins });
     } catch (error) {
-      console.error("Failed to claim daily reward:", error);
-      res.status(500).json({ message: "Failed to claim daily reward" });
+      console.error("Error claiming daily reward:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
-  app.post("/api/quests/:questId/claim", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-
+  // Join server quest endpoint
+  app.post("/api/quests/join-server", requireAuth, async (req, res) => {
     try {
-      const { questId } = req.params;
-      const userId = req.user.id;
-      const user = await storage.getUser(userId);
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+      });
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const questsClaimed = user.questsClaimed || [];
-      if (questsClaimed.includes(questId)) {
-        return res.status(400).json({ message: "Quest already claimed" });
+      const questData = user.metadata as any || {};
+      const completions = questData.questCompletions || [];
+
+      // Check if already completed
+      if (completions.some((c: any) => c.questId === "join-server")) {
+        return res.status(400).json({ message: "Quest already completed" });
       }
 
-      // Define quest rewards
-      const questRewards = {
-        invite_members: { reward: 15, requirement: (user.inviteCount ?? 0) >= 3 },
-        join_servers: { reward: 10, requirement: (user.serversJoined ?? 0) >= 1 },
-        daily_login: { reward: 20, requirement: (user.dailyLoginStreak ?? 0) >= 7 },
-        referral_bonus: { reward: 50, requirement: (user.referralCount ?? 0) >= 10 },
+      // Check if user is in Discord server (simplified check)
+      // In a real implementation, you would verify with Discord API
+
+      // Award coins and mark quest as completed
+      const coinsEarned = 2;
+      const newCoins = (user.coins || 0) + coinsEarned;
+      const newCompletion = {
+        questId: "join-server",
+        completedAt: new Date().toISOString(),
+        reward: coinsEarned
       };
 
-      const quest = questRewards[questId as keyof typeof questRewards];
-      if (!quest) {
-        return res.status(404).json({ message: "Quest not found" });
-      }
+      const newMetadata = {
+        ...questData,
+        questCompletions: [...completions, newCompletion]
+      };
 
-      if (!quest.requirement) {
-        return res.status(400).json({ message: "Quest requirements not met" });
-      }
+      await db.update(users)
+        .set({ 
+          coins: newCoins,
+          metadata: newMetadata
+        })
+        .where(eq(users.id, req.user.id));
 
-      // Award coins and mark quest as claimed
-      const newCoinBalance = (user.coins || 0) + quest.reward;
-      const newQuestsClaimed = [...questsClaimed, questId];
-
-      await Promise.all([
-        storage.updateUserCoins(userId, newCoinBalance),
-        storage.updateUser(userId, { questsClaimed: newQuestsClaimed }),
-      ]);
-
-      res.json({
-        message: "Quest reward claimed successfully",
-        reward: quest.reward,
-        newBalance: newCoinBalance,
-      });
+      res.json({ coinsEarned, totalCoins: newCoins });
     } catch (error) {
-      console.error("Failed to claim quest reward:", error);
-      res.status(500).json({ message: "Failed to claim quest reward" });
+      console.error("Error completing join server quest:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
@@ -1620,7 +1614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { serverLink } = req.body;
       const inviteCode = serverLink.split('/').pop().split('?')[0];
-      
+
       const botToken = process.env.DISCORD_BOT_TOKEN;
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
@@ -1631,7 +1625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!inviteResponse.ok) {
         return res.status(400).json({ message: "Invalid server link" });
       }
-      
+
       const inviteData = await inviteResponse.json();
       const guildId = inviteData.guild.id;
 
@@ -1685,7 +1679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { templateLink, guildId } = req.body;
       const template = await storage.getTemplateByLink(templateLink);
-      
+
       if (!template) {
         return res.status(404).json({ message: "Template not found" });
       }

@@ -13,12 +13,13 @@ import {
   ExternalLink,
   UserPlus,
   Zap,
-  Copy
+  Copy,
+  CheckCircle
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
 import {
   Dialog,
@@ -29,13 +30,33 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+interface QuestCompletion {
+  questId: string;
+  completedAt: string;
+  reward: number;
+}
+
+interface UserQuests {
+  completions: QuestCompletion[];
+  lastDailyReward: string | null;
+}
+
 export default function Quest() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [lastDailyReward, setLastDailyReward] = useState<string | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const inviteLink = "https://discord.gg/Ept7zwYJH5";
-  
+
+  // Fetch user's quest data
+  const { data: userQuests, refetch } = useQuery<UserQuests>({
+    queryKey: ["/api/quests/user-progress"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/quests/user-progress");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(inviteLink);
@@ -51,28 +72,33 @@ export default function Quest() {
       });
     }
   };
-  
+
+  // Check if a quest is completed
+  const isQuestCompleted = (questId: string) => {
+    return userQuests?.completions.some(completion => completion.questId === questId) || false;
+  };
+
   // Check if user can claim daily reward (24 hours since last claim)
   const canClaimDaily = () => {
-    if (!lastDailyReward) return true;
-    const lastClaim = new Date(lastDailyReward);
+    if (!userQuests?.lastDailyReward) return true;
+    const lastClaim = new Date(userQuests.lastDailyReward);
     const now = new Date();
     const hoursSinceLastClaim = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
     return hoursSinceLastClaim >= 24;
   };
 
   const getTimeUntilNextDaily = () => {
-    if (!lastDailyReward) return "Available now!";
-    const lastClaim = new Date(lastDailyReward);
+    if (!userQuests?.lastDailyReward) return "Available now!";
+    const lastClaim = new Date(userQuests.lastDailyReward);
     const nextAvailable = new Date(lastClaim.getTime() + 24 * 60 * 60 * 1000);
     const now = new Date();
-    
+
     if (now >= nextAvailable) return "Available now!";
-    
+
     const msUntil = nextAvailable.getTime() - now.getTime();
     const hoursUntil = Math.floor(msUntil / (1000 * 60 * 60));
     const minutesUntil = Math.floor((msUntil % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     return `${hoursUntil}h ${minutesUntil}m`;
   };
 
@@ -84,7 +110,8 @@ export default function Quest() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      setLastDailyReward(new Date().toISOString());
+      queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
+      refetch();
       toast({
         title: "Daily Reward Claimed!",
         description: `You earned ${data.coinsEarned} coins! Come back tomorrow for more.`,
@@ -94,6 +121,30 @@ export default function Quest() {
       toast({
         title: "Reward Unavailable",
         description: error.message || "Please try again in 24 hours.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Join server mutation
+  const joinServerMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/quests/join-server");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
+      refetch();
+      toast({
+        title: "Quest Completed!",
+        description: `You earned ${data.coinsEarned} coins for joining the server!`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Quest Failed",
+        description: error.message || "Could not verify server join.",
         variant: "destructive",
       });
     },
@@ -122,9 +173,10 @@ export default function Quest() {
       description: "Join our Discord server to get started with the community",
       reward: 2,
       icon: <Users className="w-8 h-8 text-primary" />,
-      action: "Join Server",
+      action: isQuestCompleted("join-server") ? "Completed" : "Join Server",
       link: "https://discord.gg/Ept7zwYJH5",
-      note: "Note: Leave and join again reduces reward by 1.5 coins"
+      note: "Note: Leave and join again reduces reward by 1.5 coins",
+      completed: isQuestCompleted("join-server")
     },
     {
       id: "social-promotion",
@@ -132,7 +184,8 @@ export default function Quest() {
       description: "Create an Instagram reel or YouTube video (5+ minutes) about our platform",
       reward: 1000,
       icon: <Video className="w-8 h-8 text-primary" />,
-      action: "Submit Content"
+      action: isQuestCompleted("social-promotion") ? "Completed" : "Submit Content",
+      completed: isQuestCompleted("social-promotion")
     },
     {
       id: "daily-reward",
@@ -141,7 +194,8 @@ export default function Quest() {
       reward: 2,
       icon: <Gift className="w-8 h-8 text-primary" />,
       action: canClaimDaily() ? "Claim Reward" : getTimeUntilNextDaily(),
-      canClaim: canClaimDaily()
+      canClaim: canClaimDaily(),
+      isDaily: true
     },
     {
       id: "boost-server",
@@ -149,7 +203,8 @@ export default function Quest() {
       description: "Use Discord Nitro to boost our server and earn a big reward",
       reward: 50,
       icon: <Zap className="w-8 h-8 text-primary" />,
-      action: "Boost Server"
+      action: isQuestCompleted("boost-server") ? "Completed" : "Boost Server",
+      completed: isQuestCompleted("boost-server")
     },
     {
       id: "invite-members",
@@ -158,14 +213,17 @@ export default function Quest() {
       reward: 3,
       icon: <UserPlus className="w-8 h-8 text-primary" />,
       action: "Start Inviting",
-      note: "Earn 3 coins per member. If member leaves: -1.75 coins"
+      note: "Earn 3 coins per member. If member leaves: -1.75 coins",
+      isOngoing: true
     }
   ];
+
+  const completedCount = allQuests.filter(quest => quest.completed).length;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section with Gradient Background */}
       <section className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -181,15 +239,25 @@ export default function Quest() {
                 Complete quests to earn coins, unlock rewards, and support our community!
               </p>
             </div>
-            
-            {/* Current Balance */}
+
+            {/* Current Balance & Stats */}
             <div className="mt-6">
-              <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-6 h-6 text-primary" />
-                  <span className="text-xl font-bold text-foreground" data-testid="text-coin-balance">
-                    {(user as any)?.coins || 0} Coins
-                  </span>
+              <div className="flex flex-wrap justify-center gap-4">
+                <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-6 h-6 text-primary" />
+                    <span className="text-xl font-bold text-foreground" data-testid="text-coin-balance">
+                      {(user as any)?.coins || 0} Coins
+                    </span>
+                  </div>
+                </div>
+                <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                    <span className="text-xl font-bold text-foreground">
+                      {completedCount} Completed
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -204,16 +272,20 @@ export default function Quest() {
             <h2 className="text-3xl font-bold text-foreground mb-2">Available Quests</h2>
             <p className="text-muted-foreground">Complete these tasks to earn coins and rewards</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {allQuests.map((quest) => (
               <Card key={quest.id} className="transition-all duration-300 hover:scale-105 bg-card border-border hover:bg-card/80">
                 <CardHeader className="text-center pb-4">
                   <div className="flex justify-center mb-2">
                     {quest.icon}
+                    {quest.completed && (
+                      <CheckCircle className="w-6 h-6 text-green-500 absolute ml-6 -mt-2" />
+                    )}
                   </div>
-                  <CardTitle className="text-xl font-bold text-foreground">
+                  <CardTitle className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
                     {quest.title}
+                    {quest.completed && <Badge className="bg-green-500 text-white">Completed</Badge>}
                   </CardTitle>
                   <CardDescription className="text-muted-foreground text-sm">
                     {quest.description}
@@ -226,7 +298,7 @@ export default function Quest() {
                       {quest.reward} Coins
                     </Badge>
                   </div>
-                  
+
                   {quest.note && (
                     <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2 rounded mb-4">
                       {quest.note}
@@ -235,22 +307,50 @@ export default function Quest() {
 
                   {quest.id === "join-server" && (
                     <Button 
-                      className="w-full" 
-                      onClick={() => window.open(quest.link, '_blank', 'noopener,noreferrer')}
+                      className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : ''}`}
+                      onClick={() => {
+                        if (!quest.completed) {
+                          window.open(quest.link, '_blank', 'noopener,noreferrer');
+                          // Auto-verify after a short delay
+                          setTimeout(() => {
+                            joinServerMutation.mutate();
+                          }, 3000);
+                        }
+                      }}
+                      disabled={quest.completed}
                       data-testid="button-join-server"
                     >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      {quest.action}
+                      {quest.completed ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Completed
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          {quest.action}
+                        </>
+                      )}
                     </Button>
                   )}
 
                   {quest.id === "social-promotion" && (
                     <Button 
-                      className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600" 
+                      className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'}`}
+                      disabled={quest.completed}
                       data-testid="button-submit-content"
                     >
-                      <Video className="w-4 h-4 mr-2" />
-                      {quest.action}
+                      {quest.completed ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Completed
+                        </>
+                      ) : (
+                        <>
+                          <Video className="w-4 h-4 mr-2" />
+                          {quest.action}
+                        </>
+                      )}
                     </Button>
                   )}
 
@@ -268,12 +368,22 @@ export default function Quest() {
 
                   {quest.id === "boost-server" && (
                     <Button 
-                      className="w-full bg-purple-600 hover:bg-purple-700" 
-                      onClick={() => window.open("https://discord.gg/Ept7zwYJH5", '_blank', 'noopener,noreferrer')}
+                      className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : 'bg-purple-600 hover:bg-purple-700'}`}
+                      onClick={() => !quest.completed && window.open("https://discord.gg/Ept7zwYJH5", '_blank', 'noopener,noreferrer')}
+                      disabled={quest.completed}
                       data-testid="button-boost-server"
                     >
-                      <Zap className="w-4 h-4 mr-2" />
-                      {quest.action}
+                      {quest.completed ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Completed
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4 mr-2" />
+                          {quest.action}
+                        </>
+                      )}
                     </Button>
                   )}
 
@@ -372,7 +482,7 @@ export default function Quest() {
                 The ultimate platform for Discord server discovery and community building.
               </p>
             </div>
-            
+
             <div>
               <h3 className="text-foreground font-semibold mb-3">Community</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
@@ -381,7 +491,7 @@ export default function Quest() {
                 <li><a href="#" className="hover:text-foreground transition-colors">Guidelines</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-foreground font-semibold mb-3">Resources</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
@@ -390,7 +500,7 @@ export default function Quest() {
                 <li><a href="#" className="hover:text-foreground transition-colors">API Docs</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-foreground font-semibold mb-3">Legal</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
@@ -400,214 +510,12 @@ export default function Quest() {
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground text-sm">
             <p>&copy; 2024 Quest Hub. All rights reserved.</p>
           </div>
         </div>
       </footer>
-    </div>
-  );
-}
-
-import { useState } from "react";
-import Navbar from "@/components/navbar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Trophy, Star, Target, Gift, Clock, CheckCircle } from "lucide-react";
-import { useAuth } from "@/lib/auth";
-
-export default function Quest() {
-  const { isAuthenticated } = useAuth();
-  const [completedQuests, setCompletedQuests] = useState([1, 3]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center max-w-md mx-auto">
-            <h1 className="text-3xl font-bold mb-4 text-foreground">Authentication Required</h1>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Please login with Discord to access Quests and earn rewards.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const quests = [
-    {
-      id: 1,
-      title: "First Server Join",
-      description: "Join your first Discord server through Smart Serve",
-      reward: "10 Coins + Welcome Badge",
-      progress: 100,
-      maxProgress: 100,
-      difficulty: "Easy",
-      type: "daily",
-      icon: Target,
-      completed: true
-    },
-    {
-      id: 2,
-      title: "Social Butterfly",
-      description: "Join 5 different Discord servers",
-      reward: "50 Coins + Social Badge",
-      progress: 2,
-      maxProgress: 5,
-      difficulty: "Medium",
-      type: "weekly",
-      icon: Star,
-      completed: false
-    },
-    {
-      id: 3,
-      title: "Template Creator",
-      description: "Create and publish your first server template",
-      reward: "100 Coins + Creator Badge",
-      progress: 100,
-      maxProgress: 100,
-      difficulty: "Hard",
-      type: "achievement",
-      icon: Trophy,
-      completed: true
-    },
-    {
-      id: 4,
-      title: "Community Builder",
-      description: "Get 100 members to join servers through your referrals",
-      reward: "500 Coins + Builder Badge",
-      progress: 23,
-      maxProgress: 100,
-      difficulty: "Legendary",
-      type: "achievement",
-      icon: Gift,
-      completed: false
-    }
-  ];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy": return "bg-green-500";
-      case "Medium": return "bg-yellow-500";
-      case "Hard": return "bg-orange-500";
-      case "Legendary": return "bg-purple-500";
-      default: return "bg-gray-500";
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "daily": return "bg-blue-100 text-blue-800";
-      case "weekly": return "bg-green-100 text-green-800";
-      case "achievement": return "bg-purple-100 text-purple-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-            Quest Center
-          </h1>
-          <p className="text-muted-foreground text-lg mb-6">
-            Complete quests to earn coins, badges, and exclusive rewards
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{completedQuests.length}</div>
-                <div className="text-sm text-muted-foreground">Completed</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Target className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{quests.length - completedQuests.length}</div>
-                <div className="text-sm text-muted-foreground">In Progress</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Star className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">1,250</div>
-                <div className="text-sm text-muted-foreground">Total XP</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {quests.map((quest) => {
-            const IconComponent = quest.icon;
-            const isCompleted = completedQuests.includes(quest.id);
-            
-            return (
-              <Card key={quest.id} className={`hover:shadow-lg transition-all duration-300 ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-12 h-12 ${getDifficultyColor(quest.difficulty)} rounded-full flex items-center justify-center`}>
-                        <IconComponent className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="flex items-center space-x-2">
-                          <span>{quest.title}</span>
-                          {isCompleted && <CheckCircle className="w-5 h-5 text-green-500" />}
-                        </CardTitle>
-                        <CardDescription>{quest.description}</CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end space-y-2">
-                      <Badge className={getTypeColor(quest.type)}>{quest.type}</Badge>
-                      <Badge className={`${getDifficultyColor(quest.difficulty)} text-white`}>{quest.difficulty}</Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {!isCompleted ? (
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{quest.progress}/{quest.maxProgress}</span>
-                      </div>
-                      <Progress value={(quest.progress / quest.maxProgress) * 100} className="h-2" />
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2 text-green-600">
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="font-medium">Quest Completed!</span>
-                    </div>
-                  )}
-                  
-                  <div className="mt-4 p-3 bg-muted rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Gift className="w-4 h-4 text-amber-500" />
-                      <span className="text-sm font-medium">Reward: {quest.reward}</span>
-                    </div>
-                  </div>
-
-                  {!isCompleted && (
-                    <Button className="w-full mt-4" variant="outline">
-                      View Details
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

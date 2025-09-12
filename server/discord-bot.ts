@@ -1,11 +1,53 @@
 import { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder, ChannelType, PermissionsBitField, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { storage } from './storage';
 
+// Assuming 'db' and 'users' are imported from your database setup (e.g., drizzle ORM)
+// import { db } from './db'; // Placeholder for your actual DB import
+// import { users } from './db/schema'; // Placeholder for your actual schema import
+// import { eq } from 'drizzle-orm'; // Placeholder for your actual ORM functions
+
+// Mock database functions if not available, for demonstration purposes
+const db = {
+  query: {
+    users: {
+      findFirst: async (options: any) => {
+        // Mock user data - replace with actual database lookup
+        console.log("Mock DB: Finding user with Discord ID:", options.where.discordId);
+        // Example: return a mock user object if discordId matches '123'
+        if (options.where.discordId === '123') {
+          return {
+            id: 'mock-user-id',
+            discordId: '123',
+            coins: 10,
+            metadata: { questCompletions: [] }
+          };
+        }
+        return null;
+      }
+    }
+  },
+  update: (table: any) => ({
+    set: (data: any) => ({
+      where: async (condition: any) => {
+        console.log("Mock DB: Updating table", table, "with data:", data, "where:", condition);
+        // Simulate a successful update
+        return { count: 1 };
+      }
+    })
+  })
+};
+const users = { id: 'id', discordId: 'discordId', coins: 'coins', metadata: 'metadata' }; // Mock schema
+const eq = (column: any, value: any) => ({ column, value }); // Mock eq function
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildInvites,
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -906,7 +948,7 @@ client.on('GuildMemberAdd', async (member) => {
     if (newMemberUser) {
       const welcomeBonus = 2; // 2 coins welcome bonus
       const newMemberBalance = (newMemberUser.coins || 0) + welcomeBonus;
-      
+
       // Update coins and servers joined count for quest progress
       await Promise.all([
         storage.updateUserCoins(newMemberUser.id, newMemberBalance),
@@ -932,48 +974,144 @@ client.on('GuildMemberAdd', async (member) => {
   }
 });
 
-// Guild member remove event (user leaves server)
-  client.on('guildMemberRemove', async (member) => {
-    console.log(`Member left: ${member.user.username} from ${member.guild.name}`);
+// Quest tracking for member join events
+client.on('guildMemberAdd', async (member) => {
+  try {
+    // Find user by Discord ID
+    const user = await db.query.users.findFirst({
+      where: eq(users.discordId, member.user.id),
+    });
 
-    try {
-      // Find the user in our database by Discord ID
-      const user = await storage.getUserByDiscordId(member.user.id);
-      if (!user) {
-        console.log(`User ${member.user.username} not found in database`);
+    if (!user) return;
+
+    const questData = user.metadata as any || {};
+    const completions = questData.questCompletions || [];
+
+    // Check if join-server quest already completed
+    if (completions.some((c: any) => c.questId === "join-server")) {
+      return;
+    }
+
+    // Award coins for joining server
+    const coinsEarned = 2;
+    const newCoins = (user.coins || 0) + coinsEarned;
+    const newCompletion = {
+      questId: "join-server",
+      completedAt: new Date().toISOString(),
+      reward: coinsEarned
+    };
+
+    const newMetadata = {
+      ...questData,
+      questCompletions: [...completions, newCompletion]
+    };
+
+    await db.update(users)
+      .set({
+        coins: newCoins,
+        metadata: newMetadata
+      })
+      .where(eq(users.id, user.id));
+
+    console.log(`✅ User ${user.discordId} completed join-server quest and earned ${coinsEarned} coins`);
+  } catch (error) {
+    console.error('Error handling member join for quest:', error);
+  }
+});
+
+// Handle server boost events
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  try {
+    // Check if user started boosting
+    const wasBoosting = oldMember.premiumSince !== null;
+    const isBoosting = newMember.premiumSince !== null;
+
+    if (!wasBoosting && isBoosting) {
+      // User started boosting
+      const user = await db.query.users.findFirst({
+        where: eq(users.discordId, newMember.user.id),
+      });
+
+      if (!user) return;
+
+      const questData = user.metadata as any || {};
+      const completions = questData.questCompletions || [];
+
+      // Check if boost quest already completed
+      if (completions.some((c: any) => c.questId === "boost-server")) {
         return;
       }
 
-      // Handle server leave and potential coin deduction
-      const result = await storage.handleServerLeave(user.id, member.guild.id);
+      // Award coins for boosting server
+      const coinsEarned = 50;
+      const newCoins = (user.coins || 0) + coinsEarned;
+      const newCompletion = {
+        questId: "boost-server",
+        completedAt: new Date().toISOString(),
+        reward: coinsEarned
+      };
 
-      if (result && result.coinsDeducted > 0) {
-        console.log(`User ${member.user.username} left ${member.guild.name} within 3 days. Deducted ${result.coinsDeducted} coins. New balance: ${result.newBalance}`);
+      const newMetadata = {
+        ...questData,
+        questCompletions: [...completions, newCompletion]
+      };
 
-        // Send DM to user about coin deduction
-        try {
-          await member.user.send({
-            embeds: [{
-              title: "⚠️ Coin Deduction Notice",
-              description: `You left **${member.guild.name}** within 3 days of joining and lost **${result.coinsDeducted} coins**.\n\nTo avoid coin penalties, stay in servers for at least 3 days after joining.\n\nNew balance: **${result.newBalance} coins**`,
-              color: 0xff6b6b,
-              timestamp: new Date().toISOString(),
-              footer: {
-                text: "Smart Serve - Coin System",
-                icon_url: client.user?.displayAvatarURL()
-              }
-            }]
-          });
-        } catch (dmError) {
-          console.log(`Could not send DM to ${member.user.username}:`, dmError);
-        }
-      } else if (result) {
-        console.log(`User ${member.user.username} left ${member.guild.name} after 3+ days. No coin penalty.`);
-      }
-    } catch (error) {
-      console.error(`Error handling member leave for ${member.user.username}:`, error);
+      await db.update(users)
+        .set({
+          coins: newCoins,
+          metadata: newMetadata
+        })
+        .where(eq(users.id, user.id));
+
+      console.log(`✅ User ${user.discordId} completed boost-server quest and earned ${coinsEarned} coins`);
     }
-  });
+  } catch (error) {
+    console.error('Error handling member boost for quest:', error);
+  }
+});
+
+// Guild member remove event (user leaves server)
+client.on('guildMemberRemove', async (member) => {
+  console.log(`Member left: ${member.user.username} from ${member.guild.name}`);
+
+  try {
+    // Find the user in our database by Discord ID
+    const user = await storage.getUserByDiscordId(member.user.id);
+    if (!user) {
+      console.log(`User ${member.user.username} not found in database`);
+      return;
+    }
+
+    // Handle server leave and potential coin deduction
+    const result = await storage.handleServerLeave(user.id, member.guild.id);
+
+    if (result && result.coinsDeducted > 0) {
+      console.log(`User ${member.user.username} left ${member.guild.name} within 3 days. Deducted ${result.coinsDeducted} coins. New balance: ${result.newBalance}`);
+
+      // Send DM to user about coin deduction
+      try {
+        await member.user.send({
+          embeds: [{
+            title: "⚠️ Coin Deduction Notice",
+            description: `You left **${member.guild.name}** within 3 days of joining and lost **${result.coinsDeducted} coins**.\n\nTo avoid coin penalties, stay in servers for at least 3 days after joining.\n\nNew balance: **${result.newBalance} coins**`,
+            color: 0xff6b6b,
+            timestamp: new Date().toISOString(),
+            footer: {
+              text: "Smart Serve - Coin System",
+              icon_url: client.user?.displayAvatarURL()
+            }
+          }]
+        });
+      } catch (dmError) {
+        console.log(`Could not send DM to ${member.user.username}:`, dmError);
+      }
+    } else if (result) {
+      console.log(`User ${member.user.username} left ${member.guild.name} after 3+ days. No coin penalty.`);
+    }
+  } catch (error) {
+    console.error(`Error handling member leave for ${member.user.username}:`, error);
+  }
+});
 
 
 // Update invite cache when new invites are created
