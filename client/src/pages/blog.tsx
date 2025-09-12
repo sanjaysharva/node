@@ -1,13 +1,13 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Navbar from "@/components/navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Clock, Search, Tag, TrendingUp, BookOpen } from "lucide-react";
+import Navbar from "@/components/navbar";
 
 export default function Blog() {
   const [searchQuery, setSearchQuery] = useState("");
