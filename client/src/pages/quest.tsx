@@ -4,12 +4,56 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Star, Target, Gift, Clock, CheckCircle } from "lucide-react";
+import { Trophy, Star, Target, Gift, Clock, CheckCircle, Users, Calendar } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  reward: number;
+  target: number;
+  progress: number;
+  completed: boolean;
+  claimable: boolean;
+}
 
 export default function Quest() {
   const { isAuthenticated } = useAuth();
-  const [completedQuests, setCompletedQuests] = useState([1, 3]);
+  const { toast } = useToast();
+
+  // Fetch real quest data from API
+  const { data: quests = [], isLoading } = useQuery<Quest[]>({
+    queryKey: ['/api/quests'],
+    enabled: isAuthenticated,
+  });
+
+  // Quest claiming mutation
+  const claimQuestMutation = useMutation({
+    mutationFn: async (questId: string) => {
+      const response = await apiRequest(`/api/quests/${questId}/claim`, 'POST');
+      return response;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Quest Completed! 🎉",
+        description: `You earned ${data.reward} coins! New balance: ${data.newBalance}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to claim quest reward",
+        variant: "destructive",
+      });
+    },
+  });
 
   if (!isAuthenticated) {
     return (
@@ -27,85 +71,48 @@ export default function Quest() {
     );
   }
 
-  const quests = [
-    {
-      id: 1,
-      title: "First Server Join",
-      description: "Join your first Discord server through Smart Serve",
-      reward: "10 Coins + Welcome Badge",
-      progress: 100,
-      maxProgress: 100,
-      difficulty: "Easy",
-      type: "daily",
-      icon: Target,
-      completed: true
-    },
-    {
-      id: 2,
-      title: "Review Master",
-      description: "Write 5 helpful server reviews",
-      reward: "25 Coins + Critic Badge",
-      progress: 60,
-      maxProgress: 100,
-      difficulty: "Medium",
-      type: "weekly",
-      icon: Star,
-      completed: false
-    },
-    {
-      id: 3,
-      title: "Community Explorer",
-      description: "Join 10 different servers",
-      reward: "50 Coins + Explorer Badge",
-      progress: 100,
-      maxProgress: 100,
-      difficulty: "Medium",
-      type: "achievement",
-      icon: Trophy,
-      completed: true
-    },
-    {
-      id: 4,
-      title: "Daily Active",
-      description: "Log in for 7 consecutive days",
-      reward: "15 Coins + Loyal Badge",
-      progress: 40,
-      maxProgress: 100,
-      difficulty: "Easy",
-      type: "daily",
-      icon: Clock,
-      completed: false
-    },
-    {
-      id: 5,
-      title: "Premium Supporter",
-      description: "Join 3 premium servers",
-      reward: "100 Coins + VIP Badge",
-      progress: 0,
-      maxProgress: 100,
-      difficulty: "Hard",
-      type: "premium",
-      icon: Gift,
-      completed: false
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4 text-foreground">Loading Quests...</h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Map quest types to icons
+  const getQuestIcon = (type: string) => {
+    switch (type) {
+      case 'invite': return Users;
+      case 'join_servers': return Target;
+      case 'daily_login': return Calendar;
+      case 'referral': return Trophy;
+      default: return Star;
     }
-  ];
+  };
 
-  const categories = [
-    { name: "All", count: 5, active: true },
-    { name: "Daily", count: 2, active: false },
-    { name: "Weekly", count: 1, active: false },
-    { name: "Achievement", count: 1, active: false },
-    { name: "Premium", count: 1, active: false }
-  ];
-
+  // Calculate stats from real quest data
   const stats = {
-    totalCoins: 247,
-    completedQuests: 2,
-    totalQuests: 5,
-    level: 3,
-    xp: 750,
+    totalCoins: 0, // This will be fetched from user data
+    completedQuests: quests.filter((q: Quest) => q.completed).length,
+    totalQuests: quests.length,
+    level: Math.floor(quests.filter((q: Quest) => q.completed).length / 2) + 1,
+    xp: quests.filter((q: Quest) => q.completed).length * 100,
     nextLevelXp: 1000
   };
+
+  // Calculate quest categories from real data
+  const categories = [
+    { name: "All", count: quests.length, active: true },
+    { name: "Invite", count: quests.filter((q: Quest) => q.type === 'invite').length, active: false },
+    { name: "Join Servers", count: quests.filter((q: Quest) => q.type === 'join_servers').length, active: false },
+    { name: "Daily Login", count: quests.filter((q: Quest) => q.type === 'daily_login').length, active: false },
+    { name: "Referral", count: quests.filter((q: Quest) => q.type === 'referral').length, active: false }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,7 +134,7 @@ export default function Quest() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
             <Card className="text-center">
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-primary mb-1">{stats.totalCoins}</div>
+                <div className="text-2xl font-bold text-primary mb-1">—</div>
                 <div className="text-sm text-muted-foreground">Total Coins</div>
               </CardContent>
             </Card>
@@ -176,19 +183,19 @@ export default function Quest() {
         {/* Quest Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quests.map((quest) => {
-            const IconComponent = quest.icon;
-            const isCompleted = completedQuests.includes(quest.id);
+            const IconComponent = getQuestIcon(quest.type);
+            const progressPercent = Math.min((quest.progress / quest.target) * 100, 100);
             
             return (
-              <Card key={quest.id} className={`relative overflow-hidden ${isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''}`}>
+              <Card key={quest.id} className={`relative overflow-hidden ${quest.completed ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-lg ${
-                        isCompleted ? 'bg-green-500' : 
-                        quest.type === 'daily' ? 'bg-blue-500' :
-                        quest.type === 'weekly' ? 'bg-purple-500' :
-                        quest.type === 'achievement' ? 'bg-orange-500' :
+                        quest.completed ? 'bg-green-500' : 
+                        quest.type === 'invite' ? 'bg-blue-500' :
+                        quest.type === 'join_servers' ? 'bg-purple-500' :
+                        quest.type === 'daily_login' ? 'bg-orange-500' :
                         'bg-pink-500'
                       }`}>
                         <IconComponent className="h-5 w-5 text-white" />
@@ -196,19 +203,17 @@ export default function Quest() {
                       <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                           {quest.title}
-                          {isCompleted && <CheckCircle className="h-5 w-5 text-green-500" />}
+                          {quest.completed && <CheckCircle className="h-5 w-5 text-green-500" />}
                         </CardTitle>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={
-                            quest.difficulty === 'Easy' ? 'default' :
-                            quest.difficulty === 'Medium' ? 'secondary' :
-                            'destructive'
-                          }>
-                            {quest.difficulty}
-                          </Badge>
                           <Badge variant="outline">
-                            {quest.type}
+                            {quest.type.replace('_', ' ')}
                           </Badge>
+                          {quest.claimable && !quest.completed && (
+                            <Badge variant="default" className="bg-yellow-500">
+                              Ready to Claim!
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -224,22 +229,25 @@ export default function Quest() {
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-medium">Progress</span>
                         <span className="text-sm text-muted-foreground">
-                          {quest.progress}%
+                          {quest.progress}/{quest.target} ({progressPercent.toFixed(0)}%)
                         </span>
                       </div>
-                      <Progress value={quest.progress} className="h-2" />
+                      <Progress value={progressPercent} className="h-2" />
                     </div>
                     
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                       <div className="text-sm font-medium text-green-600 dark:text-green-400">
-                        {quest.reward}
+                        {quest.reward} Coins
                       </div>
                       <Button 
                         size="sm" 
-                        disabled={isCompleted}
+                        disabled={!quest.claimable || claimQuestMutation.isPending}
+                        onClick={() => claimQuestMutation.mutate(quest.id)}
                         data-testid={`quest-action-${quest.id}`}
                       >
-                        {isCompleted ? 'Completed' : 'Start Quest'}
+                        {quest.completed ? 'Completed' : 
+                         quest.claimable ? (claimQuestMutation.isPending ? 'Claiming...' : 'Claim Reward') :
+                         'In Progress'}
                       </Button>
                     </div>
                   </div>
