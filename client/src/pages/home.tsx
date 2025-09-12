@@ -268,18 +268,18 @@ export default function Home() {
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="/help-center" className="hover:text-primary transition-colors">Help Center</a></li>
+                <li><a href="/help-center" className="hover:text-primary transition-colors">Contact Us</a></li>
+                <li><a href="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</a></li>
+                <li><a href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
 
             <div>
               <h3 className="font-semibold mb-4">Community</h3>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Discord Server</a></li>
+                <li><a href="/blog" className="hover:text-primary transition-colors">Blog</a></li>
+                <li><a href="https://discord.gg/smartserve" className="hover:text-primary transition-colors">Discord Server</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">GitHub</a></li>
               </ul>

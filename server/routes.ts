@@ -1320,6 +1320,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Support ticket routes
+  app.post("/api/support/ticket", requireAuth, async (req, res) => {
+    try {
+      const { message } = req.body;
+      const userId = req.user!.id;
+
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ message: "Support message is required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const ticket = await storage.createSupportTicket({
+        userId: userId,
+        discordUserId: user.discordId,
+        username: user.username,
+        message: message.trim(),
+        status: 'open',
+      });
+
+      // Here you could add Discord DM integration
+      // The Discord bot will handle sending DMs to the user and admins
+
+      res.status(201).json({ 
+        message: "Support ticket created successfully",
+        ticketId: ticket.id 
+      });
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      res.status(500).json({ message: "Failed to create support ticket" });
+    }
+  });
+
+  app.get("/api/support/tickets", requireAdmin, async (req, res) => {
+    try {
+      const tickets = await storage.getSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+
+  // Blog routes
+  app.get("/api/blog/posts", async (req, res) => {
+    try {
+      const { search, category, limit = "20", offset = "0" } = req.query;
+      const posts = await storage.getBlogPosts({
+        search: search as string,
+        category: category as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.get("/api/blog/featured", async (req, res) => {
+    try {
+      const posts = await storage.getFeaturedBlogPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching featured blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch featured blog posts" });
+    }
+  });
+
+  app.post("/api/blog/posts", requireAdmin, async (req, res) => {
+    try {
+      const { title, content, excerpt, category, featured } = req.body;
+      const authorId = req.user!.id;
+
+      if (!title || !content || !category) {
+        return res.status(400).json({ message: "Title, content, and category are required" });
+      }
+
+      const post = await storage.createBlogPost({
+        title,
+        content,
+        excerpt: excerpt || content.substring(0, 200) + '...',
+        category,
+        featured: featured || false,
+        authorId,
+      });
+
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ message: "Failed to create blog post" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

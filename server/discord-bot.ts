@@ -43,7 +43,16 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('setbump')
-    .setDescription('Get your server management link (only visible to you)')
+    .setDescription('Get your server management link (only visible to you)'),
+
+  new SlashCommandBuilder()
+    .setName('support')
+    .setDescription('Contact Smart Serve support team')
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('Your support message')
+        .setRequired(true)
+    )
 ];
 
 client.once(Events.ClientReady, async () => {
@@ -95,6 +104,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         break;
       case 'setbump':
         await handleSetBumpCommand(interaction);
+        break;
+      case 'support':
+        await handleSupportCommand(interaction);
         break;
     }
   } catch (error) {
@@ -287,6 +299,79 @@ async function handleSetBumpCommand(interaction: any) {
     .setFooter({ text: 'This link is only visible to you' });
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handleSupportCommand(interaction: any) {
+  const message = interaction.options.getString('message');
+  const userId = interaction.user.id;
+  const username = interaction.user.username;
+  const guildName = interaction.guild?.name || 'Direct Message';
+
+  try {
+    // Create support ticket in database
+    await storage.createSupportTicket({
+      discordUserId: userId,
+      username: username,
+      message: message,
+      guildName: guildName,
+      status: 'open',
+    });
+
+    // Send confirmation to user
+    await interaction.reply({
+      content: '✅ Your support request has been submitted! Our team will respond via DM within 24 hours.',
+      ephemeral: true
+    });
+
+    // Send DM to user with ticket confirmation
+    try {
+      const dmEmbed = new EmbedBuilder()
+        .setTitle('🎫 Support Ticket Created')
+        .setDescription('Thank you for contacting Smart Serve support!')
+        .setColor('#00FF00')
+        .addFields(
+          { name: '📝 Your Message:', value: message, inline: false },
+          { name: '⏰ Response Time:', value: 'Our team typically responds within 24 hours', inline: false },
+          { name: '🔗 Need More Help?', value: `[Visit Help Center](${process.env.APP_URL || 'https://smartserve.com'}/help-center)`, inline: false }
+        )
+        .setFooter({ text: 'Smart Serve Support Team' })
+        .setTimestamp();
+
+      await interaction.user.send({ embeds: [dmEmbed] });
+    } catch (dmError) {
+      console.log(`Could not send DM confirmation to ${username}`);
+    }
+
+    // Notify admin channel or specific admin users
+    const ADMIN_USER_IDS = ['123456789']; // Add actual admin Discord IDs here
+    
+    for (const adminId of ADMIN_USER_IDS) {
+      try {
+        const adminUser = await client.users.fetch(adminId);
+        const adminEmbed = new EmbedBuilder()
+          .setTitle('🆘 New Support Ticket')
+          .setColor('#FF6B6B')
+          .addFields(
+            { name: '👤 User:', value: `${username} (${userId})`, inline: true },
+            { name: '🏠 Server:', value: guildName, inline: true },
+            { name: '📝 Message:', value: message, inline: false },
+            { name: '⚡ Quick Actions:', value: `Reply: \`/dm ${userId} [message]\`\nClose: \`/close-ticket ${userId}\``, inline: false }
+          )
+          .setTimestamp();
+
+        await adminUser.send({ embeds: [adminEmbed] });
+      } catch (adminError) {
+        console.log(`Could not notify admin ${adminId}`);
+      }
+    }
+
+  } catch (error) {
+    console.error('Support command error:', error);
+    await interaction.reply({
+      content: '❌ Failed to submit support request. Please try again later.',
+      ephemeral: true
+    });
+  }
 }
 
 // Track invite usage when someone joins

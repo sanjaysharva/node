@@ -20,6 +20,12 @@ import AddEvent from "@/pages/add-event";
 import SearchPage from "@/pages/search";
 import ServerDetail from "@/pages/server-detail";
 import NotFound from "@/pages/not-found";
+import CookieConsent from "@/components/cookie-consent";
+import HelpCenter from "./pages/help-center";
+import TermsOfService from "./pages/terms-of-service";
+import PrivacyPolicy from "./pages/privacy-policy";
+import Blog from "./pages/blog";
+
 
 function Router() {
   const { user } = useAuth();
@@ -43,6 +49,10 @@ function Router() {
       <Route path="/admin">
           {user?.isAdmin ? <AdminPage /> : <NotFound />}
         </Route>
+      <Route path="/blog" component={Blog} />
+      <Route path="/help-center" component={HelpCenter} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -53,6 +63,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <CookieConsent />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>

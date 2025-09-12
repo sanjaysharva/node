@@ -124,6 +124,15 @@ export default function Navbar() {
               >
                 Quest
               </Link>
+              <Link
+                href="/help-center"
+                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
+                  location === "/help-center" ? "text-primary" : "text-muted-foreground"
+                }`}
+                data-testid="link-help-center"
+              >
+                Help
+              </Link>
 
               {/* Three dots dropdown */}
               <DropdownMenu>
