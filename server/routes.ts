@@ -19,7 +19,7 @@ import {
   insertServerJoinSchema,
   insertSlideshowSchema,
   insertPartnershipSchema, // Import the new schema
-  insertTemplateSchema // Import the new schema
+  insertServerTemplateSchema // Import the new schema
 } from "@shared/schema";
 import { z } from "zod";
 import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm";
