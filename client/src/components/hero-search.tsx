@@ -23,7 +23,7 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
 
   return (
     <section className="gradient-bg py-20">
-      <div className="relative z-10 max-w-4xl mx-auto px-4 text-center text-white">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
           <span className="block text-white">Find Your Perfect</span>
           <span className="block bg-gradient-to-r from-purple-800 via-purple-600 to-purple-900 bg-clip-text text-transparent animate-gradient-x bg-300%">
