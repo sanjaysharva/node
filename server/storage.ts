@@ -802,13 +802,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserVoteStatus(serverId: string, userId: string) {
+  async getUserVoteStatus(serverId: string, userId: string): Promise<{ voteType: 'up' | 'down' | null }> {
     const [vote] = await db
       .select()
       .from(votes)
       .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
 
-    return { voteType: vote?.voteType || null };
+    return { voteType: (vote?.voteType as 'up' | 'down') || null };
   }
 
   // Partnerships
@@ -1004,6 +1004,28 @@ export class DatabaseStorage implements IStorage {
       averageRating: avgRating,
       totalReviews: result[0]?.count || 0 
     }).where(eq(servers.id, serverId));
+  }
+
+  // Support ticket implementation
+  async createSupportTicket(ticketData: {
+    userId?: string;
+    discordUserId: string;
+    username: string;
+    message: string;
+    guildName?: string;
+    status: string;
+  }): Promise<any> {
+    // Mock implementation - no support ticket table exists yet
+    return { 
+      id: `ticket_${Date.now()}`,
+      ...ticketData,
+      createdAt: new Date()
+    };
+  }
+
+  async getSupportTickets(): Promise<any[]> {
+    // Mock implementation - no support ticket table exists yet
+    return [];
   }
 
   // Blog operations implementation

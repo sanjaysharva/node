@@ -857,10 +857,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // ATOMIC TRANSACTION: All validation and state checks are now inside the transaction
+      const userForTransaction = await storage.getUser(userId);
+      const serverForTransaction = await storage.getServer(serverId);
       const result = await storage.atomicServerJoin({
         userId,
         serverId,
         coinsToAward,
+        currentCoins: userForTransaction?.coins || 0,
+        advertisingMembersNeeded: serverForTransaction?.advertisingMembersNeeded || 0,
       });
 
       res.json({
@@ -1141,9 +1145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         serverId,
         userId,
         rating,
-        comment,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        review: comment,
       });
 
       // Update server's average rating
@@ -1159,7 +1161,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/servers/:serverId/reviews", async (req, res) => {
     try {
       const { serverId } = req.params;
-      const reviews = await storage.getReviewsForServer(serverId);
+      const { limit = "10", offset = "0" } = req.query;
+      const reviews = await storage.getReviewsForServer(serverId, { 
+        limit: parseInt(limit as string), 
+        offset: parseInt(offset as string) 
+      });
       res.json(reviews);
     } catch (error) {
       console.error("Error fetching reviews:", error);
@@ -1189,8 +1195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedReview = await storage.updateReview(reviewId, {
         rating,
-        comment,
-        updatedAt: new Date(),
+        review: comment,
       });
 
       // Update server's average rating
