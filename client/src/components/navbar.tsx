@@ -267,7 +267,7 @@ export default function Navbar() {
               data-testid="button-login"
             >
               <Link href="/login">
-                <i className="fab fa-discord mr-2 text-white"></i>
+                <i class="fa-brands fa-discord"></i>
                 Login
               </Link>
             </Button>
