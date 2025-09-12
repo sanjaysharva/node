@@ -708,7 +708,7 @@ async function handleAddTemplateCommand(interaction: any) {
     const guildId = interaction.guild.id;
 
     // Validate template link
-    const response = await fetch(`${process.env.APP_URL || 'https://smartserve.com'}/api/templates/validate`, {
+    const response = await fetch(`${process.env.APP_URL || 'https://smartserve.repl.co'}/api/templates/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ templateLink, guildId }),
@@ -931,6 +931,50 @@ client.on('GuildMemberAdd', async (member) => {
     console.error('Error tracking invite usage:', error);
   }
 });
+
+// Guild member remove event (user leaves server)
+  client.on('guildMemberRemove', async (member) => {
+    console.log(`Member left: ${member.user.username} from ${member.guild.name}`);
+
+    try {
+      // Find the user in our database by Discord ID
+      const user = await storage.getUserByDiscordId(member.user.id);
+      if (!user) {
+        console.log(`User ${member.user.username} not found in database`);
+        return;
+      }
+
+      // Handle server leave and potential coin deduction
+      const result = await storage.handleServerLeave(user.id, member.guild.id);
+
+      if (result && result.coinsDeducted > 0) {
+        console.log(`User ${member.user.username} left ${member.guild.name} within 3 days. Deducted ${result.coinsDeducted} coins. New balance: ${result.newBalance}`);
+
+        // Send DM to user about coin deduction
+        try {
+          await member.user.send({
+            embeds: [{
+              title: "⚠️ Coin Deduction Notice",
+              description: `You left **${member.guild.name}** within 3 days of joining and lost **${result.coinsDeducted} coins**.\n\nTo avoid coin penalties, stay in servers for at least 3 days after joining.\n\nNew balance: **${result.newBalance} coins**`,
+              color: 0xff6b6b,
+              timestamp: new Date(),
+              footer: {
+                text: "Smart Serve - Coin System",
+                icon_url: client.user?.displayAvatarURL()
+              }
+            }]
+          });
+        } catch (dmError) {
+          console.log(`Could not send DM to ${member.user.username}:`, dmError);
+        }
+      } else if (result) {
+        console.log(`User ${member.user.username} left ${member.guild.name} after 3+ days. No coin penalty.`);
+      }
+    } catch (error) {
+      console.error(`Error handling member leave for ${member.user.username}:`, error);
+    }
+  });
+
 
 // Update invite cache when new invites are created
 client.on('InviteCreate', async (invite) => {

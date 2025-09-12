@@ -138,6 +138,8 @@ export const serverJoins = pgTable("server_joins", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   serverId: varchar("server_id").references(() => servers.id).notNull(),
   coinsEarned: integer("coins_earned").default(0),
+  leftAt: timestamp("left_at"), // Track when user left the server
+  coinsDeducted: integer("coins_deducted").default(0), // Track coins deducted for early leave
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   // Composite unique index prevents duplicate coin awards for same user+server

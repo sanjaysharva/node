@@ -966,6 +966,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Handle server leave notifications
+  app.post("/api/servers/:serverId/leave", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { serverId } = req.params;
+      const userId = req.user.id;
+
+      // Handle the server leave and potential coin deduction
+      const result = await storage.handleServerLeave(userId, serverId);
+
+      if (!result) {
+        return res.status(404).json({ message: "No active server join record found" });
+      }
+
+      res.json({
+        message: result.coinsDeducted > 0 
+          ? `You left the server within 3 days and lost ${result.coinsDeducted} coins`
+          : "You left the server with no coin penalty",
+        coinsDeducted: result.coinsDeducted,
+        newBalance: result.newBalance,
+      });
+    } catch (error) {
+      console.error("Server leave error:", error);
+      res.status(500).json({ message: "Failed to process server leave" });
+    }
+  });
+
   // Quest system routes
   app.get("/api/quests", async (req, res) => {
     if (!req.user) {

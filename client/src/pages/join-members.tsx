@@ -200,6 +200,11 @@ export default function JoinMembers() {
                     <span>Member Price:</span>
                     <Badge variant="outline">2 coins each</Badge>
                   </p>
+                  <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
+                    <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                      ⚠️ Leave Penalty: If you leave a server within 3 days of joining, you'll lose 0.75 coins
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -412,7 +417,7 @@ export default function JoinMembers() {
                     ) : (
                       <>
                         <Coins className="w-4 h-4 mr-2" />
-                        Join & Earn 0.5 Coins
+                        Join & Earn 1 Coin
                       </>
                     )}
                   </Button>
@@ -446,7 +451,7 @@ export default function JoinMembers() {
 }
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Navbar from "@/components/navbar";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

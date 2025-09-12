@@ -53,6 +53,9 @@ export interface IStorage {
   incrementUserReferralCount(userId: string): Promise<User | undefined>;
   updateDailyLoginStreak(userId: string): Promise<User | undefined>;
 
+  // Server leave tracking
+  handleServerLeave(userId: string, serverId: string): Promise<{ coinsDeducted: number; newBalance: number } | null>;
+
   // Bump operations
   getServerByDiscordId(discordId: string): Promise<Server | null>;
   setBumpChannel(guildId: string, channelId: string): Promise<void>;
@@ -358,6 +361,65 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updatedUser;
+  }
+
+  // Handle server leave and coin deduction
+  async handleServerLeave(userId: string, serverId: string): Promise<{ coinsDeducted: number; newBalance: number } | null> {
+    return await db.transaction(async (tx) => {
+      // Find the server join record
+      const [serverJoin] = await tx.select().from(serverJoins)
+        .where(and(
+          eq(serverJoins.userId, userId),
+          eq(serverJoins.serverId, serverId),
+          isNull(serverJoins.leftAt) // Only consider active joins
+        ));
+
+      if (!serverJoin) {
+        return null; // User never joined this server or already processed leave
+      }
+
+      const joinDate = new Date(serverJoin.createdAt);
+      const leaveDate = new Date();
+      const daysDifference = Math.floor((leaveDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      let coinsToDeduct = 0;
+      
+      // If user leaves within 3 days, deduct 0.75 coins
+      if (daysDifference < 3) {
+        coinsToDeduct = 0.75; // This will be stored as integer (75 cents)
+      }
+
+      // Update the server join record to mark as left
+      await tx.update(serverJoins)
+        .set({
+          leftAt: leaveDate,
+          coinsDeducted: Math.round(coinsToDeduct * 100) // Store as cents
+        })
+        .where(eq(serverJoins.id, serverJoin.id));
+
+      // Get current user balance and deduct coins if necessary
+      const [currentUser] = await tx.select({ coins: users.coins }).from(users)
+        .where(eq(users.id, userId));
+
+      if (!currentUser) {
+        throw new Error("User not found");
+      }
+
+      const currentCoins = currentUser.coins || 0;
+      const newBalance = Math.max(0, currentCoins - coinsToDeduct);
+
+      // Update user coins
+      if (coinsToDeduct > 0) {
+        await tx.update(users)
+          .set({ coins: newBalance })
+          .where(eq(users.id, userId));
+      }
+
+      return {
+        coinsDeducted: coinsToDeduct,
+        newBalance: newBalance
+      };
+    });
   }
 
   // Slideshow operations
