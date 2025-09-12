@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
 import ServerCard from "@/components/server-card";
 import { Button } from "@/components/ui/button";
@@ -99,7 +99,7 @@ export default function JoinMembers() {
     if (server?.inviteCode) {
       // Open Discord invite
       window.open(`https://discord.gg/${server.inviteCode}`, '_blank', 'noopener,noreferrer');
-      
+
       // Award coins for joining
       joinServerMutation.mutate(serverId);
     }
@@ -188,9 +188,9 @@ export default function JoinMembers() {
                   </div>
                   <p className="text-sm text-muted-foreground">Available Coins</p>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="text-sm text-muted-foreground space-y-1">
                   <p className="flex items-center justify-between">
                     <span>Join Server Reward:</span>
@@ -241,7 +241,7 @@ export default function JoinMembers() {
                   Cost: {membersToGet ? parseInt(membersToGet) * 2 : 0} coins
                 </p>
               </div>
-              
+
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
@@ -252,7 +252,7 @@ export default function JoinMembers() {
                     Get Members
                   </Button>
                 </DialogTrigger>
-                
+
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>Select Server to Advertise</DialogTitle>
@@ -261,7 +261,7 @@ export default function JoinMembers() {
                       Cost: {membersToGet ? parseInt(membersToGet) * 2 : 0} coins
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="space-y-4">
                     {loadingUserServers ? (
                       <div className="space-y-2">
@@ -290,7 +290,7 @@ export default function JoinMembers() {
                               ))}
                           </SelectContent>
                         </Select>
-                        
+
                         {userServers.every(server => server.isAdvertising) && (
                           <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400">
                             <AlertCircle className="w-4 h-4" />
@@ -305,7 +305,7 @@ export default function JoinMembers() {
                         <p className="text-xs mt-1">Only servers with our bot can be advertised.</p>
                       </div>
                     )}
-                    
+
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" onClick={() => setDialogOpen(false)}>
                         Cancel
@@ -363,7 +363,7 @@ export default function JoinMembers() {
                     +1 coin
                   </Badge>
                 </div>
-                
+
                 <CardHeader>
                   <div className="flex items-start space-x-4">
                     <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
@@ -379,7 +379,7 @@ export default function JoinMembers() {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -393,7 +393,7 @@ export default function JoinMembers() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-sm text-muted-foreground">
                       <span>Members needed: {server.advertisingMembersNeeded}</span>
@@ -405,7 +405,7 @@ export default function JoinMembers() {
                       </div>
                     )}
                   </div>
-                  
+
                   <Button
                     onClick={() => handleJoinServer(server.id)}
                     className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"

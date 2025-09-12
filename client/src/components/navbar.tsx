@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { User, Server, Trophy, ShoppingCart, LogOut, Menu, Bot, Calendar, Plus, Users, Hash, Settings } from "lucide-react";
+import { User, Server, Trophy, ShoppingCart, LogOut, Menu, Bot, Calendar, Plus, Users, Hash, Settings, Coins } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -147,94 +147,100 @@ export default function Navbar() {
           </div>
 
           {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="flex items-center space-x-2 bg-secondary/20 hover:bg-secondary/30 transition-all duration-300 hover:scale-105"
-                  data-testid="button-user-menu"
-                >
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage
-                      src={user?.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : undefined}
-                      alt="User Avatar"
-                    />
-                    <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
-                  </Avatar>
-                  <span data-testid="text-displayname">{user?.username}</span>
-                  <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" data-testid="button-profile">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/add-event" data-testid="button-add-event">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Add Event
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/your-servers" data-testid="button-your-servers">
-                    <Server className="mr-2 h-4 w-4" />
-                    Your Servers
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/add-bot" data-testid="button-add-bot">
-                    <Bot className="mr-2 h-4 w-4" />
-                    Add Bot
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/partnership')}>
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Partnership Hub</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/server-templates')}>
-                  <Hash className="mr-2 h-4 w-4" />
-                  <span>Server Templates</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/store')}>
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  <span>Store</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/quest')}>
-                  <Trophy className="mr-2 h-4 w-4" />
-                  <span>Quest</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/join-members')}>
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Join Members</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem data-testid="button-settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                {user?.isAdmin && (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 rounded-full">
+                <Coins className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-medium">{user?.coins || 0} coins</span>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center space-x-2 bg-secondary/20 hover:bg-secondary/30 transition-all duration-300 hover:scale-105"
+                    data-testid="button-user-menu"
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage
+                        src={user?.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : undefined}
+                        alt="User Avatar"
+                      />
+                      <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
+                    </Avatar>
+                    <span data-testid="text-displayname">{user?.username}</span>
+                    <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/admin" data-testid="button-admin-panel">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Admin Panel
+                    <Link href="/profile" data-testid="button-profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
                     </Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="text-red-400 focus:text-red-400"
-                  data-testid="button-logout"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-event" data-testid="button-add-event">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Add Event
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/your-servers" data-testid="button-your-servers">
+                      <Server className="mr-2 h-4 w-4" />
+                      Your Servers
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-bot" data-testid="button-add-bot">
+                      <Bot className="mr-2 h-4 w-4" />
+                      Add Bot
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/partnership')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Partnership Hub</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/server-templates')}>
+                    <Hash className="mr-2 h-4 w-4" />
+                    <span>Server Templates</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/store')}>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    <span>Store</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/quest')}>
+                    <Trophy className="mr-2 h-4 w-4" />
+                    <span>Quest</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/join-members')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Join Members</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem data-testid="button-settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  {user?.isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" data-testid="button-admin-panel">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="text-red-400 focus:text-red-400"
+                    data-testid="button-logout"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
             <Button
               asChild

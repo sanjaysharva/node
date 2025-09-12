@@ -1,33 +1,13 @@
-import { useAuth } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Coins, 
-  Trophy, 
-  Users, 
-  Video, 
-  Gift, 
-  Crown,
-  ExternalLink,
-  UserPlus,
-  Zap,
-  Copy,
-  CheckCircle
-} from "lucide-react";
-import { useState, useEffect } from "react";
+import { Coins, Users, Gift, Zap, Video, Clock, Trophy, CheckCircle, ExternalLink, UserPlus, Copy } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Navbar from "@/components/navbar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface QuestCompletion {
   questId: string;
@@ -35,39 +15,63 @@ interface QuestCompletion {
   reward: number;
 }
 
-interface UserQuests {
+interface QuestProgress {
   completions: QuestCompletion[];
   lastDailyReward: string | null;
+}
+
+interface ServerStatus {
+  inServer: boolean;
+  isBoosting: boolean;
+  serverGuildId: string;
 }
 
 export default function Quest() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [socialDialogOpen, setSocialDialogOpen] = useState(false);
-  const inviteLink = "https://discord.gg/Ept7zwYJH5";
+  const inviteLink = "https://discord.gg/Ept7zwYJH5"; // Default invite link
+  const [timeRemaining, setTimeRemaining] = useState<{ hours: number; minutes: number } | null>(null);
 
-  // Get user's quest progress and completions
-  const { data: userQuests, refetch: refetchQuests } = useQuery<UserQuests>({
+  const { data: userQuests, refetch: refetchQuests } = useQuery<QuestProgress>({
     queryKey: ["/api/quests/user-progress"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/quests/user-progress");
+      const res = await fetch("/api/quests/user-progress", { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch user quests');
       return res.json();
     },
     enabled: isAuthenticated,
     refetchOnWindowFocus: true,
+    staleTime: 5000,
   });
 
-  // Check server membership status
-  const { data: serverStatus, refetch: refetchServerStatus } = useQuery({
+  const { data: serverStatus, refetch: refetchServerStatus } = useQuery<ServerStatus>({
     queryKey: ["/api/quests/server-status"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/quests/server-status");
+      const res = await fetch("/api/quests/server-status", { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch server status');
       return res.json();
     },
     enabled: isAuthenticated,
     refetchOnWindowFocus: true,
+    staleTime: 10000,
   });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/me"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch user data');
+      return res.json();
+    },
+    enabled: isAuthenticated,
+    refetchOnWindowFocus: true,
+    staleTime: 3000,
+  });
+
+  const currentCoins = (currentUser as any)?.coins || 0;
 
   const copyToClipboard = async () => {
     try {
@@ -85,12 +89,10 @@ export default function Quest() {
     }
   };
 
-  // Check if a quest is completed
   const isQuestCompleted = (questId: string) => {
     return userQuests?.completions.some(completion => completion.questId === questId) || false;
   };
 
-  // Check if user can claim daily reward (24 hours since last claim)
   const canClaimDaily = () => {
     if (!userQuests?.lastDailyReward) return true;
     const lastClaim = new Date(userQuests.lastDailyReward);
@@ -114,10 +116,43 @@ export default function Quest() {
     return `${hoursUntil}h ${minutesUntil}m`;
   };
 
-  // Daily reward mutation
+  useEffect(() => {
+    if (!userQuests?.lastDailyReward) {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const lastClaim = new Date(userQuests.lastDailyReward);
+      const now = new Date();
+      const diffMs = lastClaim.getTime() + 24 * 60 * 60 * 1000 - now.getTime();
+
+      if (diffMs <= 0) {
+        setTimeRemaining(null);
+        return;
+      }
+
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      setTimeRemaining({ hours, minutes });
+    };
+
+    updateTimer();
+    const intervalId = setInterval(updateTimer, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [userQuests?.lastDailyReward]);
+
   const dailyRewardMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/quests/daily-reward");
+      const res = await fetch("/api/quests/daily-reward", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to claim daily reward");
+      }
       return res.json();
     },
     onSuccess: (data) => {
@@ -126,7 +161,7 @@ export default function Quest() {
       refetchQuests();
       toast({
         title: "Daily Reward Claimed!",
-        description: `You earned ${data.coinsEarned} coins! Come back tomorrow for more.`,
+        description: `You earned ${data.coinsEarned} coins! Come back tomorrow for more. Total: ${data.totalCoins}`,
       });
     },
     onError: (error: any) => {
@@ -138,10 +173,16 @@ export default function Quest() {
     },
   });
 
-  // Join server mutation
   const joinServerMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/quests/join-server");
+      const res = await fetch("/api/quests/join-server", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Could not verify server join.");
+      }
       return res.json();
     },
     onSuccess: (data) => {
@@ -152,22 +193,28 @@ export default function Quest() {
       refetchServerStatus();
       toast({
         title: "Quest Completed!",
-        description: `You earned ${data.coinsEarned} coins for joining the server!`,
+        description: `You earned ${data.coinsEarned} coins for joining the server! Total: ${data.totalCoins}`,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Quest Failed",
-        description: error.message || "Could not verify server join.",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  // Invite members mutation
   const inviteMembersMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/quests/check-invites");
+      const res = await fetch("/api/quests/check-invites", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to check invites.");
+      }
       return res.json();
     },
     onSuccess: (data) => {
@@ -177,9 +224,53 @@ export default function Quest() {
         refetchQuests();
         toast({
           title: "Invites Rewarded!",
-          description: `You earned ${data.coinsEarned} coins for ${data.newInvites} new invites!`,
+          description: `You earned ${data.coinsEarned} coins for ${data.newInvites} new invites! Total: ${data.totalCoins}`,
+        });
+      } else {
+        toast({
+          title: "No New Invites",
+          description: "You haven't invited any new members recently.",
         });
       }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Invite Check Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const boostServerMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/quests/boost-server", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to boost server");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quests/user-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quests/server-status"] });
+      refetchQuests();
+      refetchServerStatus();
+      toast({
+        title: "Server Boost Rewarded!",
+        description: `You earned ${data.coinsEarned} coins for boosting the server! Total: ${data.totalCoins}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Boost Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -206,8 +297,8 @@ export default function Quest() {
       description: "Join our Discord server to get started with the community",
       reward: 2,
       icon: <Users className="w-8 h-8 text-primary" />,
-      action: isQuestCompleted("join-server") ? "Completed" : (serverStatus?.inServer ? "Complete Quest" : "Join Server"),
-      link: "https://discord.gg/Ept7zwYJH5",
+      action: isQuestCompleted("join-server") ? "Completed" : (serverStatus?.inServer ? "Claim Reward" : "Join Server"),
+      link: `https://discord.gg/${serverStatus?.serverGuildId || 'Ept7zwYJH5'}`,
       note: "Note: Leave and join again reduces reward by 1.5 coins",
       completed: isQuestCompleted("join-server")
     },
@@ -217,7 +308,7 @@ export default function Quest() {
       description: "Create an Instagram reel or YouTube video (5+ minutes) about our platform",
       reward: 1000,
       icon: <Video className="w-8 h-8 text-primary" />,
-      action: isQuestCompleted("social-promotion") ? "Completed" : "Submit Content",
+      action: "Submit Content",
       completed: isQuestCompleted("social-promotion")
     },
     {
@@ -257,7 +348,6 @@ export default function Quest() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section with Gradient Background */}
       <section className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
@@ -273,14 +363,13 @@ export default function Quest() {
               </p>
             </div>
 
-            {/* Current Balance & Stats */}
             <div className="mt-6">
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
                   <div className="flex items-center gap-2">
                     <Coins className="w-6 h-6 text-primary" />
                     <span className="text-xl font-bold text-foreground" data-testid="text-coin-balance">
-                      {(user as any)?.coins || 0} Coins
+                      {currentCoins} Coins
                     </span>
                   </div>
                 </div>
@@ -299,7 +388,6 @@ export default function Quest() {
       </section>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Available Quests Section */}
         <section className="mb-16">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-2">Available Quests</h2>
@@ -310,7 +398,7 @@ export default function Quest() {
             {allQuests.map((quest) => (
               <Card key={quest.id} className="transition-all duration-300 hover:scale-105 bg-card border-border hover:bg-card/80">
                 <CardHeader className="text-center pb-4">
-                  <div className="flex justify-center mb-2">
+                  <div className="flex justify-center mb-2 relative">
                     {quest.icon}
                     {quest.completed && (
                       <CheckCircle className="w-6 h-6 text-green-500 absolute ml-6 -mt-2" />
@@ -339,7 +427,7 @@ export default function Quest() {
                   )}
 
                   {quest.id === "join-server" && (
-                    <Button 
+                    <Button
                       className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : ''}`}
                       onClick={() => {
                         if (!quest.completed) {
@@ -347,10 +435,9 @@ export default function Quest() {
                             joinServerMutation.mutate();
                           } else {
                             window.open(quest.link, '_blank', 'noopener,noreferrer');
-                            // Auto-verify after a short delay
                             setTimeout(() => {
-                              joinServerMutation.mutate();
-                            }, 5000);
+                              refetchServerStatus();
+                            }, 15000);
                           }
                         }
                       }}
@@ -376,7 +463,7 @@ export default function Quest() {
                   {quest.id === "social-promotion" && (
                     <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button 
+                        <Button
                           className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'}`}
                           disabled={quest.completed}
                           data-testid="button-submit-content"
@@ -416,7 +503,7 @@ export default function Quest() {
                               <strong>Reward:</strong> 1000 coins upon approval
                             </p>
                           </div>
-                          <Button 
+                          <Button
                             className="w-full"
                             onClick={() => {
                               window.open("https://discord.gg/Ept7zwYJH5", '_blank');
@@ -431,7 +518,7 @@ export default function Quest() {
                   )}
 
                   {quest.id === "daily-reward" && (
-                    <Button 
+                    <Button
                       className={`w-full ${canClaimDaily() ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 cursor-not-allowed'}`}
                       disabled={!canClaimDaily() || dailyRewardMutation.isPending}
                       onClick={() => canClaimDaily() && dailyRewardMutation.mutate()}
@@ -443,9 +530,17 @@ export default function Quest() {
                   )}
 
                   {quest.id === "boost-server" && (
-                    <Button 
+                    <Button
                       className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : 'bg-purple-600 hover:bg-purple-700'}`}
-                      onClick={() => !quest.completed && window.open("https://discord.gg/Ept7zwYJH5", '_blank', 'noopener,noreferrer')}
+                      onClick={() => {
+                        if (!quest.completed) {
+                          if (serverStatus?.isBoosting) {
+                            boostServerMutation.mutate();
+                          } else {
+                            window.open(`https://discord.gg/${serverStatus?.serverGuildId || 'Ept7zwYJH5'}`, '_blank', 'noopener,noreferrer');
+                          }
+                        }
+                      }}
                       disabled={quest.completed}
                       data-testid="button-boost-server"
                     >
@@ -466,8 +561,8 @@ export default function Quest() {
                   {quest.id === "invite-members" && (
                     <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button 
-                          className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600" 
+                        <Button
+                          className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
                           data-testid="button-invite-members"
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
@@ -483,14 +578,14 @@ export default function Quest() {
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="flex items-center space-x-2">
-                            <input 
-                              type="text" 
-                              value={inviteLink} 
-                              readOnly 
+                            <input
+                              type="text"
+                              value={inviteLink}
+                              readOnly
                               className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-foreground"
                               data-testid="input-invite-link"
                             />
-                            <Button 
+                            <Button
                               onClick={copyToClipboard}
                               size="sm"
                               className="bg-primary hover:bg-primary/90"
@@ -502,7 +597,7 @@ export default function Quest() {
                           <div className="text-xs text-muted-foreground bg-primary/10 border border-primary/20 p-3 rounded">
                             <strong>Note:</strong> Earn 3 coins per member. If member leaves: -1.75 coins
                           </div>
-                          <Button 
+                          <Button
                             onClick={() => {
                               inviteMembersMutation.mutate();
                               setInviteDialogOpen(false);
@@ -522,7 +617,6 @@ export default function Quest() {
           </div>
         </section>
 
-        {/* Information Panel */}
         <section className="mb-8">
           <Card className="bg-card border-border">
             <CardHeader>
@@ -553,7 +647,6 @@ export default function Quest() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="bg-card border-t border-border mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">

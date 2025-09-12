@@ -10,13 +10,13 @@ import { loadStripe } from "@stripe/stripe-js";
 import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
-  DialogTrigger 
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 // Stripe is optional for now - payment integration will be added later
@@ -76,9 +76,9 @@ const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
         <p className="text-2xl font-bold text-primary">${amount}</p>
       </div>
       <PaymentElement />
-      <Button 
-        type="submit" 
-        disabled={!stripe || isProcessing} 
+      <Button
+        type="submit"
+        disabled={!stripe || isProcessing}
         className="w-full"
         data-testid="button-pay"
       >
@@ -88,13 +88,13 @@ const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
   );
 };
 
-const CheckoutDialog = ({ 
-  amount, 
-  description, 
-  children 
-}: { 
-  amount: number; 
-  description: string; 
+const CheckoutDialog = ({
+  amount,
+  description,
+  children
+}: {
+  amount: number;
+  description: string;
   children: React.ReactNode;
 }) => {
   const [clientSecret, setClientSecret] = useState("");
@@ -127,7 +127,7 @@ const CheckoutDialog = ({
         </DialogHeader>
         {clientSecret ? (
           <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <PaymentForm 
+            <PaymentForm
               amount={amount}
               description={description}
               onSuccess={() => setIsOpen(false)}
@@ -145,6 +145,7 @@ const CheckoutDialog = ({
 
 export default function Store() {
   const { user, isAuthenticated } = useAuth();
+  const userCoins = user?.coins || 0;
 
   const coinPackages = [
     { coins: 50, price: 2, popular: false },
@@ -202,7 +203,7 @@ export default function Store() {
                 <div className="flex items-center gap-2">
                   <Coins className="w-6 h-6 text-primary" />
                   <span className="text-xl font-bold text-foreground">
-                    {(user as any)?.coins || 0} Coins
+                    {userCoins} Coins
                   </span>
                 </div>
               </div>
@@ -246,7 +247,7 @@ export default function Store() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   {stripePromise ? (
-                    <CheckoutDialog 
+                    <CheckoutDialog
                       amount={pkg.price}
                       description={`${pkg.coins} Coins Package`}
                     >
@@ -255,9 +256,9 @@ export default function Store() {
                       </Button>
                     </CheckoutDialog>
                   ) : (
-                    <Button 
-                      disabled 
-                      className="w-full bg-gray-500 cursor-not-allowed" 
+                    <Button
+                      disabled
+                      className="w-full bg-gray-500 cursor-not-allowed"
                       data-testid={`button-buy-${pkg.coins}-coins`}
                     >
                       Payment Not Available
@@ -312,7 +313,7 @@ export default function Store() {
                     </p>
                   </div>
                   {stripePromise ? (
-                    <CheckoutDialog 
+                    <CheckoutDialog
                       amount={boost.price}
                       description={`${boost.duration} Advertise Boost`}
                     >
@@ -321,9 +322,9 @@ export default function Store() {
                       </Button>
                     </CheckoutDialog>
                   ) : (
-                    <Button 
-                      disabled 
-                      className="w-full bg-gray-500 cursor-not-allowed" 
+                    <Button
+                      disabled
+                      className="w-full bg-gray-500 cursor-not-allowed"
                       data-testid={`button-buy-boost-${boost.duration.replace(' ', '-')}`}
                     >
                       Payment Not Available
@@ -375,7 +376,7 @@ export default function Store() {
                   </div>
                 </div>
                 {stripePromise ? (
-                  <CheckoutDialog 
+                  <CheckoutDialog
                     amount={8}
                     description="Premium Bot Tools"
                   >
@@ -384,9 +385,9 @@ export default function Store() {
                     </Button>
                   </CheckoutDialog>
                 ) : (
-                  <Button 
-                    disabled 
-                    className="w-full bg-gray-500 cursor-not-allowed" 
+                  <Button
+                    disabled
+                    className="w-full bg-gray-500 cursor-not-allowed"
                     data-testid="button-buy-premium-tools"
                   >
                     Payment Not Available

@@ -8,6 +8,7 @@ export interface User {
   avatar?: string;
   email?: string;
   isAdmin?: boolean;
+  coins?: number;
 }
 
 export function useAuth() {

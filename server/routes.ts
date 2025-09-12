@@ -1312,6 +1312,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Boost server quest endpoint
+  app.post("/api/quests/boost-server", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
+      const completions = questData.questCompletions || [];
+
+      // Check if already completed
+      if (completions.some((c: any) => c.questId === "boost-server")) {
+        return res.status(400).json({ message: "Quest already completed" });
+      }
+
+      // Verify user is actually boosting the Discord server
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
+
+        if (!memberResponse.ok) {
+          return res.status(400).json({ message: "You must be in the Discord server first" });
+        }
+
+        const memberData = await memberResponse.json();
+        const isBoosting = memberData.premium_since !== null;
+
+        if (!isBoosting) {
+          return res.status(400).json({ message: "You must be boosting the server to complete this quest" });
+        }
+
+        // Award coins and mark quest as completed
+        const coinsEarned = 50;
+        const newCoins = (user.coins || 0) + coinsEarned;
+        const newCompletion = {
+          questId: "boost-server",
+          completedAt: new Date().toISOString(),
+          reward: coinsEarned
+        };
+
+        const newMetadata = {
+          ...questData,
+          questCompletions: [...completions, newCompletion]
+        };
+
+        await db.update(users)
+          .set({ 
+            coins: newCoins,
+            metadata: JSON.stringify(newMetadata)
+          })
+          .where(eq(users.id, req.user.id));
+
+        console.log(`User ${user.discordId} completed boost-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
+        res.json({ coinsEarned, totalCoins: newCoins });
+      } catch (discordError) {
+        console.error("Discord verification error:", discordError);
+        return res.status(500).json({ message: "Failed to verify Discord boost status" });
+      }
+    } catch (error) {
+      console.error("Error completing boost server quest:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Review routes
   app.post("/api/servers/:serverId/reviews", reviewLimiter, validateReview, async (req, res) => {
     if (!req.user) {

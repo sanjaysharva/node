@@ -74,7 +74,8 @@ app.use(async (req, res, next) => {
           discordId: user.discordId,
           username: user.username,
           avatar: user.avatar ?? undefined,
-          isAdmin: user.isAdmin ?? undefined
+          isAdmin: user.isAdmin ?? undefined,
+          coins: user.coins ?? 0
         };
         
         // Update last activity for security tracking
