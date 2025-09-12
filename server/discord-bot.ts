@@ -918,24 +918,27 @@ client.on('GuildMemberAdd', async (member) => {
     if (usedInvite && usedInvite.inviter) {
       console.log(`${member.user.tag} joined using invite by ${usedInvite.inviter.tag}`);
 
-      // Award coins to the inviter
+      // Award coins to the inviter and complete invite quest
       const inviterUser = await storage.getUserByDiscordId(usedInvite.inviter.id);
       if (inviterUser) {
-        const coinsToAward = 5; // 5 coins for successful invite
+        const coinsToAward = 3; // 3 coins for successful invite (as per quest)
         const newBalance = (inviterUser.coins || 0) + coinsToAward;
-        await storage.updateUserCoins(inviterUser.id, newBalance);
+        
+        // Update user data
+        const updatedInviteCount = (inviterUser.inviteCount || 0) + 1;
+        await Promise.all([
+          storage.updateUserCoins(inviterUser.id, newBalance),
+          storage.updateUser(inviterUser.id, {
+            inviteCount: updatedInviteCount
+          })
+        ]);
 
-        // Update invite count for quest progress
-        await storage.updateUser(inviterUser.id, {
-          inviteCount: (inviterUser.inviteCount || 0) + 1
-        });
+        console.log(`Awarded ${coinsToAward} coins to ${usedInvite.inviter.tag} for inviting ${member.user.tag}. Total invites: ${updatedInviteCount}`);
 
-        console.log(`Awarded ${coinsToAward} coins to ${usedInvite.inviter.tag} for inviting ${member.user.tag}`);
-
-        // Optionally send a DM to the inviter
+        // Send DM to the inviter
         try {
           await usedInvite.inviter.send(
-            `🎉 You earned ${coinsToAward} coins for inviting ${member.user.tag} to ${guild.name}! Your balance is now ${newBalance} coins.`
+            `🎉 You earned ${coinsToAward} coins for inviting ${member.user.tag} to ${guild.name}! Your balance is now ${newBalance} coins. Total invites: ${updatedInviteCount}`
           );
         } catch (dmError) {
           console.log(`Could not send DM to ${usedInvite.inviter.tag}`);
@@ -976,19 +979,27 @@ client.on('GuildMemberAdd', async (member) => {
 
 // Quest tracking for member join events
 client.on('guildMemberAdd', async (member) => {
+  // Only process joins for our main server
+  const MAIN_SERVER_ID = "1372226433191247983";
+  if (member.guild.id !== MAIN_SERVER_ID) return;
+
   try {
     // Find user by Discord ID
     const user = await db.query.users.findFirst({
       where: eq(users.discordId, member.user.id),
     });
 
-    if (!user) return;
+    if (!user) {
+      console.log(`User ${member.user.tag} joined but not found in database`);
+      return;
+    }
 
     const questData = user.metadata as any || {};
     const completions = questData.questCompletions || [];
 
     // Check if join-server quest already completed
     if (completions.some((c: any) => c.questId === "join-server")) {
+      console.log(`User ${member.user.tag} already completed join-server quest`);
       return;
     }
 
@@ -1014,6 +1025,24 @@ client.on('guildMemberAdd', async (member) => {
       .where(eq(users.id, user.id));
 
     console.log(`✅ User ${user.discordId} completed join-server quest and earned ${coinsEarned} coins`);
+
+    // Send welcome DM with quest completion notification
+    try {
+      await member.send({
+        embeds: [{
+          title: "🎉 Welcome & Quest Completed!",
+          description: `Welcome to **${member.guild.name}**!\n\nYou've automatically completed the **Join Server** quest and earned **${coinsEarned} coins**!\n\nYour new balance: **${newCoins} coins**`,
+          color: 0x00ff00,
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: "Smart Serve - Quest System",
+            icon_url: client.user?.displayAvatarURL()
+          }
+        }]
+      });
+    } catch (dmError) {
+      console.log(`Could not send welcome DM to ${member.user.tag}`);
+    }
   } catch (error) {
     console.error('Error handling member join for quest:', error);
   }
@@ -1021,6 +1050,10 @@ client.on('guildMemberAdd', async (member) => {
 
 // Handle server boost events
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  // Only process boosts for our main server
+  const MAIN_SERVER_ID = "1372226433191247983";
+  if (newMember.guild.id !== MAIN_SERVER_ID) return;
+
   try {
     // Check if user started boosting
     const wasBoosting = oldMember.premiumSince !== null;
@@ -1032,13 +1065,17 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
         where: eq(users.discordId, newMember.user.id),
       });
 
-      if (!user) return;
+      if (!user) {
+        console.log(`User ${newMember.user.tag} boosted but not found in database`);
+        return;
+      }
 
       const questData = user.metadata as any || {};
       const completions = questData.questCompletions || [];
 
       // Check if boost quest already completed
       if (completions.some((c: any) => c.questId === "boost-server")) {
+        console.log(`User ${newMember.user.tag} already completed boost-server quest`);
         return;
       }
 
@@ -1064,6 +1101,24 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
         .where(eq(users.id, user.id));
 
       console.log(`✅ User ${user.discordId} completed boost-server quest and earned ${coinsEarned} coins`);
+
+      // Send thank you DM with quest completion notification
+      try {
+        await newMember.send({
+          embeds: [{
+            title: "🚀 Thank You for Boosting!",
+            description: `Thank you for boosting **${newMember.guild.name}**!\n\nYou've completed the **Server Boost** quest and earned **${coinsEarned} coins**!\n\nYour new balance: **${newCoins} coins**`,
+            color: 0xff6b6b,
+            timestamp: new Date().toISOString(),
+            footer: {
+              text: "Smart Serve - Quest System",
+              icon_url: client.user?.displayAvatarURL()
+            }
+          }]
+        });
+      } catch (dmError) {
+        console.log(`Could not send boost thank you DM to ${newMember.user.tag}`);
+      }
     }
   } catch (error) {
     console.error('Error handling member boost for quest:', error);

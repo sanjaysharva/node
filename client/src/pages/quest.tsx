@@ -45,6 +45,7 @@ export default function Quest() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [socialDialogOpen, setSocialDialogOpen] = useState(false);
   const inviteLink = "https://discord.gg/Ept7zwYJH5";
 
   // Fetch user's quest data
@@ -52,6 +53,16 @@ export default function Quest() {
     queryKey: ["/api/quests/user-progress"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/quests/user-progress");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Check server membership status
+  const { data: serverStatus } = useQuery({
+    queryKey: ["/api/quests/server-status"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/quests/server-status");
       return res.json();
     },
     enabled: isAuthenticated,
@@ -173,7 +184,7 @@ export default function Quest() {
       description: "Join our Discord server to get started with the community",
       reward: 2,
       icon: <Users className="w-8 h-8 text-primary" />,
-      action: isQuestCompleted("join-server") ? "Completed" : "Join Server",
+      action: isQuestCompleted("join-server") ? "Completed" : (serverStatus?.inServer ? "Join Now" : "Join Server"),
       link: "https://discord.gg/Ept7zwYJH5",
       note: "Note: Leave and join again reduces reward by 1.5 coins",
       completed: isQuestCompleted("join-server")
@@ -335,23 +346,60 @@ export default function Quest() {
                   )}
 
                   {quest.id === "social-promotion" && (
-                    <Button 
-                      className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'}`}
-                      disabled={quest.completed}
-                      data-testid="button-submit-content"
-                    >
-                      {quest.completed ? (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Completed
-                        </>
-                      ) : (
-                        <>
-                          <Video className="w-4 h-4 mr-2" />
-                          {quest.action}
-                        </>
-                      )}
-                    </Button>
+                    <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          className={`w-full ${quest.completed ? 'bg-green-600 cursor-default' : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'}`}
+                          disabled={quest.completed}
+                          data-testid="button-submit-content"
+                        >
+                          {quest.completed ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Completed
+                            </>
+                          ) : (
+                            <>
+                              <Video className="w-4 h-4 mr-2" />
+                              {quest.action}
+                            </>
+                          )}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-card border border-border">
+                        <DialogHeader>
+                          <DialogTitle className="text-foreground">Submit Your Content</DialogTitle>
+                          <DialogDescription className="text-muted-foreground">
+                            Complete the social media promotion quest
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="bg-primary/10 border border-primary/20 p-4 rounded-md">
+                            <h4 className="font-semibold text-foreground mb-2">Instructions:</h4>
+                            <ul className="text-sm text-muted-foreground space-y-1">
+                              <li>• Create an Instagram reel or YouTube video (5+ minutes minimum)</li>
+                              <li>• Feature our Discord server and platform</li>
+                              <li>• Send the video link to our Discord bot via DM</li>
+                              <li>• Wait for manual review and approval</li>
+                            </ul>
+                          </div>
+                          <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded">
+                            <p className="text-sm text-amber-300">
+                              <strong>Reward:</strong> 1000 coins upon approval
+                            </p>
+                          </div>
+                          <Button 
+                            className="w-full"
+                            onClick={() => {
+                              window.open("https://discord.gg/Ept7zwYJH5", '_blank');
+                              setSocialDialogOpen(false);
+                            }}
+                          >
+                            Open Discord Server
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   )}
 
                   {quest.id === "daily-reward" && (

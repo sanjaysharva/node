@@ -1118,6 +1118,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check server membership status
+  app.get("/api/quests/server-status", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+      });
+
+      if (!user || !user.discordAccessToken) {
+        return res.status(404).json({ message: "User not found or no Discord access" });
+      }
+
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        // Check if user is in the server
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
+
+        const inServer = memberResponse.ok;
+        
+        // Check if user is boosting
+        let isBoosting = false;
+        if (inServer) {
+          const memberData = await memberResponse.json();
+          isBoosting = memberData.premium_since !== null;
+        }
+
+        res.json({
+          inServer,
+          isBoosting,
+          serverGuildId
+        });
+      } catch (error) {
+        console.error("Discord API error:", error);
+        res.json({ inServer: false, isBoosting: false, serverGuildId });
+      }
+    } catch (error) {
+      console.error("Error checking server status:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Daily reward endpoint
   app.post("/api/quests/daily-reward", requireAuth, async (req, res) => {
     try {
@@ -1132,23 +1180,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questData = user.metadata as any || {};
       const lastDailyReward = questData.lastDailyReward;
 
-      // Check if user can claim daily reward
+      // Check if user can claim daily reward (strict 24-hour check)
       if (lastDailyReward) {
         const lastClaim = new Date(lastDailyReward);
         const now = new Date();
         const hoursSinceLastClaim = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
 
         if (hoursSinceLastClaim < 24) {
-          return res.status(400).json({ message: "Daily reward already claimed. Try again in 24 hours." });
+          const hoursRemaining = Math.ceil(24 - hoursSinceLastClaim);
+          const minutesRemaining = Math.ceil((24 - hoursSinceLastClaim) * 60) % 60;
+          return res.status(400).json({ 
+            message: `Daily reward already claimed. Try again in ${hoursRemaining}h ${minutesRemaining}m.`,
+            timeRemaining: { hours: hoursRemaining, minutes: minutesRemaining }
+          });
         }
       }
 
       // Award coins and update last claim time
       const coinsEarned = 2;
       const newCoins = (user.coins || 0) + coinsEarned;
+      const now = new Date().toISOString();
       const newMetadata = {
         ...questData,
-        lastDailyReward: new Date().toISOString()
+        lastDailyReward: now
       };
 
       await db.update(users)
@@ -1158,6 +1212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(users.id, req.user.id));
 
+      console.log(`User ${user.discordId} claimed daily reward: ${coinsEarned} coins`);
       res.json({ coinsEarned, totalCoins: newCoins });
     } catch (error) {
       console.error("Error claiming daily reward:", error);
@@ -1184,31 +1239,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Quest already completed" });
       }
 
-      // Check if user is in Discord server (simplified check)
-      // In a real implementation, you would verify with Discord API
+      // Verify user is actually in the Discord server
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
 
-      // Award coins and mark quest as completed
-      const coinsEarned = 2;
-      const newCoins = (user.coins || 0) + coinsEarned;
-      const newCompletion = {
-        questId: "join-server",
-        completedAt: new Date().toISOString(),
-        reward: coinsEarned
-      };
+      try {
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
 
-      const newMetadata = {
-        ...questData,
-        questCompletions: [...completions, newCompletion]
-      };
+        if (!memberResponse.ok) {
+          return res.status(400).json({ message: "You must be in the Discord server to complete this quest" });
+        }
 
-      await db.update(users)
-        .set({ 
-          coins: newCoins,
-          metadata: newMetadata
-        })
-        .where(eq(users.id, req.user.id));
+        // Award coins and mark quest as completed
+        const coinsEarned = 2;
+        const newCoins = (user.coins || 0) + coinsEarned;
+        const newCompletion = {
+          questId: "join-server",
+          completedAt: new Date().toISOString(),
+          reward: coinsEarned
+        };
 
-      res.json({ coinsEarned, totalCoins: newCoins });
+        const newMetadata = {
+          ...questData,
+          questCompletions: [...completions, newCompletion]
+        };
+
+        await db.update(users)
+          .set({ 
+            coins: newCoins,
+            metadata: newMetadata
+          })
+          .where(eq(users.id, req.user.id));
+
+        console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins`);
+        res.json({ coinsEarned, totalCoins: newCoins });
+      } catch (discordError) {
+        console.error("Discord verification error:", discordError);
+        return res.status(500).json({ message: "Failed to verify Discord membership" });
+      }
     } catch (error) {
       console.error("Error completing join server quest:", error);
       res.status(500).json({ message: "Internal server error" });
