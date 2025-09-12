@@ -11,15 +11,19 @@ import {
   errorHandler 
 } from "./middleware/security";
 
-// Augment cookie-session types
-declare module 'cookie-session' {
-  interface CookieSessionObject {
-    userId?: string;
-    rememberMe?: boolean;
-    loginTime?: number;
-    oauthState?: string;
-    oauthTimestamp?: number;
-    pendingRememberMe?: boolean;
+// Extend Express Request type for cookie-session
+declare global {
+  namespace Express {
+    interface Request {
+      session?: {
+        userId?: string;
+        rememberMe?: boolean;
+        loginTime?: number;
+        oauthState?: string;
+        oauthTimestamp?: number;
+        pendingRememberMe?: boolean;
+      } | null;
+    }
   }
 }
 

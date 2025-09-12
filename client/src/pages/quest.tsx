@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Coins, Users, Gift, Zap, Video, Clock, Trophy, CheckCircle, ExternalLink, UserPlus, Copy } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import Navbar from "@/components/navbar";
 
 interface QuestCompletion {
