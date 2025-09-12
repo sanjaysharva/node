@@ -58,9 +58,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes
-  app.get("/api/auth/me", (req, res) => {
+  app.get("/api/auth/me", async (req, res) => {
     if (req.user) {
-      res.json(req.user);
+      try {
+        // Get fresh user data from database to include coins
+        const freshUser = await storage.getUser(req.user.id);
+        if (freshUser) {
+          res.json({
+            ...req.user,
+            coins: freshUser.coins || 0,
+          });
+        } else {
+          res.json(req.user);
+        }
+      } catch (error) {
+        console.error("Error fetching fresh user data:", error);
+        res.json(req.user);
+      }
     } else {
       res.status(401).json({ message: "Not authenticated" });
     }
@@ -941,10 +955,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         advertisingMembersNeeded: serverForTransaction?.advertisingMembersNeeded || 0,
       });
 
+      // Get fresh user data after transaction
+      const updatedUser = await storage.getUser(userId);
+      
       res.json({
         message: "Successfully joined server and earned coins",
         coinsEarned: coinsToAward,
         newBalance: result.newBalance,
+        user: updatedUser,
       });
     } catch (error) {
       console.error("Server join error:", error);

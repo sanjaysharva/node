@@ -68,7 +68,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Coins className="w-4 h-4 text-yellow-500" />
-                      <span data-testid="text-coins">0 Coins</span>
+                      <span data-testid="text-coins">{user?.coins || 0} Coins</span>
                     </div>
                   </div>
                 </div>

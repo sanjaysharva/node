@@ -325,7 +325,7 @@ export class DatabaseStorage implements IStorage {
       .set({ coins })
       .where(eq(users.id, userId))
       .returning();
-    return updatedUser;
+    return updatedUser || undefined;
   }
 
   async incrementUserInviteCount(userId: string) {

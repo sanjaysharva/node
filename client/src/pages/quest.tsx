@@ -27,7 +27,7 @@ interface ServerStatus {
 }
 
 export default function Quest() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -369,7 +369,7 @@ export default function Quest() {
                   <div className="flex items-center gap-2">
                     <Coins className="w-6 h-6 text-primary" />
                     <span className="text-xl font-bold text-foreground" data-testid="text-coin-balance">
-                      {currentCoins} Coins
+                      {user?.coins || 0} Coins
                     </span>
                   </div>
                 </div>

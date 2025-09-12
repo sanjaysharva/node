@@ -22,7 +22,7 @@ export default function JoinMembers() {
   const [selectedServer, setSelectedServer] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
 
   // Fetch advertising servers (servers that give coins when joined)
   const { data: advertisingServers, isLoading: loadingServers } = useQuery<Server[]>({
@@ -42,7 +42,7 @@ export default function JoinMembers() {
       const res = await apiRequest("POST", `/api/servers/${serverId}/join`);
       return res.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/servers/advertising"] });
       toast({
@@ -117,7 +117,7 @@ export default function JoinMembers() {
     }
 
     const coinsNeeded = members * 2;
-    const userCoins = (user as any)?.coins || 0;
+    const userCoins = user?.coins || 0;
     if (userCoins < coinsNeeded) {
       toast({
         title: "Insufficient Coins",
@@ -184,7 +184,7 @@ export default function JoinMembers() {
                 <div>
                   <div className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
                     <Coins className="inline w-8 h-8 mr-2 text-primary" />
-                    {(user as any)?.coins || 0}
+                    {user?.coins || 0}
                   </div>
                   <p className="text-sm text-muted-foreground">Available Coins</p>
                 </div>
@@ -244,7 +244,7 @@ export default function JoinMembers() {
 
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button 
+                  <Button
                     disabled={!membersToGet || parseInt(membersToGet) < 1}
                     data-testid="button-get-members"
                   >
@@ -310,7 +310,7 @@ export default function JoinMembers() {
                       <Button variant="outline" onClick={() => setDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button 
+                      <Button
                         onClick={handlePurchaseMembers}
                         disabled={!selectedServer || purchaseMembersMutation.isPending}
                         data-testid="button-confirm-purchase"
