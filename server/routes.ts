@@ -49,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
-    if (!(req.user as any).isAdmin) {
+    if (!req.user.isAdmin) {
       return res.status(403).json({ message: "Admin access required" });
     }
     next();
@@ -1143,7 +1143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/quests/user-progress", requireAuth, async (req, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
+        where: eq(users.id, req.user!.id),
       });
 
       if (!user) {
@@ -1159,8 +1159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questData = {};
       }
 
-      const completions = questData.questCompletions || [];
-      const lastDailyReward = questData.lastDailyReward || null;
+      const completions = (questData as any).questCompletions || [];
+      const lastDailyReward = (questData as any).lastDailyReward || null;
 
       res.json({
         completions,
@@ -1176,7 +1176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/quests/server-status", requireAuth, async (req, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
+        where: eq(users.id, req.user!.id),
       });
 
       if (!user || !user.discordAccessToken) {
@@ -1224,7 +1224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/quests/daily-reward", requireAuth, async (req, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
+        where: eq(users.id, req.user!.id),
       });
 
       if (!user) {
@@ -1240,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questData = {};
       }
 
-      const lastDailyReward = questData.lastDailyReward;
+      const lastDailyReward = (questData as any).lastDailyReward;
 
       // Check if user can claim daily reward (strict 24-hour check)
       if (lastDailyReward) {
@@ -1272,7 +1272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           coins: newCoins,
           metadata: JSON.stringify(newMetadata)
         })
-        .where(eq(users.id, req.user.id));
+        .where(eq(users.id, req.user!.id));
 
       console.log(`User ${user.discordId} claimed daily reward: ${coinsEarned} coins (new balance: ${newCoins})`);
       res.json({ coinsEarned, totalCoins: newCoins });
@@ -1286,7 +1286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/quests/join-server", requireAuth, async (req, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
+        where: eq(users.id, req.user!.id),
       });
 
       if (!user) {
@@ -1302,7 +1302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questData = {};
       }
 
-      const completions = questData.questCompletions || [];
+      const completions = (questData as any).questCompletions || [];
 
       // Check if already completed
       if (completions.some((c: any) => c.questId === "join-server")) {
@@ -1345,7 +1345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             coins: newCoins,
             metadata: JSON.stringify(newMetadata)
           })
-          .where(eq(users.id, req.user.id));
+          .where(eq(users.id, req.user!.id));
 
         console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
         res.json({ coinsEarned, totalCoins: newCoins });
@@ -1363,7 +1363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/quests/check-invites", requireAuth, async (req, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
+        where: eq(users.id, req.user!.id),
       });
 
       if (!user) {
@@ -1403,7 +1403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Calculate total uses
         const totalUses = userInvites.reduce((sum: number, invite: any) => sum + (invite.uses || 0), 0);
-        const lastInviteCount = questData.lastInviteCount || 0;
+        const lastInviteCount = (questData as any).lastInviteCount || 0;
         const newInvites = Math.max(0, totalUses - lastInviteCount);
 
         if (newInvites > 0) {
@@ -1420,7 +1420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               coins: newCoins,
               metadata: JSON.stringify(newMetadata)
             })
-            .where(eq(users.id, req.user.id));
+            .where(eq(users.id, req.user!.id));
 
           console.log(`User ${user.discordId} earned ${coinsEarned} coins for ${newInvites} new invites (new balance: ${newCoins})`);
           res.json({ newInvites, coinsEarned, totalCoins: newCoins });
@@ -1441,7 +1441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/quests/boost-server", requireAuth, async (req, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
+        where: eq(users.id, req.user!.id),
       });
 
       if (!user) {
@@ -1457,7 +1457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questData = {};
       }
 
-      const completions = questData.questCompletions || [];
+      const completions = (questData as any).questCompletions || [];
 
       // Check if already completed
       if (completions.some((c: any) => c.questId === "boost-server")) {
@@ -1507,7 +1507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             coins: newCoins,
             metadata: JSON.stringify(newMetadata)
           })
-          .where(eq(users.id, req.user.id));
+          .where(eq(users.id, req.user!.id));
 
         console.log(`User ${user.discordId} completed boost-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
         res.json({ coinsEarned, totalCoins: newCoins });
