@@ -81,49 +81,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Generate secure random state for CSRF protection
     const state = crypto.randomBytes(32).toString('hex');
+    
+    // Store session data immediately without callbacks
+    const session = req.session as any;
+    session.pendingRememberMe = rememberMe;
+    session.oauthState = state;
+    session.oauthTimestamp = Date.now(); // Add timestamp for debugging
+    
+    console.log('Storing OAuth state in session:', { state, sessionId: req.sessionID });
 
-    // Save session first, then set OAuth state
+    // Force session save synchronously
     req.session.save((saveErr: any) => {
       if (saveErr) {
-        console.error('Session save error before OAuth:', saveErr);
-        return res.status(500).json({ message: "Session error" });
+        console.error('Session save error:', saveErr);
+        return res.status(500).json({ message: "Session error during OAuth setup" });
       }
 
-      // Store both remember me preference and OAuth state in session
-      const session = req.session as any;
-      session.pendingRememberMe = rememberMe;
-      session.oauthState = state;
+      console.log('Session saved successfully with OAuth state');
+      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
 
-      // Save again after setting OAuth state
-      req.session.save((secondSaveErr: any) => {
-        if (secondSaveErr) {
-          console.error('Session save error after setting OAuth state:', secondSaveErr);
-          return res.status(500).json({ message: "Session error" });
-        }
-
-        const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
-
-        res.redirect(discordAuthUrl);
-      });
+      res.redirect(discordAuthUrl);
     });
   });
 
   app.get("/api/auth/discord/callback", async (req, res) => {
     const { code, state } = req.query;
 
+    console.log('OAuth callback received:', { 
+      code: code ? 'present' : 'missing', 
+      state: state ? state.toString().substring(0, 8) + '...' : 'missing',
+      sessionId: req.sessionID
+    });
+
     if (!code) {
       return res.status(400).json({ message: "Authorization code not provided" });
     }
 
-    // Validate OAuth state parameter for CSRF protection
+    // Enhanced session state validation
     const session = req.session as any;
-    if (!state || !session.oauthState || state !== session.oauthState) {
-      console.error('OAuth state validation failed:', { received: state, expected: session.oauthState });
+    
+    console.log('Session state check:', {
+      receivedState: state ? state.toString().substring(0, 8) + '...' : 'missing',
+      sessionState: session.oauthState ? session.oauthState.substring(0, 8) + '...' : 'missing',
+      sessionTimestamp: session.oauthTimestamp,
+      sessionAge: session.oauthTimestamp ? Date.now() - session.oauthTimestamp : 'unknown'
+    });
+
+    // Validate OAuth state parameter for CSRF protection
+    if (!state) {
+      console.error('OAuth callback missing state parameter');
+      return res.status(400).json({ message: "Missing OAuth state parameter" });
+    }
+
+    if (!session.oauthState) {
+      console.error('Session missing OAuth state - possible session loss');
+      // Try to regenerate session and redirect back to login
+      return res.status(400).json({ 
+        message: "Session expired during login. Please try logging in again.",
+        redirectToLogin: true 
+      });
+    }
+
+    if (state !== session.oauthState) {
+      console.error('OAuth state mismatch:', { 
+        received: state.toString().substring(0, 16), 
+        expected: session.oauthState.substring(0, 16)
+      });
       return res.status(400).json({ message: "Invalid OAuth state - possible CSRF attack" });
     }
 
+    console.log('OAuth state validation successful');
+    
     // Clear used OAuth state
     delete session.oauthState;
+    delete session.oauthTimestamp;
 
     try {
       const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";

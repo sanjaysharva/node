@@ -51,17 +51,18 @@ app.set('trust proxy', 1);
 
 // Session middleware with secure persistent login support
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
-  resave: false,
-  saveUninitialized: true, // Changed to true to ensure session is created for OAuth state
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production-' + Math.random(),
+  resave: true, // Changed to true to force session save
+  saveUninitialized: true, // Ensure session is created for OAuth state
   cookie: {
     secure: false, // Disabled for development - Replit uses HTTP in dev
     maxAge: 7 * 24 * 60 * 60 * 1000, // Default: 7 days for regular sessions
     httpOnly: true, // Better security - prevents XSS attacks
     sameSite: 'lax' // CSRF protection
   },
-  rolling: true, // Extend session on each request
-  name: 'smart-serve-session' // Custom session name
+  // Session store configuration for better persistence
+  name: 'smartserve.sid', // Custom session name
+  rolling: false, // Don't reset expiry on each request
 }));
 
 // Enhanced user authentication middleware with auto-login
@@ -78,12 +79,12 @@ app.use(async (req, res, next) => {
           isAdmin: user.isAdmin ?? undefined,
           coins: user.coins ?? 0
         };
-        
+
         // Update last activity for security tracking
         if (!req.session.loginTime) {
           req.session.loginTime = Date.now();
         }
-        
+
         // Extend session for persistent login if remember me was enabled
         if (req.session.rememberMe) {
           req.session.cookie.maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days for remember me
