@@ -24,9 +24,10 @@ export function useAuth() {
   };
 }
 
-export function loginWithDiscord() {
-  // Redirect to Discord OAuth
-  window.location.href = "/api/auth/discord";
+export function loginWithDiscord(rememberMe: boolean = false) {
+  // Redirect to Discord OAuth with remember me parameter
+  const rememberParam = rememberMe ? '?remember=true' : '';
+  window.location.href = `/api/auth/discord${rememberParam}`;
 }
 
 export function logout() {

@@ -28,6 +28,7 @@ import Blog from "./pages/blog";
 import Partnership from "@/pages/partnership";
 import ServerTemplates from "@/pages/server-templates";
 import AddTemplate from "@/pages/add-template";
+import Login from "@/pages/login";
 
 
 function Router() {
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/partnership" component={Partnership} />
       <Route path="/server-templates" component={ServerTemplates} />
       <Route path="/add-template" component={AddTemplate} />
+      <Route path="/login" component={Login} />
       <Route component={NotFound} />
     </Switch>
   );

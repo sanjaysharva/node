@@ -237,12 +237,14 @@ export default function Navbar() {
             </DropdownMenu>
           ) : (
             <Button
-              onClick={loginWithDiscord}
+              asChild
               className="bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
               data-testid="button-login"
             >
-              <i className="fab fa-discord mr-2 text-white"></i>
-              Login
+              <Link href="/login">
+                <i className="fab fa-discord mr-2 text-white"></i>
+                Login
+              </Link>
             </Button>
           )}
         </div>

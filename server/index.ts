@@ -15,6 +15,10 @@ import {
 declare module 'express-session' {
   interface SessionData {
     userId?: string;
+    rememberMe?: boolean;
+    loginTime?: number;
+    oauthState?: string;
+    pendingRememberMe?: boolean;
   }
 }
 
@@ -37,19 +41,29 @@ const app = express();
   app.use(errorHandler);
 
 
-// Session middleware
+// Require strong session secret in production
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('SESSION_SECRET environment variable is required in production');
+}
+
+// Configure trust proxy for proper protocol detection
+app.set('trust proxy', 1);
+
+// Session middleware with secure persistent login support
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Set to true in production with HTTPS
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for better persistence
-    httpOnly: true // Better security
-  }
+    secure: process.env.NODE_ENV === 'production', // Use HTTPS in production
+    maxAge: 7 * 24 * 60 * 60 * 1000, // Default: 7 days for regular sessions
+    httpOnly: true, // Better security - prevents XSS attacks
+    sameSite: 'lax' // CSRF protection
+  },
+  rolling: true // Extend session on each request
 }));
 
-// User authentication middleware
+// Enhanced user authentication middleware with auto-login
 app.use(async (req, res, next) => {
   if (req.session?.userId) {
     try {
@@ -62,9 +76,26 @@ app.use(async (req, res, next) => {
           avatar: user.avatar ?? undefined,
           isAdmin: user.isAdmin ?? undefined
         };
+        
+        // Update last activity for security tracking
+        if (!req.session.loginTime) {
+          req.session.loginTime = Date.now();
+        }
+        
+        // Extend session for persistent login if remember me was enabled
+        if (req.session.rememberMe) {
+          req.session.cookie.maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days for remember me
+        } else {
+          req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days for regular sessions
+        }
+      } else {
+        // User no longer exists, clear session
+        req.session.destroy(() => {});
       }
     } catch (error) {
       console.error('Error loading user:', error);
+      // Clear invalid session on error
+      req.session.destroy(() => {});
     }
   }
   next();

@@ -65,32 +65,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/discord", (req, res) => {
     const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
-    const redirectUri = `https://${req.get('host')}/api/auth/discord/callback`;
+    const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+    const redirectUri = `${protocol}://${req.get('host')}/api/auth/discord/callback`;
     const scope = 'identify email guilds';
+    const rememberMe = req.query.remember === 'true';
 
     console.log('Discord OAuth - Client ID:', clientId);
     console.log('Discord OAuth - Redirect URI:', redirectUri);
+    console.log('Discord OAuth - Remember Me:', rememberMe);
 
     if (!clientId) {
       return res.status(500).json({ message: "Discord client ID not configured" });
     }
 
-    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+    // Generate secure random state for CSRF protection
+    const crypto = require('crypto');
+    const state = crypto.randomBytes(32).toString('hex');
+
+    // Store both remember me preference and OAuth state in session
+    const session = req.session as any;
+    session.pendingRememberMe = rememberMe;
+    session.oauthState = state;
+
+    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
 
     res.redirect(discordAuthUrl);
   });
 
   app.get("/api/auth/discord/callback", async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
 
     if (!code) {
       return res.status(400).json({ message: "Authorization code not provided" });
     }
 
+    // Validate OAuth state parameter for CSRF protection
+    const session = req.session as any;
+    if (!state || !session.oauthState || state !== session.oauthState) {
+      console.error('OAuth state validation failed:', { received: state, expected: session.oauthState });
+      return res.status(400).json({ message: "Invalid OAuth state - possible CSRF attack" });
+    }
+
+    // Clear used OAuth state
+    delete session.oauthState;
+
     try {
       const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
       const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-      const redirectUri = `https://${req.get('host')}/api/auth/discord/callback`;
+      const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+      const redirectUri = `${protocol}://${req.get('host')}/api/auth/discord/callback`;
 
       if (!clientSecret) {
         console.error('Discord client secret not configured');
@@ -172,12 +195,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Set user in session
-      const session = req.session as any;
-      session.userId = user?.id;
+      // Regenerate session ID to prevent session fixation attacks
+      const rememberMe = req.session.pendingRememberMe || false;
+      
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Session regeneration failed:', err);
+          return res.status(500).json({ message: "Authentication failed - session error" });
+        }
 
-      // Redirect to home
-      res.redirect('/?auth=success');
+        // Set user in session with persistent login settings
+        const session = req.session as any;
+        session.userId = user?.id;
+        session.loginTime = Date.now();
+        session.rememberMe = rememberMe;
+        
+        // Set appropriate session duration based on remember me preference
+        if (session.rememberMe) {
+          session.cookie.maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days for remember me
+          console.log('User logged in with persistent session (90 days)');
+        } else {
+          session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days for regular session
+          console.log('User logged in with regular session (7 days)');
+        }
+        
+        // Save session and redirect
+        session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Session save failed:', saveErr);
+            return res.status(500).json({ message: "Authentication failed - session save error" });
+          }
+          
+          // Redirect to home
+          res.redirect('/?auth=success');
+        });
+      });
+
 
     } catch (error) {
       console.error('Discord OAuth error:', error);
