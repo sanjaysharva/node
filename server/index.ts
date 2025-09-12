@@ -60,7 +60,8 @@ app.use(session({
     httpOnly: true, // Better security - prevents XSS attacks
     sameSite: 'lax' // CSRF protection
   },
-  rolling: true // Extend session on each request
+  rolling: true, // Extend session on each request
+  name: 'smart-serve-session' // Custom session name
 }));
 
 // Enhanced user authentication middleware with auto-login

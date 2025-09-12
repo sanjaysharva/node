@@ -82,14 +82,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Generate secure random state for CSRF protection
     const state = crypto.randomBytes(32).toString('hex');
 
-    // Store both remember me preference and OAuth state in session
-    const session = req.session as any;
-    session.pendingRememberMe = rememberMe;
-    session.oauthState = state;
+    // Save session first, then set OAuth state
+    req.session.save((saveErr: any) => {
+      if (saveErr) {
+        console.error('Session save error before OAuth:', saveErr);
+        return res.status(500).json({ message: "Session error" });
+      }
 
-    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
+      // Store both remember me preference and OAuth state in session
+      const session = req.session as any;
+      session.pendingRememberMe = rememberMe;
+      session.oauthState = state;
 
-    res.redirect(discordAuthUrl);
+      // Save again after setting OAuth state
+      req.session.save((secondSaveErr: any) => {
+        if (secondSaveErr) {
+          console.error('Session save error after setting OAuth state:', secondSaveErr);
+          return res.status(500).json({ message: "Session error" });
+        }
+
+        const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
+
+        res.redirect(discordAuthUrl);
+      });
+    });
   });
 
   app.get("/api/auth/discord/callback", async (req, res) => {
@@ -1308,6 +1324,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error completing join server quest:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Check invites quest endpoint
+  app.post("/api/quests/check-invites", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
+      const serverGuildId = "1372226433191247983"; // Your server's guild ID
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        // Get invite data from Discord API
+        const invitesResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/invites`, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
+
+        if (!invitesResponse.ok) {
+          return res.status(500).json({ message: "Failed to fetch invite data" });
+        }
+
+        const invites = await invitesResponse.json();
+        
+        // Find invites created by this user
+        const userInvites = invites.filter((invite: any) => invite.inviter && invite.inviter.id === user.discordId);
+        
+        // Calculate total uses
+        const totalUses = userInvites.reduce((sum: number, invite: any) => sum + (invite.uses || 0), 0);
+        const lastInviteCount = questData.lastInviteCount || 0;
+        const newInvites = Math.max(0, totalUses - lastInviteCount);
+
+        if (newInvites > 0) {
+          const coinsEarned = newInvites * 3; // 3 coins per invite
+          const newCoins = (user.coins || 0) + coinsEarned;
+          
+          const newMetadata = {
+            ...questData,
+            lastInviteCount: totalUses
+          };
+
+          await db.update(users)
+            .set({ 
+              coins: newCoins,
+              metadata: JSON.stringify(newMetadata)
+            })
+            .where(eq(users.id, req.user.id));
+
+          console.log(`User ${user.discordId} earned ${coinsEarned} coins for ${newInvites} new invites (new balance: ${newCoins})`);
+          res.json({ newInvites, coinsEarned, totalCoins: newCoins });
+        } else {
+          res.json({ newInvites: 0, coinsEarned: 0, totalCoins: user.coins || 0 });
+        }
+      } catch (discordError) {
+        console.error("Discord invite check error:", discordError);
+        return res.status(500).json({ message: "Failed to check invites" });
+      }
+    } catch (error) {
+      console.error("Error checking invites:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

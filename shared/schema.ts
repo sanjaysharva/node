@@ -19,7 +19,7 @@ export const users = pgTable("users", {
   referralCount: integer("referral_count").default(0),
   questsClaimed: text("quests_claimed").array().default([]),
   lastLoginDate: timestamp("last_login_date"),
-  metadata: text("metadata"), // Store quest data as JSON string
+  metadata: text("metadata"), // Store quest data as JSON string - includes questCompletions, lastDailyReward, lastInviteCount
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

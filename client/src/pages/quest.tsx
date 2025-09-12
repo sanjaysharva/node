@@ -435,9 +435,10 @@ export default function Quest() {
                             joinServerMutation.mutate();
                           } else {
                             window.open(quest.link, '_blank', 'noopener,noreferrer');
+                            // Refresh server status after user potentially joins
                             setTimeout(() => {
                               refetchServerStatus();
-                            }, 15000);
+                            }, 5000);
                           }
                         }
                       }}
@@ -451,10 +452,15 @@ export default function Quest() {
                         </>
                       ) : joinServerMutation.isPending ? (
                         "Verifying..."
+                      ) : serverStatus?.inServer ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Claim Reward
+                        </>
                       ) : (
                         <>
                           <ExternalLink className="w-4 h-4 mr-2" />
-                          {quest.action}
+                          Join Server
                         </>
                       )}
                     </Button>
@@ -518,15 +524,23 @@ export default function Quest() {
                   )}
 
                   {quest.id === "daily-reward" && (
-                    <Button
-                      className={`w-full ${canClaimDaily() ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 cursor-not-allowed'}`}
-                      disabled={!canClaimDaily() || dailyRewardMutation.isPending}
-                      onClick={() => canClaimDaily() && dailyRewardMutation.mutate()}
-                      data-testid="button-daily-reward"
-                    >
-                      <Gift className="w-4 h-4 mr-2" />
-                      {dailyRewardMutation.isPending ? "Claiming..." : quest.action}
-                    </Button>
+                    <div className="space-y-2">
+                      {!canClaimDaily() && timeRemaining && (
+                        <div className="text-xs text-center text-muted-foreground bg-amber-500/10 border border-amber-500/20 p-2 rounded">
+                          <Clock className="w-3 h-3 inline mr-1" />
+                          Next claim in: {timeRemaining.hours}h {timeRemaining.minutes}m
+                        </div>
+                      )}
+                      <Button
+                        className={`w-full ${canClaimDaily() ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 cursor-not-allowed'}`}
+                        disabled={!canClaimDaily() || dailyRewardMutation.isPending}
+                        onClick={() => canClaimDaily() && dailyRewardMutation.mutate()}
+                        data-testid="button-daily-reward"
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        {dailyRewardMutation.isPending ? "Claiming..." : canClaimDaily() ? "Claim Reward" : "Wait 24h"}
+                      </Button>
+                    </div>
                   )}
 
                   {quest.id === "boost-server" && (
