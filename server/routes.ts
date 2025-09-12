@@ -17,7 +17,9 @@ import {
   insertEventSchema, 
   insertAdSchema, 
   insertServerJoinSchema,
-  insertSlideshowSchema
+  insertSlideshowSchema,
+  insertPartnershipSchema, // Import the new schema
+  insertTemplateSchema // Import the new schema
 } from "@shared/schema";
 import { z } from "zod";
 import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm";
@@ -81,13 +83,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Generate secure random state for CSRF protection
     const state = crypto.randomBytes(32).toString('hex');
-    
+
     // Store session data immediately without callbacks
     const session = req.session as any;
     session.pendingRememberMe = rememberMe;
     session.oauthState = state;
     session.oauthTimestamp = Date.now(); // Add timestamp for debugging
-    
+
     console.log('Storing OAuth state in session:', { state });
 
     // Cookie-session automatically saves changes
@@ -112,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Enhanced session state validation
     const session = req.session as any;
-    
+
     console.log('Session state check:', {
       receivedState: state ? state.toString().substring(0, 8) + '...' : 'missing',
       sessionState: session.oauthState ? session.oauthState.substring(0, 8) + '...' : 'missing',
@@ -144,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     console.log('OAuth state validation successful');
-    
+
     // Clear used OAuth state
     delete session.oauthState;
     delete session.oauthTimestamp;
@@ -237,12 +239,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set user in session - cookie-session handles persistence automatically
       const rememberMe = req.session?.pendingRememberMe || false;
-      
+
       if (req.session) {
         req.session.userId = user?.id;
         req.session.loginTime = Date.now();
         req.session.rememberMe = rememberMe;
-        
+
         // Clear OAuth state
         delete req.session.oauthState;
         delete req.session.oauthTimestamp;
@@ -250,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log('User logged in with persistent session (1 year)');
-      
+
       // Redirect to home - cookie-session automatically saves
       res.redirect('/?auth=success');
 
@@ -1157,7 +1159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const botToken = process.env.DISCORD_BOT_TOKEN;
       const serverGuildId = "1371746742768500818"; // Your server's guild ID
-      
+
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
       }
@@ -1167,15 +1169,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const apiUrl = `https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`;
         console.log(`Checking server membership: ${apiUrl}`);
         console.log(`Discord ID: ${user.discordId}, Guild: ${serverGuildId}`);
-        
+
         const memberResponse = await fetch(apiUrl, {
           headers: { 'Authorization': `Bot ${botToken}` },
         });
 
         console.log(`Discord API Response Status: ${memberResponse.status}`);
-        
+
         const inServer = memberResponse.ok;
-        
+
         // Check if user is boosting
         let isBoosting = false;
         if (inServer) {
@@ -1189,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         console.log(`Server Status Result: inServer=${inServer}, isBoosting=${isBoosting}`);
-        
+
         res.json({
           inServer,
           isBoosting,
@@ -1297,7 +1299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify user is actually in the Discord server
       const botToken = process.env.DISCORD_BOT_TOKEN;
       const serverGuildId = "1371746742768500818"; // Your server's guild ID
-      
+
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
       }
@@ -1366,7 +1368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const serverGuildId = "1371746742768500818"; // Your server's guild ID
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      
+
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
       }
@@ -1382,10 +1384,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const invites = await invitesResponse.json();
-        
+
         // Find invites created by this user
         const userInvites = invites.filter((invite: any) => invite.inviter && invite.inviter.id === user.discordId);
-        
+
         // Calculate total uses
         const totalUses = userInvites.reduce((sum: number, invite: any) => sum + (invite.uses || 0), 0);
         const lastInviteCount = (questData as any).lastInviteCount || 0;
@@ -1394,7 +1396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (newInvites > 0) {
           const coinsEarned = newInvites * 3; // 3 coins per invite
           const newCoins = (user.coins || 0) + coinsEarned;
-          
+
           const newMetadata = {
             ...questData,
             lastInviteCount: totalUses
@@ -1452,7 +1454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify user is actually boosting the Discord server
       const botToken = process.env.DISCORD_BOT_TOKEN;
       const serverGuildId = "1371746742768500818"; // Your server's guild ID
-      
+
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
       }
@@ -1855,17 +1857,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create partnership
   app.post("/api/partnerships", requireAuth, async (req, res) => {
     try {
-      const partnershipData = req.body;
-      const partnership = await storage.createPartnership({
-        ...partnershipData,
+      const validatedData = insertPartnershipSchema.parse({
+        ...req.body,
         ownerId: req.user!.id,
       });
-      res.status(201).json(partnership);
+
+      const partnership = await storage.createPartnership(validatedData);
+      console.log("Partnership created successfully:", partnership.id);
+      res.json({ success: true, partnership });
     } catch (error) {
-      console.error("Error creating partnership:", error);
-      res.status(500).json({ message: "Failed to create partnership" });
+      console.error("Partnership creation error:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to create partnership" 
+      });
     }
   });
 
@@ -1899,15 +1906,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/templates", requireAuth, async (req, res) => {
     try {
-      const templateData = req.body;
-      const template = await storage.createServerTemplate({
-        ...templateData,
+      const templateData = insertTemplateSchema.parse({
+        ...req.body,
         ownerId: req.user!.id,
         templateLink: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       });
+      const template = await storage.createServerTemplate(templateData);
       res.status(201).json(template);
     } catch (error) {
       console.error("Error creating template:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
       res.status(500).json({ message: "Failed to create template" });
     }
   });

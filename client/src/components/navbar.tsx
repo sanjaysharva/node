@@ -148,10 +148,6 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 rounded-full">
-                <Coins className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium">{user?.coins || 0} coins</span>
-              </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -170,8 +166,15 @@ export default function Navbar() {
                     <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuContent align="end" forceMount className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user?.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/profile" data-testid="button-profile">
@@ -216,6 +219,18 @@ export default function Navbar() {
                   <DropdownMenuItem onClick={() => navigate('/join-members')}>
                     <Users className="mr-2 h-4 w-4" />
                     <span>Join Members</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/add-partnership')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>Create Partnership</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/add-template')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>Create Template</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/jobs')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Job Board</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem data-testid="button-settings">

@@ -139,24 +139,26 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  constructor(private db: any) {} // Accept db instance in constructor
+
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await this.db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByDiscordId(discordId: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.discordId, discordId));
+    const [user] = await this.db.select().from(users).where(eq(users.discordId, discordId));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    const [user] = await this.db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
-    const [updatedUser] = await db.update(users).set(user).where(eq(users.id, id)).returning();
+    const [updatedUser] = await this.db.update(users).set(user).where(eq(users.id, id)).returning();
     return updatedUser || undefined;
   }
 
@@ -174,7 +176,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Build complete query with all conditions
-    const baseQuery = db.select().from(servers);
+    const baseQuery = this.db.select().from(servers);
     const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const withOrder = withWhere.orderBy(desc(servers.memberCount));
     const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
@@ -184,32 +186,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPopularServers(limit = 6): Promise<Server[]> {
-    return await db.select().from(servers)
+    return await this.db.select().from(servers)
       .orderBy(desc(servers.memberCount))
       .limit(limit);
   }
 
   async getServer(id: string): Promise<Server | undefined> {
-    const [server] = await db.select().from(servers).where(eq(servers.id, id));
+    const [server] = await this.db.select().from(servers).where(eq(servers.id, id));
     return server || undefined;
   }
 
   async getServersByOwner(ownerId: string): Promise<Server[]> {
-    return await db.select().from(servers).where(eq(servers.ownerId, ownerId));
+    return await this.db.select().from(servers).where(eq(servers.ownerId, ownerId));
   }
 
   async createServer(insertServer: InsertServer): Promise<Server> {
-    const [server] = await db.insert(servers).values(insertServer).returning();
+    const [server] = await this.db.insert(servers).values(insertServer).returning();
     return server;
   }
 
   async updateServer(id: string, server: Partial<InsertServer>): Promise<Server | undefined> {
-    const [updatedServer] = await db.update(servers).set({ ...server, updatedAt: new Date() }).where(eq(servers.id, id)).returning();
+    const [updatedServer] = await this.db.update(servers).set({ ...server, updatedAt: new Date() }).where(eq(servers.id, id)).returning();
     return updatedServer || undefined;
   }
 
   async deleteServer(id: string): Promise<boolean> {
-    const result = await db.delete(servers).where(eq(servers.id, id));
+    const result = await this.db.delete(servers).where(eq(servers.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 
@@ -227,7 +229,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Build complete query with all conditions
-    const baseQuery = db.select().from(bots);
+    const baseQuery = this.db.select().from(bots);
     const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const withOrder = withWhere.orderBy(desc(bots.serverCount));
     const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
@@ -237,32 +239,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPopularBots(limit = 6): Promise<Bot[]> {
-    return await db.select().from(bots)
+    return await this.db.select().from(bots)
       .orderBy(desc(bots.serverCount))
       .limit(limit);
   }
 
   async getBot(id: string): Promise<Bot | undefined> {
-    const [bot] = await db.select().from(bots).where(eq(bots.id, id));
+    const [bot] = await this.db.select().from(bots).where(eq(bots.id, id));
     return bot || undefined;
   }
 
   async getBotsByOwner(ownerId: string): Promise<Bot[]> {
-    return await db.select().from(bots).where(eq(bots.ownerId, ownerId));
+    return await this.db.select().from(bots).where(eq(bots.ownerId, ownerId));
   }
 
   async createBot(insertBot: InsertBot): Promise<Bot> {
-    const [bot] = await db.insert(bots).values(insertBot).returning();
+    const [bot] = await this.db.insert(bots).values(insertBot).returning();
     return bot;
   }
 
   async updateBot(id: string, bot: Partial<InsertBot>): Promise<Bot | undefined> {
-    const [updatedBot] = await db.update(bots).set({ ...bot, updatedAt: new Date() }).where(eq(bots.id, id)).returning();
+    const [updatedBot] = await this.db.update(bots).set({ ...bot, updatedAt: new Date() }).where(eq(bots.id, id)).returning();
     return updatedBot || undefined;
   }
 
   async deleteBot(id: string): Promise<boolean> {
-    const result = await db.delete(bots).where(eq(bots.id, id));
+    const result = await this.db.delete(bots).where(eq(bots.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 
@@ -274,51 +276,51 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(ads.position, position));
     }
 
-    return await db.select().from(ads)
+    return await this.db.select().from(ads)
       .where(and(...conditions))
       .orderBy(desc(ads.createdAt));
   }
 
   async getAd(id: string): Promise<Ad | undefined> {
-    const [ad] = await db.select().from(ads).where(eq(ads.id, id));
+    const [ad] = await this.db.select().from(ads).where(eq(ads.id, id));
     return ad || undefined;
   }
 
   async createAd(insertAd: InsertAd): Promise<Ad> {
-    const [ad] = await db.insert(ads).values(insertAd).returning();
+    const [ad] = await this.db.insert(ads).values(insertAd).returning();
     return ad;
   }
 
   async updateAd(id: string, ad: Partial<InsertAd>): Promise<Ad | undefined> {
-    const [updatedAd] = await db.update(ads).set({ ...ad, updatedAt: new Date() }).where(eq(ads.id, id)).returning();
+    const [updatedAd] = await this.db.update(ads).set({ ...ad, updatedAt: new Date() }).where(eq(ads.id, id)).returning();
     return updatedAd || undefined;
   }
 
   async deleteAd(id: string): Promise<boolean> {
-    const result = await db.delete(ads).where(eq(ads.id, id));
+    const result = await this.db.delete(ads).where(eq(ads.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 
   // Wallet operations
   async getAdvertisingServers(): Promise<Server[]> {
-    return await db.select().from(servers)
+    return await this.db.select().from(servers)
       .where(eq(servers.isAdvertising, true))
       .orderBy(desc(servers.memberCount));
   }
 
   async createServerJoin(join: InsertServerJoin): Promise<ServerJoin> {
-    const [serverJoin] = await db.insert(serverJoins).values(join).returning();
+    const [serverJoin] = await this.db.insert(serverJoins).values(join).returning();
     return serverJoin;
   }
 
   async hasUserJoinedServer(userId: string, serverId: string): Promise<boolean> {
-    const [join] = await db.select().from(serverJoins)
+    const [join] = await this.db.select().from(serverJoins)
       .where(and(eq(serverJoins.userId, userId), eq(serverJoins.serverId, serverId)));
     return !!join;
   }
 
   async updateUserCoins(userId: string, coins: number): Promise<User | undefined> {
-    const [updatedUser] = await db.update(users)
+    const [updatedUser] = await this.db.update(users)
       .set({ coins })
       .where(eq(users.id, userId))
       .returning();
@@ -329,7 +331,7 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return undefined;
 
-    const [updatedUser] = await db.update(users)
+    const [updatedUser] = await this.db.update(users)
       .set({ inviteCount: (user.inviteCount || 0) + 1 })
       .where(eq(users.id, userId))
       .returning();
@@ -340,7 +342,7 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return undefined;
 
-    const [updatedUser] = await db.update(users)
+    const [updatedUser] = await this.db.update(users)
       .set({ referralCount: (user.referralCount || 0) + 1 })
       .where(eq(users.id, userId))
       .returning();
@@ -367,7 +369,7 @@ export class DatabaseStorage implements IStorage {
       // If daysDiff > 1, streak resets to 1
     }
 
-    const [updatedUser] = await db.update(users)
+    const [updatedUser] = await this.db.update(users)
       .set({
         dailyLoginStreak: newStreak,
         lastLoginDate: today
@@ -379,7 +381,7 @@ export class DatabaseStorage implements IStorage {
 
   // Handle server leave and coin deduction
   async handleServerLeave(userId: string, serverId: string): Promise<{ coinsDeducted: number; newBalance: number } | null> {
-    return await db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx) => {
       // Find the server join record
       const [serverJoin] = await tx.select().from(serverJoins)
         .where(and(
@@ -397,7 +399,7 @@ export class DatabaseStorage implements IStorage {
       const daysDifference = Math.floor((leaveDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
 
       let coinsToDeduct = 0;
-      
+
       // If user leaves within 3 days, deduct 0.75 coins
       if (daysDifference < 3) {
         coinsToDeduct = 0.75; // This will be stored as integer (75 cents)
@@ -444,7 +446,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(slideshows.page, page));
     }
 
-    return await db.select().from(slideshows)
+    return await this.db.select().from(slideshows)
       .where(and(...conditions))
       .orderBy(slideshows.position, desc(slideshows.createdAt));
   }
@@ -462,7 +464,7 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    const baseQuery = db.select().from(events);
+    const baseQuery = this.db.select().from(events);
     const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const withOrder = withWhere.orderBy(desc(events.startDate));
     const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
@@ -472,7 +474,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
-    const [event] = await db.insert(events).values(insertEvent).returning();
+    const [event] = await this.db.insert(events).values(insertEvent).returning();
     return event;
   }
 
@@ -486,7 +488,7 @@ export class DatabaseStorage implements IStorage {
   }): Promise<{ newBalance: number; advertisingComplete: boolean }> {
     const { userId, serverId, coinsToAward } = params;
 
-    return await db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx) => {
       // Fetch current user and server state inside transaction for consistency
       const [currentUser] = await tx.select({ coins: users.coins }).from(users)
         .where(eq(users.id, userId));
@@ -561,7 +563,7 @@ export class DatabaseStorage implements IStorage {
 
   // Bump functionality methods
   async getServerByDiscordId(discordId: string): Promise<Server | null> {
-    const result = await db
+    const result = await this.db
       .select()
       .from(servers)
       .where(eq(servers.discordId, discordId))
@@ -570,7 +572,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setBumpChannel(guildId: string, channelId: string): Promise<void> {
-    await db
+    await this.db
       .insert(bumpChannels)
       .values({ guildId, channelId })
       .onConflictDoUpdate({
@@ -580,13 +582,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeBumpChannel(guildId: string): Promise<void> {
-    await db
+    await this.db
       .delete(bumpChannels)
       .where(eq(bumpChannels.guildId, guildId));
   }
 
   async getBumpChannel(guildId: string): Promise<BumpChannel | null> {
-    const result = await db
+    const result = await this.db
       .select()
       .from(bumpChannels)
       .where(eq(bumpChannels.guildId, guildId))
@@ -595,11 +597,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBumpChannels(): Promise<BumpChannel[]> {
-    return await db.select().from(bumpChannels);
+    return await this.db.select().from(bumpChannels);
   }
 
   async getLastBump(guildId: string): Promise<Date | null> {
-    const result = await db
+    const result = await this.db
       .select({ lastBumpAt: servers.lastBumpAt })
       .from(servers)
       .where(eq(servers.discordId, guildId))
@@ -608,14 +610,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLastBump(guildId: string): Promise<void> {
-    await db
+    await this.db
       .update(servers)
       .set({ lastBumpAt: new Date() })
       .where(eq(servers.discordId, guildId));
   }
 
   async updateServerBumpSettings(serverId: string, bumpEnabled: boolean): Promise<void> {
-    await db
+    await this.db
       .update(servers)
       .set({ bumpEnabled })
       .where(eq(servers.id, serverId));
@@ -623,7 +625,7 @@ export class DatabaseStorage implements IStorage {
 
   // Comments
   async getCommentsForServer(serverId: string, options: { limit: number; offset: number }) {
-    const result = await db
+    const result = await this.db
       .select({
         id: comments.id,
         content: comments.content,
@@ -650,7 +652,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createComment(data: { serverId: string; userId: string; content: string; parentId?: string | null }) {
-    const [comment] = await db
+    const [comment] = await this.db
       .insert(comments)
       .values({
         serverId: data.serverId,
@@ -664,7 +666,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getComment(commentId: string) {
-    const [comment] = await db
+    const [comment] = await this.db
       .select()
       .from(comments)
       .where(eq(comments.id, commentId));
@@ -673,24 +675,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteComment(commentId: string): Promise<void> {
-    await db.delete(comments).where(eq(comments.id, commentId));
+    await this.db.delete(comments).where(eq(comments.id, commentId));
   }
 
   async toggleCommentLike(commentId: string, userId: string) {
     // Check if user already liked the comment
-    const [existingLike] = await db
+    const [existingLike] = await this.db
       .select()
       .from(commentLikes)
       .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
 
     if (existingLike) {
       // Remove like
-      await db
+      await this.db
         .delete(commentLikes)
         .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
 
       // Decrement like count
-      await db
+      await this.db
         .update(comments)
         .set({ likes: sql`${comments.likes} - 1` })
         .where(eq(comments.id, commentId));
@@ -698,13 +700,13 @@ export class DatabaseStorage implements IStorage {
       return { liked: false };
     } else {
       // Add like
-      await db.insert(commentLikes).values({
+      await this.db.insert(commentLikes).values({
         commentId,
         userId,
       });
 
       // Increment like count
-      await db
+      await this.db
         .update(comments)
         .set({ likes: sql`${comments.likes} + 1` })
         .where(eq(comments.id, commentId));
@@ -714,7 +716,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async incrementServerCommentCount(serverId: string): Promise<void> {
-    await db
+    await this.db
       .update(servers)
       .set({ totalComments: sql`${servers.totalComments} + 1` })
       .where(eq(servers.id, serverId));
@@ -723,7 +725,7 @@ export class DatabaseStorage implements IStorage {
   // Voting
   async voteOnServer(serverId: string, userId: string, voteType: 'up' | 'down') {
     // Check if user already voted
-    const [existingVote] = await db
+    const [existingVote] = await this.db
       .select()
       .from(votes)
       .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
@@ -731,18 +733,18 @@ export class DatabaseStorage implements IStorage {
     if (existingVote) {
       if (existingVote.voteType === voteType) {
         // Remove vote if same type
-        await db
+        await this.db
           .delete(votes)
           .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
 
         // Update server vote counts
         if (voteType === 'up') {
-          await db
+          await this.db
             .update(servers)
             .set({ upvotes: sql`${servers.upvotes} - 1` })
             .where(eq(servers.id, serverId));
         } else {
-          await db
+          await this.db
             .update(servers)
             .set({ downvotes: sql`${servers.downvotes} - 1` })
             .where(eq(servers.id, serverId));
@@ -751,14 +753,14 @@ export class DatabaseStorage implements IStorage {
         return { voteType: null };
       } else {
         // Change vote type
-        await db
+        await this.db
           .update(votes)
           .set({ voteType })
           .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
 
         // Update server vote counts
         if (voteType === 'up') {
-          await db
+          await this.db
             .update(servers)
             .set({
               upvotes: sql`${servers.upvotes} + 1`,
@@ -766,7 +768,7 @@ export class DatabaseStorage implements IStorage {
             })
             .where(eq(servers.id, serverId));
         } else {
-          await db
+          await this.db
             .update(servers)
             .set({
               upvotes: sql`${servers.upvotes} - 1`,
@@ -779,7 +781,7 @@ export class DatabaseStorage implements IStorage {
       }
     } else {
       // Create new vote
-      await db.insert(votes).values({
+      await this.db.insert(votes).values({
         serverId,
         userId,
         voteType,
@@ -787,12 +789,12 @@ export class DatabaseStorage implements IStorage {
 
       // Update server vote counts
       if (voteType === 'up') {
-        await db
+        await this.db
           .update(servers)
           .set({ upvotes: sql`${servers.upvotes} + 1` })
           .where(eq(servers.id, serverId));
       } else {
-        await db
+        await this.db
           .update(servers)
           .set({ downvotes: sql`${servers.downvotes} + 1` })
           .where(eq(servers.id, serverId));
@@ -803,7 +805,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserVoteStatus(serverId: string, userId: string): Promise<{ voteType: 'up' | 'down' | null }> {
-    const [vote] = await db
+    const [vote] = await this.db
       .select()
       .from(votes)
       .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
@@ -818,62 +820,78 @@ export class DatabaseStorage implements IStorage {
     limit: number;
     offset: number;
   }) {
-    const conditions = [];
-    
-    if (options.search) {
-      conditions.push(or(
-        ilike(partnerships.title, `%${options.search}%`),
-        ilike(partnerships.description, `%${options.search}%`),
-        ilike(partnerships.serverName, `%${options.search}%`)
-      ));
-    }
-    
-    if (options.type && options.type !== 'all') {
-      conditions.push(eq(partnerships.partnershipType, options.type));
-    }
+    try {
+      let query = this.db
+        .select({
+          id: partnerships.id,
+          title: partnerships.title,
+          description: partnerships.description,
+          serverName: partnerships.serverName,
+          serverIcon: partnerships.serverIcon,
+          memberCount: partnerships.memberCount,
+          partnershipType: partnerships.partnershipType,
+          requirements: partnerships.requirements,
+          benefits: partnerships.benefits,
+          contactInfo: partnerships.contactInfo,
+          discordLink: partnerships.discordLink,
+          verified: partnerships.verified,
+          featured: partnerships.featured,
+          createdAt: partnerships.createdAt,
+          ownerUsername: users.username,
+        })
+        .from(partnerships)
+        .leftJoin(users, eq(partnerships.ownerId, users.id))
+        .orderBy(desc(partnerships.createdAt))
+        .limit(options.limit)
+        .offset(options.offset);
 
-    const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+      if (options.search) {
+        query = query.where(
+          or(
+            ilike(partnerships.title, `%${options.search}%`),
+            ilike(partnerships.description, `%${options.search}%`),
+            ilike(partnerships.serverName, `%${options.search}%`)
+          )
+        );
+      }
 
-    return await db
-      .select({
-        id: partnerships.id,
-        title: partnerships.title,
-        description: partnerships.description,
-        serverName: partnerships.serverName,
-        serverIcon: partnerships.serverIcon,
-        memberCount: partnerships.memberCount,
-        partnershipType: partnerships.partnershipType,
-        requirements: partnerships.requirements,
-        benefits: partnerships.benefits,
-        contactInfo: partnerships.contactInfo,
-        discordLink: partnerships.discordLink,
-        verified: partnerships.verified,
-        featured: partnerships.featured,
-        createdAt: partnerships.createdAt,
-        ownerUsername: users.username,
-      })
-      .from(partnerships)
-      .leftJoin(users, eq(partnerships.ownerId, users.id))
-      .where(whereCondition)
-      .orderBy(desc(partnerships.featured), desc(partnerships.createdAt))
-      .limit(options.limit)
-      .offset(options.offset);
+      if (options.type && options.type !== "all") {
+        query = query.where(eq(partnerships.partnershipType, options.type));
+      }
+
+      const results = await query;
+      return results;
+    } catch (error) {
+      console.error("Database error fetching partnerships:", error);
+      return [];
+    }
   }
 
   async createPartnership(partnershipData: any) {
-    const [newPartnership] = await db
-      .insert(partnerships)
-      .values(partnershipData)
-      .returning();
-    return newPartnership;
+    try {
+      const [partnership] = await this.db
+        .insert(partnerships)
+        .values({
+          ...partnershipData,
+          id: crypto.randomUUID(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      return partnership;
+    } catch (error) {
+      console.error("Database error creating partnership:", error);
+      throw new Error("Failed to create partnership in database");
+    }
   }
 
   async analyzePartnershipServer(serverLink: string) {
     // Mock server analysis for now - in real implementation, this would use Discord API
     // Extract invite code from the server link
-    const inviteCode = serverLink.match(/discord\.gg\/([a-zA-Z0-9]+)/)?.[1] || 
+    const inviteCode = serverLink.match(/discord\.gg\/([a-zA-Z0-9]+)/)?.[1] ||
                       serverLink.match(/discordapp\.com\/invite\/([a-zA-Z0-9]+)/)?.[1];
-    
+
     if (!inviteCode) {
       throw new Error('Invalid Discord invite link');
     }
@@ -953,18 +971,18 @@ export class DatabaseStorage implements IStorage {
 
   // Review operations implementation
   async getReview(serverId: string, userId: string): Promise<any | undefined> {
-    const [review] = await db.select().from(reviews).where(and(eq(reviews.serverId, serverId), eq(reviews.userId, userId))).limit(1);
+    const [review] = await this.db.select().from(reviews).where(and(eq(reviews.serverId, serverId), eq(reviews.userId, userId))).limit(1);
     return review;
   }
 
   async createReview(reviewData: { serverId: string; userId: string; rating: number; review?: string }): Promise<any> {
-    const [newReview] = await db.insert(reviews).values(reviewData).returning();
+    const [newReview] = await this.db.insert(reviews).values(reviewData).returning();
     await this.updateServerAverageRating(reviewData.serverId);
     return newReview;
   }
 
   async updateReview(reviewId: string, reviewData: { rating?: number; review?: string }): Promise<any | undefined> {
-    const [updatedReview] = await db.update(reviews).set({ ...reviewData, updatedAt: sql`now()` }).where(eq(reviews.id, reviewId)).returning();
+    const [updatedReview] = await this.db.update(reviews).set({ ...reviewData, updatedAt: sql`now()` }).where(eq(reviews.id, reviewId)).returning();
     if (updatedReview) {
       await this.updateServerAverageRating(updatedReview.serverId);
     }
@@ -972,35 +990,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteReview(reviewId: string): Promise<void> {
-    const review = await db.select().from(reviews).where(eq(reviews.id, reviewId)).limit(1);
-    await db.delete(reviews).where(eq(reviews.id, reviewId));
+    const review = await this.db.select().from(reviews).where(eq(reviews.id, reviewId)).limit(1);
+    await this.db.delete(reviews).where(eq(reviews.id, reviewId));
     if (review[0]) {
       await this.updateServerAverageRating(review[0].serverId);
     }
   }
 
   async getReviewsForServer(serverId: string, options: { limit: number; offset: number }): Promise<any[]> {
-    return await db.select().from(reviews).where(eq(reviews.serverId, serverId))
+    return await this.db.select().from(reviews).where(eq(reviews.serverId, serverId))
       .orderBy(desc(reviews.createdAt))
       .limit(options.limit)
       .offset(options.offset);
   }
 
   async getReviewById(reviewId: string): Promise<any | undefined> {
-    const [review] = await db.select().from(reviews).where(eq(reviews.id, reviewId)).limit(1);
+    const [review] = await this.db.select().from(reviews).where(eq(reviews.id, reviewId)).limit(1);
     return review;
   }
 
   async updateServerAverageRating(serverId: string): Promise<void> {
-    const result = await db.select({
+    const result = await this.db.select({
       avgRating: sql<number>`AVG(${reviews.rating})`,
       count: sql<number>`COUNT(*)`
     }).from(reviews).where(eq(reviews.serverId, serverId));
-    
+
     const avgRating = result[0]?.avgRating || 0;
-    await db.update(servers).set({ 
+    await this.db.update(servers).set({
       averageRating: avgRating,
-      totalReviews: result[0]?.count || 0 
+      totalReviews: result[0]?.count || 0
     }).where(eq(servers.id, serverId));
   }
 
@@ -1014,7 +1032,7 @@ export class DatabaseStorage implements IStorage {
     status: string;
   }): Promise<any> {
     // Mock implementation - no support ticket table exists yet
-    return { 
+    return {
       id: `ticket_${Date.now()}`,
       ...ticketData,
       createdAt: new Date()
@@ -1043,4 +1061,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new DatabaseStorage(db);

@@ -116,13 +116,16 @@ export default function AddPartnership() {
       if (!response.ok) throw new Error("Failed to create partnership");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Partnership created:", data);
       toast({
         title: "Partnership created successfully",
         description: "Your partnership has been published and is now searchable.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/partnerships"] });
-      window.location.href = "/partnership";
+      setTimeout(() => {
+        window.location.href = "/partnership";
+      }, 1000);
     },
     onError: (error: Error) => {
       toast({
@@ -371,13 +374,13 @@ export default function AddPartnership() {
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
                       name="memberCount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Minimum Members Needed</FormLabel>
+                          <FormLabel>Minimum Members Required</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -389,7 +392,7 @@ export default function AddPartnership() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Minimum server size you're looking for in partnership
+                            Minimum server size needed for partnership
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -414,6 +417,31 @@ export default function AddPartnership() {
                             How interested servers can reach you
                           </FormDescription>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="joinEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col justify-end">
+                          <FormLabel>Join Enabled</FormLabel>
+                          <FormControl>
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                data-testid="switch-join-enabled"
+                              />
+                              <span className="text-sm">
+                                {field.value ? "Enabled" : "Disabled"}
+                              </span>
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Allow auto-joining to partnership
+                          </FormDescription>
                         </FormItem>
                       )}
                     />
@@ -515,38 +543,7 @@ export default function AddPartnership() {
                 </CardContent>
               </Card>
 
-              {/* Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Partnership Settings</CardTitle>
-                  <CardDescription>
-                    Configure how your partnership opportunity works
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="joinEnabled"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Enable Joining</FormLabel>
-                          <FormDescription>
-                            Allow other servers to automatically apply for partnership
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="switch-join-enabled"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+              
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-4">

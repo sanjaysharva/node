@@ -30,6 +30,7 @@ import AddPartnership from "@/pages/add-partnership";
 import ServerTemplates from "@/pages/server-templates";
 import AddTemplate from "@/pages/add-template";
 import Login from "@/pages/login";
+import { lazy } from "react";
 
 
 function Router() {
@@ -47,22 +48,9 @@ function Router() {
       <Route path="/join-members" component={JoinMembers} />
       <Route path="/store" component={Store} />
       <Route path="/quest" component={Quest} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/add-event" component={AddEvent} />
-      <Route path="/search" component={SearchPage} />
-      <Route path="/server/:serverId" component={ServerDetail} />
-      <Route path="/admin">
-          {user?.isAdmin ? <AdminPage /> : <NotFound />}
-        </Route>
-      <Route path="/blog" component={Blog} />
-      <Route path="/help-center" component={HelpCenter} />
-      <Route path="/terms-of-service" component={TermsOfService} />
-      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/partnership" component={Partnership} />
-      <Route path="/add-partnership" component={AddPartnership} />
       <Route path="/server-templates" component={ServerTemplates} />
-      <Route path="/add-template" component={AddTemplate} />
-      <Route path="/login" component={Login} />
+      <Route path="/jobs" component={lazy(() => import("./pages/jobs"))} />
       <Route component={NotFound} />
     </Switch>
   );
