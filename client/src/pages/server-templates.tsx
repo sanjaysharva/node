@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
@@ -18,8 +17,8 @@ interface ServerTemplate {
   description: string;
   category: string;
   previewImage: string;
-  channels: TemplateChannel[];
-  roles: TemplateRole[];
+  channels: string; // Changed to string to match JSON parsing
+  roles: string;    // Changed to string to match JSON parsing
   templateLink: string;
   downloads: number;
   rating: number;
@@ -29,6 +28,7 @@ interface ServerTemplate {
   createdAt: string;
 }
 
+// Interface for parsing channels and roles, kept for clarity within the map functions
 interface TemplateChannel {
   name: string;
   type: 'text' | 'voice' | 'category';
@@ -58,7 +58,7 @@ export default function ServerTemplates() {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
       if (selectedCategory !== "all") params.set("category", selectedCategory);
-      
+
       const response = await fetch(`/api/templates?${params}`);
       if (!response.ok) throw new Error("Failed to fetch templates");
       return response.json();
@@ -87,7 +87,7 @@ export default function ServerTemplates() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -100,8 +100,8 @@ export default function ServerTemplates() {
                 Ready-to-use Discord server templates with pre-configured channels and roles
               </p>
             </div>
-            
-            
+
+
           </div>
 
           {/* Search and Filters */}
@@ -157,8 +157,8 @@ export default function ServerTemplates() {
                   {/* Preview Image */}
                   <div className="relative h-48 bg-gradient-to-br from-purple-500/20 to-pink-500/20">
                     {template.previewImage ? (
-                      <img 
-                        src={template.previewImage} 
+                      <img
+                        src={template.previewImage}
                         alt={template.name}
                         className="w-full h-full object-cover"
                       />
@@ -201,31 +201,31 @@ export default function ServerTemplates() {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4 text-blue-400" />
-                        <span>{template.channels?.length || 0} Channels</span>
+                        <span>{JSON.parse(template.channels || '[]')?.length || 0} Channels</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-green-400" />
-                        <span>{template.roles?.length || 0} Roles</span>
+                        <span>{JSON.parse(template.roles || '[]')?.length || 0} Roles</span>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="flex-1"
                         onClick={() => setPreviewTemplate(template)}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Preview
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         className="flex-1"
                         onClick={() => copyTemplateLink(template.templateLink, template.name)}
                       >
@@ -233,7 +233,7 @@ export default function ServerTemplates() {
                         Copy Link
                       </Button>
                     </div>
-                    
+
                     <div className="text-xs text-muted-foreground text-center">
                       Use: <code>/addtemplate {template.templateLink}</code>
                     </div>
@@ -264,24 +264,23 @@ export default function ServerTemplates() {
 
       {/* Template Preview Modal */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">{previewTemplate?.name}</DialogTitle>
+            <DialogTitle>{previewTemplate?.name}</DialogTitle>
           </DialogHeader>
-          
           {previewTemplate && (
             <div className="space-y-6">
               <p className="text-muted-foreground">{previewTemplate.description}</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Channels Preview */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3 flex items-center">
                     <Hash className="w-5 h-5 mr-2 text-blue-400" />
-                    Channels ({previewTemplate.channels?.length || 0})
+                    Channels ({JSON.parse(previewTemplate.channels || '[]').length})
                   </h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {previewTemplate.channels?.map((channel, idx) => (
+                    {JSON.parse(previewTemplate.channels || '[]').map((channel: TemplateChannel, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 p-2 bg-muted/50 rounded">
                         {channel.type === 'category' ? (
                           <div className="flex items-center gap-2">
@@ -307,13 +306,13 @@ export default function ServerTemplates() {
                 <div>
                   <h3 className="text-lg font-semibold mb-3 flex items-center">
                     <Shield className="w-5 h-5 mr-2 text-green-400" />
-                    Roles ({previewTemplate.roles?.length || 0})
+                    Roles ({JSON.parse(previewTemplate.roles || '[]').length})
                   </h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {previewTemplate.roles?.map((role, idx) => (
+                    {JSON.parse(previewTemplate.roles || '[]').map((role: TemplateRole, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 p-2 bg-muted/50 rounded">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
+                        <div
+                          className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: role.color || '#99aab5' }}
                         ></div>
                         <span className="text-sm font-medium">{role.name}</span>
@@ -327,14 +326,16 @@ export default function ServerTemplates() {
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button 
+                <Button
                   className="flex-1"
-                  onClick={() => copyTemplateLink(previewTemplate.templateLink, previewTemplate.name)}
+                  onClick={() => {
+                    copyTemplateLink(previewTemplate.templateLink, previewTemplate.name)
+                  }}
                 >
                   <Copy className="w-4 h-4 mr-2" />
                   Copy Template Link
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => setPreviewTemplate(null)}
                 >

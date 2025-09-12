@@ -1,6 +1,7 @@
 import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
+import crypto from "crypto";
 
 export interface IStorage {
   // User operations

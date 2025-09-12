@@ -1906,7 +1906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/templates", requireAuth, async (req, res) => {
     try {
-      const templateData = insertTemplateSchema.parse({
+      const templateData = insertServerTemplateSchema.parse({
         ...req.body,
         ownerId: req.user!.id,
         templateLink: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
