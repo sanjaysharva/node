@@ -51,11 +51,11 @@ app.set('trust proxy', 1);
 
 // Session middleware with secure persistent login support
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Changed to true to ensure session is created for OAuth state
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use HTTPS in production
+    secure: false, // Disabled for development - Replit uses HTTP in dev
     maxAge: 7 * 24 * 60 * 60 * 1000, // Default: 7 days for regular sessions
     httpOnly: true, // Better security - prevents XSS attacks
     sameSite: 'lax' // CSRF protection
