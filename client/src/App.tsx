@@ -59,9 +59,6 @@ function Router() {
       <Route path="/partnership" component={Partnership} />
       <Route path="/server-templates" component={ServerTemplates} />
       <Route path="/add-template" component={AddTemplate} />
-      <Route path="/store" component={Store} />
-      <Route path="/quest" component={Quest} />
-      <Route path="/join-members" component={JoinMembers} />
       <Route component={NotFound} />
     </Switch>
   );

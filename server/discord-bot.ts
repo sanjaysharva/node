@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder, ChannelType, PermissionsBitField } from 'discord.js';
+import { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder, ChannelType, PermissionsBitField, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { storage } from './storage';
 
 const client = new Client({
@@ -61,7 +61,122 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('templateprocess')
-    .setDescription('Check the progress of template application')
+    .setDescription('Check the progress of template application'),
+
+  new SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('Replies with Pong!'),
+
+  new SlashCommandBuilder()
+    .setName('serverinfo')
+    .setDescription('Get information about the server'),
+
+  new SlashCommandBuilder()
+    .setName('userinfo')
+    .setDescription('Get information about a user')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to get info about')
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('setwelcome')
+    .setDescription('Set welcome message for new members')
+    .addChannelOption(option =>
+      option.setName('channel')
+        .setDescription('Channel to send welcome messages')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('Welcome message (use {user} and {server} as placeholders)')
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('setgoodbye')
+    .setDescription('Set goodbye message when members leave')
+    .addChannelOption(option =>
+      option.setName('channel')
+        .setDescription('Channel to send goodbye messages')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('Goodbye message (use {user} as placeholder)')
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('addtemplate')
+    .setDescription('Apply a server template from Smart Serve')
+    .addStringOption(option =>
+      option.setName('link')
+        .setDescription('Smart Serve template link')
+        .setRequired(true)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('templateprocess')
+    .setDescription('Check template application progress'),
+
+  new SlashCommandBuilder()
+    .setName('poll')
+    .setDescription('Create a poll')
+    .addStringOption(option =>
+      option.setName('question')
+        .setDescription('Poll question')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('option1')
+        .setDescription('First option')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('option2')
+        .setDescription('Second option')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('option3')
+        .setDescription('Third option')
+        .setRequired(false)
+    )
+    .addStringOption(option =>
+      option.setName('option4')
+        .setDescription('Fourth option')
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('verify')
+    .setDescription('Create a verification panel')
+    .addRoleOption(option =>
+      option.setName('role')
+        .setDescription('Role to give when verified')
+        .setRequired(true)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('reactionrole')
+    .setDescription('Create a reaction role message')
+    .addRoleOption(option =>
+      option.setName('role')
+        .setDescription('Role to give')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('emoji')
+        .setDescription('Emoji to react with')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('Custom message')
+        .setRequired(false)
+    ),
 ];
 
 client.once(Events.ClientReady, async () => {
@@ -95,8 +210,8 @@ client.once(Events.ClientReady, async () => {
 });
 
 // Handle slash command interactions
-client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isCommand()) return;
 
   const { commandName } = interaction;
 
@@ -120,6 +235,200 @@ client.on(Events.InteractionCreate, async (interaction) => {
       case 'templateprocess':
         await handleTemplateProcessCommand(interaction);
         break;
+      case 'ping':
+        await interaction.reply('Pong! 🏓');
+        break;
+      case 'serverinfo':
+        if (!interaction.guild) {
+          await interaction.reply('This command can only be used in a server!');
+          return;
+        }
+        const serverInfoEmbed = new EmbedBuilder()
+          .setTitle(`${interaction.guild.name} Information`)
+          .setThumbnail(interaction.guild.iconURL())
+          .addFields(
+            { name: 'Server ID', value: interaction.guild.id, inline: true },
+            { name: 'Member Count', value: interaction.guild.memberCount.toString(), inline: true },
+            { name: 'Created', value: `<t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:F>`, inline: true }
+          )
+          .setColor('#7289DA');
+        await interaction.reply({ embeds: [serverInfoEmbed] });
+        break;
+      case 'userinfo': {
+        const user = interaction.options.getUser('user') || interaction.user;
+        const member = interaction.guild?.members.cache.get(user.id);
+        const userInfoEmbed = new EmbedBuilder()
+          .setTitle(`${user.username} Information`)
+          .setThumbnail(user.displayAvatarURL())
+          .addFields(
+            { name: 'User ID', value: user.id, inline: true },
+            { name: 'Account Created', value: `<t:${Math.floor(user.createdTimestamp / 1000)}:F>`, inline: true }
+          )
+          .setColor('#7289DA');
+        if (member) {
+          userInfoEmbed.addFields(
+            { name: 'Joined Server', value: `<t:${Math.floor(member.joinedTimestamp! / 1000)}:F>`, inline: true }
+          );
+        }
+        await interaction.reply({ embeds: [userInfoEmbed] });
+        break;
+      }
+      case 'setwelcome': {
+        if (!interaction.guild) {
+          await interaction.reply('This command can only be used in a server!');
+          return;
+        }
+        const memberPerms = interaction.guild.members.cache.get(interaction.user.id);
+        if (!memberPerms?.permissions.has('ManageGuild')) {
+          await interaction.reply('You need the "Manage Server" permission to use this command!');
+          return;
+        }
+        const channel = interaction.options.getChannel('channel');
+        const message = interaction.options.getString('message') || 'Welcome {user} to {server}!';
+        await storage.updateGuildSettings(interaction.guild.id, {
+          welcomeChannelId: channel?.id,
+          welcomeMessage: message,
+        });
+        await interaction.reply(`Welcome message set for ${channel}!\nMessage: ${message}`);
+        break;
+      }
+      case 'setgoodbye': {
+        if (!interaction.guild) {
+          await interaction.reply('This command can only be used in a server!');
+          return;
+        }
+        const memberPerms = interaction.guild.members.cache.get(interaction.user.id);
+        if (!memberPerms?.permissions.has('ManageGuild')) {
+          await interaction.reply('You need the "Manage Server" permission to use this command!');
+          return;
+        }
+        const channel = interaction.options.getChannel('channel');
+        const message = interaction.options.getString('message') || 'Goodbye {user}!';
+        await storage.updateGuildSettings(interaction.guild.id, {
+          goodbyeChannelId: channel?.id,
+          goodbyeMessage: message,
+        });
+        await interaction.reply(`Goodbye message set for ${channel}!\nMessage: ${message}`);
+        break;
+      }
+      case 'addtemplate': {
+        const link = interaction.options.getString('link', true);
+        if (!link.includes('smartserve.repl.co/template/')) {
+          await interaction.reply('Invalid template link! Please use a valid Smart Serve template link.');
+          return;
+        }
+        const memberPerms = interaction.guild?.members.cache.get(interaction.user.id);
+        if (!memberPerms?.permissions.has('Administrator')) {
+          await interaction.reply('You need Administrator permission to use this command!');
+          return;
+        }
+        await interaction.deferReply();
+        try {
+          const templateId = link.split('/template/')[1].split('?')[0];
+          const response = await fetch(`https://smartserve.repl.co/api/templates/${templateId}`);
+          if (!response.ok) {
+            await interaction.editReply('Template not found!');
+            return;
+          }
+          const template = await response.json();
+          const guild = interaction.guild!;
+          for (const channel of guild.channels.cache.values()) {
+            if (channel.type !== 4 && !channel.isSystemChannel()) {
+              try { await channel.delete(); } catch (error) { console.log(`Could not delete channel ${channel.name}`); }
+            }
+          }
+          for (const role of guild.roles.cache.values()) {
+            if (role.name !== '@everyone' && !role.managed) {
+              try { await role.delete(); } catch (error) { console.log(`Could not delete role ${role.name}`); }
+            }
+          }
+          for (const roleData of template.roles || []) {
+            try { await guild.roles.create({ name: roleData.name, color: roleData.color, permissions: roleData.permissions, position: roleData.position, mentionable: roleData.mentionable }); } catch (error) { console.log(`Could not create role ${roleData.name}`); }
+          }
+          for (const channelData of template.channels || []) {
+            try {
+              if (channelData.type === 'category') { await guild.channels.create({ name: channelData.name, type: 4, position: channelData.position }); } else { await guild.channels.create({ name: channelData.name, type: channelData.type === 'text' ? 0 : 2, parent: channelData.categoryId, position: channelData.position }); }
+            } catch (error) { console.log(`Could not create channel ${channelData.name}`); }
+          }
+          await interaction.editReply(`✅ Template "${template.name}" has been successfully applied to your server!`);
+        } catch (error) {
+          console.error('Error applying template:', error);
+          await interaction.editReply('❌ Failed to apply template. Please try again later.');
+        }
+        break;
+      }
+      case 'templateprocess': {
+        await interaction.deferReply();
+        if (!interaction.guild) { await interaction.editReply('This command can only be used in a server!'); return; }
+        const guild = interaction.guild;
+        const channels = guild.channels.cache;
+        const roles = guild.roles.cache;
+        const embed = new EmbedBuilder()
+          .setTitle('📊 Server Template Process Status')
+          .setDescription(`Current status of ${guild.name}`)
+          .addFields(
+            { name: '📁 Channels', value: `${channels.size} channels created`, inline: true },
+            { name: '🏷️ Roles', value: `${roles.size} roles created`, inline: true },
+            { name: '👥 Members', value: `${guild.memberCount} members`, inline: true }
+          )
+          .setColor('#0099ff')
+          .setTimestamp();
+        await interaction.editReply({ embeds: [embed] });
+        break;
+      }
+      case 'poll': {
+        const question = interaction.options.getString('question', true);
+        const option1 = interaction.options.getString('option1', true);
+        const option2 = interaction.options.getString('option2', true);
+        const option3 = interaction.options.getString('option3');
+        const option4 = interaction.options.getString('option4');
+        const embed = new EmbedBuilder()
+          .setTitle('📊 Poll')
+          .setColor('#0099ff')
+          .setTimestamp();
+        const options = [option1, option2, option3, option4].filter(Boolean);
+        const emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣'];
+        let description = question + '\n\n';
+        options.forEach((option, index) => { description += `${emojis[index]} ${option}\n`; });
+        embed.setDescription(description);
+        const reply = await interaction.reply({ embeds: [embed] });
+        for (let i = 0; i < options.length; i++) { await reply.react(emojis[i]); }
+        break;
+      }
+      case 'verify': {
+        if (!interaction.guild) { await interaction.reply('This command can only be used in a server!'); return; }
+        const memberPerms = interaction.guild.members.cache.get(interaction.user.id);
+        if (!memberPerms?.permissions.has('ManageGuild')) { await interaction.reply('You need the "Manage Server" permission to use this command!'); return; }
+        const role = interaction.options.getRole('role', true);
+        const embed = new EmbedBuilder()
+          .setTitle('✅ Verification Panel')
+          .setDescription('Click the button below to get verified!')
+          .setColor('#00ff00');
+        const button = new ButtonBuilder()
+          .setCustomId(`verify_${role.id}`)
+          .setLabel('Verify')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('✅');
+        const row = new ActionRowBuilder().addComponents(button);
+        await interaction.reply({ embeds: [embed], components: [row] });
+        break;
+      }
+      case 'reactionrole': {
+        if (!interaction.guild) { await interaction.reply('This command can only be used in a server!'); return; }
+        const memberPerms = interaction.guild.members.cache.get(interaction.user.id);
+        if (!memberPerms?.permissions.has('ManageRoles')) { await interaction.reply('You need the "Manage Roles" permission to use this command!'); return; }
+        const role = interaction.options.getRole('role', true);
+        const emoji = interaction.options.getString('emoji', true);
+        const message = interaction.options.getString('message') || 'React to get the role!';
+        const embed = new EmbedBuilder()
+          .setTitle('🎭 Reaction Roles')
+          .setDescription(`${message}\n\nReact with ${emoji} to get ${role}`)
+          .setColor('#ff6b6b');
+        const reply = await interaction.reply({ embeds: [embed] });
+        await reply.react(emoji);
+        await storage.addReactionRole(interaction.guild.id, reply.id, emoji, role.id);
+        break;
+      }
     }
   } catch (error) {
     console.error('Error handling command:', error);
@@ -128,6 +437,100 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 });
+
+// Button interactions and reaction handling
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  // Handle verification buttons
+  if (interaction.customId.startsWith('verify_')) {
+    const roleId = interaction.customId.split('_')[1];
+    const role = interaction.guild?.roles.cache.get(roleId);
+
+    if (!role) {
+      await interaction.reply({ content: 'Verification role not found!', ephemeral: true });
+      return;
+    }
+
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    if (!member) {
+      await interaction.reply({ content: 'Member not found!', ephemeral: true });
+      return;
+    }
+
+    if (member.roles.cache.has(roleId)) {
+      await interaction.reply({ content: 'You are already verified!', ephemeral: true });
+      return;
+    }
+
+    try {
+      await member.roles.add(role);
+      await interaction.reply({ content: `✅ You have been verified and given the ${role.name} role!`, ephemeral: true });
+    } catch (error) {
+      await interaction.reply({ content: 'Failed to give you the role. Please contact an administrator.', ephemeral: true });
+    }
+  }
+});
+
+// Handle reaction role events
+client.on('messageReactionAdd', async (reaction, user) => {
+  if (user.bot) return;
+
+  if (reaction.partial) {
+    try {
+      await reaction.fetch();
+    } catch (error) {
+      console.error('Error fetching reaction:', error);
+      return;
+    }
+  }
+
+  const reactionRole = await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
+  if (!reactionRole) return;
+
+  const guild = reaction.message.guild;
+  const member = guild?.members.cache.get(user.id);
+  const role = guild?.roles.cache.get(reactionRole.roleId);
+
+  if (member && role) {
+    try {
+      await member.roles.add(role);
+      console.log(`Added role ${role.name} to ${user.tag}`);
+    } catch (error) {
+      console.error('Error adding role:', error);
+    }
+  }
+});
+
+client.on('messageReactionRemove', async (reaction, user) => {
+  if (user.bot) return;
+
+  if (reaction.partial) {
+    try {
+      await reaction.fetch();
+    } catch (error) {
+      console.error('Error fetching reaction:', error);
+      return;
+    }
+  }
+
+  const reactionRole = await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
+  if (!reactionRole) return;
+
+  const guild = reaction.message.guild;
+  const member = guild?.members.cache.get(user.id);
+  const role = guild?.roles.cache.get(reactionRole.roleId);
+
+  if (member && role) {
+    try {
+      await member.roles.remove(role);
+      console.log(`Removed role ${role.name} from ${user.tag}`);
+    } catch (error) {
+      console.error('Error removing role:', error);
+    }
+  }
+});
+
 
 async function handleBumpCommand(interaction: any) {
   await interaction.deferReply();
@@ -380,7 +783,7 @@ async function handleTemplateProcessCommand(interaction: any) {
 
     if (process.errors && process.errors.length > 0) {
       embed.addFields({
-        name: '❌ Errors', 
+        name: '❌ Errors',
         value: process.errors.slice(0, 3).join('\n') + (process.errors.length > 3 ? '\n...and more' : ''),
         inline: false
       });
@@ -427,7 +830,7 @@ async function handleSupportCommand(interaction: any) {
         .addFields(
           { name: '📝 Your Message:', value: message, inline: false },
           { name: '⏰ Response Time:', value: 'Our team typically responds within 24 hours', inline: false },
-          { name: '🔗 Need More Help?', value: `[Visit Help Center](${process.env.APP_URL || 'https://smartserve.com'}/help-center)`, inline: false }
+          { name: '🔗 Need More Help?', value: `[Visit Help Center](https://smartserve.repl.co/help-center)`, inline: false }
         )
         .setFooter({ text: 'Smart Serve Support Team' })
         .setTimestamp();
@@ -439,7 +842,7 @@ async function handleSupportCommand(interaction: any) {
 
     // Notify admin channel or specific admin users
     const ADMIN_USER_IDS = ['123456789']; // Add actual admin Discord IDs here
-    
+
     for (const adminId of ADMIN_USER_IDS) {
       try {
         const adminUser = await client.users.fetch(adminId);
@@ -470,7 +873,7 @@ async function handleSupportCommand(interaction: any) {
 }
 
 // Track invite usage when someone joins
-client.on(Events.GuildMemberAdd, async (member) => {
+client.on('GuildMemberAdd', async (member) => {
   try {
     const guild = member.guild;
     const cachedInvites = inviteCache.get(guild.id) || new Map();
@@ -530,14 +933,14 @@ client.on(Events.GuildMemberAdd, async (member) => {
 });
 
 // Update invite cache when new invites are created
-client.on(Events.InviteCreate, async (invite) => {
+client.on('InviteCreate', async (invite) => {
   const guildInvites = inviteCache.get(invite.guild?.id) || new Map();
   guildInvites.set(invite.code, invite.uses || 0);
   inviteCache.set(invite.guild?.id, guildInvites);
 });
 
 // Clean up deleted invites
-client.on(Events.InviteDelete, async (invite) => {
+client.on('InviteDelete', async (invite) => {
   const guildInvites = inviteCache.get(invite.guild?.id) || new Map();
   guildInvites.delete(invite.code);
   inviteCache.set(invite.guild?.id, guildInvites);

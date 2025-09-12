@@ -112,6 +112,13 @@ export interface IStorage {
   setPendingTemplate(guildId: string, data: any): Promise<void>;
 
   getTemplateProcess(guildId: string): Promise<any | undefined>;
+
+  // Guild Settings
+  updateGuildSettings(guildId: string, settings: any): Promise<void>;
+
+  // Reaction Roles
+  addReactionRole(guildId: string, messageId: string, emoji: string, roleId: string): Promise<void>;
+  getReactionRole(guildId: string, messageId: string, emoji: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -847,6 +854,27 @@ export class DatabaseStorage implements IStorage {
       eta: '2 minutes',
       errors: [],
     };
+  }
+
+  // Guild Settings
+  async updateGuildSettings(guildId: string, settings: any): Promise<void> {
+    // For now, we'll store guild settings in a simple way
+    // In a real implementation, you'd have a proper guildSettings table
+    console.log(`Updating guild settings for ${guildId}:`, settings);
+  }
+
+  // Reaction Roles
+  async addReactionRole(guildId: string, messageId: string, emoji: string, roleId: string): Promise<void> {
+    // Store reaction role data
+    // In a real implementation, you'd have a proper reactionRoles table
+    console.log(`Adding reaction role: ${guildId} ${messageId} ${emoji} ${roleId}`);
+  }
+
+  async getReactionRole(guildId: string, messageId: string, emoji: string): Promise<any> {
+    // Get reaction role data
+    // In a real implementation, you'd query the reactionRoles table
+    console.log(`Getting reaction role: ${guildId} ${messageId} ${emoji}`);
+    return null; // Placeholder
   }
 }
 
