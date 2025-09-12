@@ -17,10 +17,15 @@ import {
   Globe, 
   Activity,
   ArrowLeft,
-  Shield
+  Shield,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
+  Heart,
+  Share2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Server, Review } from "@shared/schema";
+import type { Server, Review, Comment } from "@shared/schema";
 
 export default function ServerDetail() {
   const [match, params] = useRoute("/server/:serverId");
@@ -30,6 +35,8 @@ export default function ServerDetail() {
   const { toast } = useToast();
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   
   // Fetch server details
   const { data: server, isLoading: loadingServer } = useQuery({
@@ -47,6 +54,26 @@ export default function ServerDetail() {
       const response = await apiRequest("GET", `/api/servers/${serverId}/reviews`);
       return response.json();
     }
+  });
+
+  // Fetch server comments
+  const { data: comments, isLoading: loadingComments } = useQuery({
+    queryKey: [`/api/servers/${serverId}/comments`],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/servers/${serverId}/comments`);
+      return response.json();
+    }
+  });
+
+  // Fetch user vote status
+  const { data: voteStatus } = useQuery({
+    queryKey: [`/api/servers/${serverId}/vote-status`],
+    queryFn: async () => {
+      if (!isAuthenticated) return null;
+      const response = await apiRequest("GET", `/api/servers/${serverId}/vote-status`);
+      return response.json();
+    },
+    enabled: isAuthenticated
   });
 
   // Submit review mutation
@@ -68,6 +95,47 @@ export default function ServerDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to submit review.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Submit comment mutation
+  const commentMutation = useMutation({
+    mutationFn: async (commentData: { content: string; parentId?: string }) => {
+      return apiRequest("POST", `/api/servers/${serverId}/comments`, commentData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Comment Posted!",
+        description: "Your comment has been added.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/comments`] });
+      setCommentText("");
+      setReplyingTo(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to post comment.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Vote mutation
+  const voteMutation = useMutation({
+    mutationFn: async (voteType: 'up' | 'down') => {
+      return apiRequest("POST", `/api/servers/${serverId}/vote`, { voteType });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}/vote-status`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/servers/${serverId}`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to vote.",
         variant: "destructive",
       });
     },
@@ -98,6 +166,65 @@ export default function ServerDetail() {
     }
 
     reviewMutation.mutate({ rating, review: reviewText });
+  };
+
+  const handleSubmitComment = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to comment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!commentText.trim()) {
+      toast({
+        title: "Comment Required",
+        description: "Please enter a comment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    commentMutation.mutate({ 
+      content: commentText.trim(),
+      parentId: replyingTo 
+    });
+  };
+
+  const handleVote = (voteType: 'up' | 'down') => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to vote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    voteMutation.mutate(voteType);
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: server?.name || 'Discord Server',
+          text: server?.description || 'Check out this Discord server!',
+          url: window.location.href,
+        });
+      } catch (error) {
+        // User cancelled sharing
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link Copied!",
+        description: "Server link copied to clipboard.",
+      });
+    }
   };
 
   const renderStars = (currentRating: number, interactive = false) => {
@@ -217,12 +344,45 @@ export default function ServerDetail() {
             </div>
           </div>
           
-          {/* Join Button */}
-          <div className="flex-shrink-0">
+          {/* Action Buttons */}
+          <div className="flex-shrink-0 flex gap-3">
+            {/* Voting */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant={voteStatus?.voteType === 'up' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleVote('up')}
+                disabled={voteMutation.isPending}
+              >
+                <ThumbsUp className="w-4 h-4 mr-1" />
+                {server?.upvotes || 0}
+              </Button>
+              <Button
+                variant={voteStatus?.voteType === 'down' ? 'destructive' : 'outline'}
+                size="sm"
+                onClick={() => handleVote('down')}
+                disabled={voteMutation.isPending}
+              >
+                <ThumbsDown className="w-4 h-4 mr-1" />
+                {server?.downvotes || 0}
+              </Button>
+            </div>
+
+            {/* Share Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+
+            {/* Join Button */}
             <Button
               onClick={handleJoinServer}
               size="lg"
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold px-8 py-4 text-lg animate-pulse"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold px-8 py-4 text-lg"
             >
               <ExternalLink className="w-5 h-5 mr-2" />
               Join Server
@@ -261,6 +421,14 @@ export default function ServerDetail() {
               <Activity className="w-6 h-6 mx-auto mb-2 text-orange-400" />
               <div className="text-2xl font-bold">{server.activityLevel}</div>
               <div className="text-sm text-muted-foreground">Activity</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4 text-center">
+              <MessageSquare className="w-6 h-6 mx-auto mb-2 text-cyan-400" />
+              <div className="text-2xl font-bold">{server.totalComments || 0}</div>
+              <div className="text-sm text-muted-foreground">Comments</div>
             </CardContent>
           </Card>
         </div>
@@ -334,6 +502,127 @@ export default function ServerDetail() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Comments Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Discussion ({server.totalComments || 0})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Add Comment */}
+            {isAuthenticated ? (
+              <div className="mb-6 p-4 border border-border rounded-lg">
+                <div className="space-y-3">
+                  {replyingTo && (
+                    <div className="flex items-center justify-between bg-muted p-2 rounded">
+                      <span className="text-sm">Replying to comment...</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setReplyingTo(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                  <Textarea
+                    placeholder="Share your thoughts about this server..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    rows={3}
+                    maxLength={1000}
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {commentText.length}/1000
+                    </span>
+                    <Button
+                      onClick={handleSubmitComment}
+                      disabled={commentMutation.isPending || !commentText.trim()}
+                    >
+                      {commentMutation.isPending ? "Posting..." : "Post Comment"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6 p-4 border border-border rounded-lg text-center">
+                <p className="text-muted-foreground">Please login to join the discussion.</p>
+              </div>
+            )}
+
+            {/* Comments List */}
+            {loadingComments ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="animate-pulse space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-muted rounded-full"></div>
+                      <div className="h-4 bg-muted rounded w-32"></div>
+                    </div>
+                    <div className="h-16 bg-muted rounded ml-10"></div>
+                  </div>
+                ))}
+              </div>
+            ) : comments && comments.length > 0 ? (
+              <div className="space-y-4">
+                {comments.map((comment: Comment & { user: { username: string; avatar?: string } }) => (
+                  <div key={comment.id} className="group">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {comment.user.avatar ? (
+                          <img
+                            src={comment.user.avatar}
+                            alt={comment.user.username}
+                            className="w-full h-full rounded-full"
+                          />
+                        ) : (
+                          comment.user.username.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">{comment.user.username}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </span>
+                          {comment.isPinned && (
+                            <Badge variant="secondary" className="text-xs">
+                              Pinned
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm mb-2 whitespace-pre-wrap">{comment.content}</p>
+                        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                            <Heart className="w-3 h-3" />
+                            {comment.likes || 0}
+                          </button>
+                          {isAuthenticated && (
+                            <button
+                              className="text-xs text-muted-foreground hover:text-foreground"
+                              onClick={() => setReplyingTo(comment.id)}
+                            >
+                              Reply
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-muted-foreground">No comments yet. Start the conversation!</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Reviews Section */}
         <Card>

@@ -87,6 +87,18 @@ export default function ServerCard({ server, onJoin, onView }: ServerCardProps) 
                 <span className="text-xs text-muted-foreground">online</span>
               </div>
             </div>
+            
+            {/* Community Engagement */}
+            <div className="flex items-center space-x-3 text-xs">
+              <div className="flex items-center space-x-1 text-green-400">
+                <i className="fas fa-thumbs-up"></i>
+                <span>{server.upvotes || 0}</span>
+              </div>
+              <div className="flex items-center space-x-1 text-blue-400">
+                <i className="fas fa-comments"></i>
+                <span>{server.totalComments || 0}</span>
+              </div>
+            </div>
           </div>
 
           {/* Enhanced Join Button */}

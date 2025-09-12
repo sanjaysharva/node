@@ -62,6 +62,18 @@ export interface IStorage {
   getLastBump(guildId: string): Promise<Date | null>;
   updateLastBump(guildId: string): Promise<void>;
   updateServerBumpSettings(serverId: string, bumpEnabled: boolean): Promise<void>;
+
+  // Comment operations
+  getCommentsForServer(serverId: string, options: { limit: number; offset: number }): Promise<any[]>;
+  createComment(data: { serverId: string; userId: string; content: string; parentId?: string | null }): Promise<any>;
+  getComment(commentId: string): Promise<any | undefined>;
+  deleteComment(commentId: string): Promise<void>;
+  toggleCommentLike(commentId: string, userId: string): Promise<{ liked: boolean }>;
+  incrementServerCommentCount(serverId: string): Promise<void>;
+
+  // Voting operations
+  voteOnServer(serverId: string, userId: string, voteType: 'up' | 'down'): Promise<{ voteType: 'up' | 'down' | null }>;
+  getUserVoteStatus(serverId: string, userId: string): Promise<{ voteType: 'up' | 'down' | null }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -294,7 +306,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const [updatedUser] = await db.update(users)
-      .set({ 
+      .set({
         dailyLoginStreak: newStreak,
         lastLoginDate: today
       })
@@ -344,9 +356,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ATOMIC SERVER JOIN: Prevents race conditions and double-awarding of coins
-  async atomicServerJoin(params: { 
-    userId: string; 
-    serverId: string; 
+  async atomicServerJoin(params: {
+    userId: string;
+    serverId: string;
     coinsToAward: number;
   }): Promise<{ newBalance: number; advertisingComplete: boolean }> {
     const { userId, serverId, coinsToAward } = params;
@@ -356,9 +368,9 @@ export class DatabaseStorage implements IStorage {
       const [currentUser] = await tx.select({ coins: users.coins }).from(users)
         .where(eq(users.id, userId));
 
-      const [currentServer] = await tx.select({ 
+      const [currentServer] = await tx.select({
         advertisingMembersNeeded: servers.advertisingMembersNeeded,
-        isAdvertising: servers.isAdvertising 
+        isAdvertising: servers.isAdvertising
       }).from(servers)
         .where(eq(servers.id, serverId));
 
@@ -402,7 +414,7 @@ export class DatabaseStorage implements IStorage {
       const advertisingComplete = newMembersNeeded <= 0;
 
       const serverUpdateResult = await tx.update(servers)
-        .set({ 
+        .set({
           advertisingMembersNeeded: newMembersNeeded,
           isAdvertising: !advertisingComplete,
         })
@@ -417,9 +429,9 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Server advertising quota was exhausted during transaction");
       }
 
-      return { 
-        newBalance: updatedUser.coins || 0, 
-        advertisingComplete 
+      return {
+        newBalance: updatedUser.coins || 0,
+        advertisingComplete
       };
     });
   }
@@ -484,6 +496,196 @@ export class DatabaseStorage implements IStorage {
       .update(servers)
       .set({ bumpEnabled })
       .where(eq(servers.id, serverId));
+  }
+
+  // Comments
+  async getCommentsForServer(serverId: string, options: { limit: number; offset: number }) {
+    const result = await db
+      .select({
+        id: comments.id,
+        content: comments.content,
+        likes: comments.likes,
+        parentId: comments.parentId,
+        createdAt: comments.createdAt,
+        updatedAt: comments.updatedAt,
+        isEdited: comments.isEdited,
+        isPinned: comments.isPinned,
+        user: {
+          id: users.id,
+          username: users.username,
+          avatar: users.avatar,
+        },
+      })
+      .from(comments)
+      .innerJoin(users, eq(comments.userId, users.id))
+      .where(eq(comments.serverId, serverId))
+      .orderBy(desc(comments.isPinned), desc(comments.createdAt))
+      .limit(options.limit)
+      .offset(options.offset);
+
+    return result;
+  }
+
+  async createComment(data: { serverId: string; userId: string; content: string; parentId?: string | null }) {
+    const [comment] = await db
+      .insert(comments)
+      .values({
+        serverId: data.serverId,
+        userId: data.userId,
+        content: data.content,
+        parentId: data.parentId,
+      })
+      .returning();
+
+    return comment;
+  }
+
+  async getComment(commentId: string) {
+    const [comment] = await db
+      .select()
+      .from(comments)
+      .where(eq(comments.id, commentId));
+
+    return comment;
+  }
+
+  async deleteComment(commentId: string): Promise<void> {
+    await db.delete(comments).where(eq(comments.id, commentId));
+  }
+
+  async toggleCommentLike(commentId: string, userId: string) {
+    // Check if user already liked the comment
+    const [existingLike] = await db
+      .select()
+      .from(commentLikes)
+      .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
+
+    if (existingLike) {
+      // Remove like
+      await db
+        .delete(commentLikes)
+        .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)));
+
+      // Decrement like count
+      await db
+        .update(comments)
+        .set({ likes: sql`${comments.likes} - 1` })
+        .where(eq(comments.id, commentId));
+
+      return { liked: false };
+    } else {
+      // Add like
+      await db.insert(commentLikes).values({
+        commentId,
+        userId,
+      });
+
+      // Increment like count
+      await db
+        .update(comments)
+        .set({ likes: sql`${comments.likes} + 1` })
+        .where(eq(comments.id, commentId));
+
+      return { liked: true };
+    }
+  }
+
+  async incrementServerCommentCount(serverId: string): Promise<void> {
+    await db
+      .update(servers)
+      .set({ totalComments: sql`${servers.totalComments} + 1` })
+      .where(eq(servers.id, serverId));
+  }
+
+  // Voting
+  async voteOnServer(serverId: string, userId: string, voteType: 'up' | 'down') {
+    // Check if user already voted
+    const [existingVote] = await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
+
+    if (existingVote) {
+      if (existingVote.voteType === voteType) {
+        // Remove vote if same type
+        await db
+          .delete(votes)
+          .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
+
+        // Update server vote counts
+        if (voteType === 'up') {
+          await db
+            .update(servers)
+            .set({ upvotes: sql`${servers.upvotes} - 1` })
+            .where(eq(servers.id, serverId));
+        } else {
+          await db
+            .update(servers)
+            .set({ downvotes: sql`${servers.downvotes} - 1` })
+            .where(eq(servers.id, serverId));
+        }
+
+        return { voteType: null };
+      } else {
+        // Change vote type
+        await db
+          .update(votes)
+          .set({ voteType })
+          .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
+
+        // Update server vote counts
+        if (voteType === 'up') {
+          await db
+            .update(servers)
+            .set({
+              upvotes: sql`${servers.upvotes} + 1`,
+              downvotes: sql`${servers.downvotes} - 1`
+            })
+            .where(eq(servers.id, serverId));
+        } else {
+          await db
+            .update(servers)
+            .set({
+              upvotes: sql`${servers.upvotes} - 1`,
+              downvotes: sql`${servers.downvotes} + 1`
+            })
+            .where(eq(servers.id, serverId));
+        }
+
+        return { voteType };
+      }
+    } else {
+      // Create new vote
+      await db.insert(votes).values({
+        serverId,
+        userId,
+        voteType,
+      });
+
+      // Update server vote counts
+      if (voteType === 'up') {
+        await db
+          .update(servers)
+          .set({ upvotes: sql`${servers.upvotes} + 1` })
+          .where(eq(servers.id, serverId));
+      } else {
+        await db
+          .update(servers)
+          .set({ downvotes: sql`${servers.downvotes} + 1` })
+          .where(eq(servers.id, serverId));
+      }
+
+      return { voteType };
+    }
+  }
+
+  async getUserVoteStatus(serverId: string, userId: string) {
+    const [vote] = await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
+
+    return { voteType: vote?.voteType || null };
   }
 }
 

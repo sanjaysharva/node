@@ -59,6 +59,9 @@ export const servers = pgTable("servers", {
   discordId: text("discord_id").unique(),
   averageRating: integer("average_rating").default(0),
   totalReviews: integer("total_reviews").default(0),
+  upvotes: integer("upvotes").default(0),
+  downvotes: integer("downvotes").default(0),
+  totalComments: integer("total_comments").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -206,8 +209,79 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   }),
 }));
 
+export const comments = pgTable("comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").references(() => servers.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  parentId: varchar("parent_id").references(() => comments.id), // For replies
+  content: text("content").notNull(),
+  likes: integer("likes").default(0),
+  isEdited: boolean("is_edited").default(false),
+  isPinned: boolean("is_pinned").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const commentLikes = pgTable("comment_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  commentId: varchar("comment_id").references(() => comments.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userCommentUnique: sql`UNIQUE (${table.userId}, ${table.commentId})`
+}));
+
+export const votes = pgTable("votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: varchar("server_id").references(() => servers.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  voteType: text("vote_type").notNull(), // 'up' or 'down'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userServerUnique: sql`UNIQUE (${table.userId}, ${table.serverId})`
+}));
+
 export const bumpChannelsRelations = relations(bumpChannels, ({ one }) => ({
   // No direct relations needed for now
+}));
+
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  server: one(servers, {
+    fields: [comments.serverId],
+    references: [servers.id],
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
+  }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id],
+  }),
+  replies: many(comments),
+  likes: many(commentLikes),
+}));
+
+export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
+  comment: one(comments, {
+    fields: [commentLikes.commentId],
+    references: [comments.id],
+  }),
+  user: one(users, {
+    fields: [commentLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const votesRelations = relations(votes, ({ one }) => ({
+  server: one(servers, {
+    fields: [votes.serverId],
+    references: [servers.id],
+  }),
+  user: one(users, {
+    fields: [votes.userId],
+    references: [users.id],
+  }),
 }));
 
 // Insert schemas
@@ -264,6 +338,17 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
   updatedAt: true,
 });
 
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertVoteSchema = createInsertSchema(votes).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -283,3 +368,8 @@ export type BumpChannel = typeof bumpChannels.$inferSelect;
 export type InsertBumpChannel = z.infer<typeof insertBumpChannelSchema>;
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type Vote = typeof votes.$inferSelect;
+export type InsertVote = z.infer<typeof insertVoteSchema>;
+export type CommentLike = typeof commentLikes.$inferSelect;

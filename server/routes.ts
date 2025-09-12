@@ -1205,6 +1205,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comments routes
+  app.get("/api/servers/:serverId/comments", async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { limit = "20", offset = "0" } = req.query;
+      const comments = await storage.getCommentsForServer(serverId, {
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/servers/:serverId/comments", requireAuth, async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { content, parentId } = req.body;
+      const userId = req.user!.id;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (content.length > 1000) {
+        return res.status(400).json({ message: "Comment too long (max 1000 characters)" });
+      }
+
+      const comment = await storage.createComment({
+        serverId,
+        userId,
+        content: content.trim(),
+        parentId: parentId || null,
+      });
+
+      // Update server comment count
+      await storage.incrementServerCommentCount(serverId);
+
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.post("/api/comments/:commentId/like", requireAuth, async (req, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user!.id;
+
+      const result = await storage.toggleCommentLike(commentId, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling comment like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  app.delete("/api/comments/:commentId", requireAuth, async (req, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user!.id;
+      const isAdmin = (req.user as any).isAdmin;
+
+      const comment = await storage.getComment(commentId);
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      if (comment.userId !== userId && !isAdmin) {
+        return res.status(403).json({ message: "You can only delete your own comments" });
+      }
+
+      await storage.deleteComment(commentId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
+  // Voting routes
+  app.post("/api/servers/:serverId/vote", requireAuth, async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { voteType } = req.body;
+      const userId = req.user!.id;
+
+      if (!['up', 'down'].includes(voteType)) {
+        return res.status(400).json({ message: "Invalid vote type" });
+      }
+
+      const result = await storage.voteOnServer(serverId, userId, voteType);
+      res.json(result);
+    } catch (error) {
+      console.error("Error voting on server:", error);
+      res.status(500).json({ message: "Failed to vote" });
+    }
+  });
+
+  app.get("/api/servers/:serverId/vote-status", requireAuth, async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const userId = req.user!.id;
+
+      const voteStatus = await storage.getUserVoteStatus(serverId, userId);
+      res.json(voteStatus);
+    } catch (error) {
+      console.error("Error fetching vote status:", error);
+      res.status(500).json({ message: "Failed to fetch vote status" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
