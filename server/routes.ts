@@ -2,20 +2,20 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { 
-  servers, 
-  bots, 
-  events, 
-  users, 
-  ads, 
-  slideshows, 
-  reviews, 
-  serverJoins, 
+import {
+  servers,
+  bots,
+  events,
+  users,
+  ads,
+  slideshows,
+  reviews,
+  serverJoins,
   bumpChannels,
-  insertServerSchema, 
-  insertBotSchema, 
-  insertEventSchema, 
-  insertAdSchema, 
+  insertServerSchema,
+  insertBotSchema,
+  insertEventSchema,
+  insertAdSchema,
   insertServerJoinSchema,
   insertSlideshowSchema,
   insertPartnershipSchema, // Import the new schema
@@ -23,11 +23,11 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm";
-import { 
-  strictLimiter, 
-  reviewLimiter, 
-  validateServerData, 
-  validateReview 
+import {
+  strictLimiter,
+  reviewLimiter,
+  validateServerData,
+  validateReview
 } from "./middleware/security";
 import crypto from "crypto";
 
@@ -116,8 +116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/discord/callback", async (req, res) => {
     const { code, state } = req.query;
 
-    console.log('OAuth callback received:', { 
-      code: code ? 'present' : 'missing', 
+    console.log('OAuth callback received:', {
+      code: code ? 'present' : 'missing',
       state: state ? state.toString().substring(0, 8) + '...' : 'missing',
       sessionExists: !!req.session
     });
@@ -145,15 +145,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!session.oauthState) {
       console.error('Session missing OAuth state - possible session loss');
       // Try to regenerate session and redirect back to login
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: "Session expired during login. Please try logging in again.",
-        redirectToLogin: true 
+        redirectToLogin: true
       });
     }
 
     if (state !== session.oauthState) {
-      console.error('OAuth state mismatch:', { 
-        received: state.toString().substring(0, 16), 
+      console.error('OAuth state mismatch:', {
+        received: state.toString().substring(0, 16),
         expected: session.oauthState.substring(0, 16)
       });
       return res.status(400).json({ message: "Invalid OAuth state - possible CSRF attack" });
@@ -443,8 +443,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate bot token format
       if (!botToken) {
         console.error('❌ No bot token configured in environment variables');
-        return res.status(500).json({ 
-          message: "Bot token not configured. Please set DISCORD_BOT_TOKEN in Secrets.", 
+        return res.status(500).json({
+          message: "Bot token not configured. Please set DISCORD_BOT_TOKEN in Secrets.",
           botPresent: false,
           checkMethod: "no_token",
           inviteUrl: `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
@@ -454,8 +454,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Basic bot token format validation
       if (!botToken.startsWith('MTM3MjIy') || botToken.length < 50) {
         console.error('❌ Invalid bot token format detected');
-        return res.status(500).json({ 
-          message: "Invalid bot token format. Please check your DISCORD_BOT_TOKEN in Secrets.", 
+        return res.status(500).json({
+          message: "Invalid bot token format. Please check your DISCORD_BOT_TOKEN in Secrets.",
           botPresent: false,
           checkMethod: "invalid_token_format",
           inviteUrl: `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
@@ -551,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Error details: ${errorDetails}`);
       }
 
-      res.json({ 
+      res.json({
         botPresent,
         checkMethod,
         errorDetails,
@@ -746,9 +746,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!guildResponse.ok) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Bot is not in this server. Please invite our bot first.",
-          botNotInServer: true 
+          botNotInServer: true
         });
       }
 
@@ -875,9 +875,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(newEvent);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid event data", 
-          errors: error.errors 
+        return res.status(400).json({
+          message: "Invalid event data",
+          errors: error.errors
         });
       }
       console.error("Event creation error:", error);
@@ -931,16 +931,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!memberResponse.ok) {
           if (memberResponse.status === 404) {
-            return res.status(400).json({ 
-              message: "You must be a member of this Discord server to earn coins" 
+            return res.status(400).json({
+              message: "You must be a member of this Discord server to earn coins"
             });
           }
           throw new Error(`Discord API error: ${memberResponse.status}`);
         }
       } catch (discordError) {
         console.error("Discord membership verification failed:", discordError);
-        return res.status(500).json({ 
-          message: "Failed to verify Discord membership" 
+        return res.status(500).json({
+          message: "Failed to verify Discord membership"
         });
       }
 
@@ -957,7 +957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get fresh user data after transaction
       const updatedUser = await storage.getUser(userId);
-      
+
       res.json({
         message: "Successfully joined server and earned coins",
         coinsEarned: coinsToAward,
@@ -1009,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const currentCoins = currentUser.coins || 0;
       if (currentCoins < totalCost) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Insufficient coins",
           required: totalCost,
           available: currentCoins,
@@ -1080,7 +1080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        message: result.coinsDeducted > 0 
+        message: result.coinsDeducted > 0
           ? `You left the server within 3 days and lost ${result.coinsDeducted} coins`
           : "You left the server with no coin penalty",
         coinsDeducted: result.coinsDeducted,
@@ -1256,7 +1256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (hoursSinceLastClaim < 24) {
           const hoursRemaining = Math.ceil(24 - hoursSinceLastClaim);
           const minutesRemaining = Math.ceil(((24 - hoursSinceLastClaim) % 1) * 60);
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: `Daily reward already claimed. Try again in ${hoursRemaining}h ${minutesRemaining}m.`,
             timeRemaining: { hours: hoursRemaining, minutes: minutesRemaining }
           });
@@ -1273,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       await db.update(users)
-        .set({ 
+        .set({
           coins: newCoins,
           metadata: JSON.stringify(newMetadata)
         })
@@ -1346,7 +1346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         await db.update(users)
-          .set({ 
+          .set({
             coins: newCoins,
             metadata: JSON.stringify(newMetadata)
           })
@@ -1421,7 +1421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
 
           await db.update(users)
-            .set({ 
+            .set({
               coins: newCoins,
               metadata: JSON.stringify(newMetadata)
             })
@@ -1508,7 +1508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         await db.update(users)
-          .set({ 
+          .set({
             coins: newCoins,
             metadata: JSON.stringify(newMetadata)
           })
@@ -1567,9 +1567,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { serverId } = req.params;
       const { limit = "10", offset = "0" } = req.query;
-      const reviews = await storage.getReviewsForServer(serverId, { 
-        limit: parseInt(limit as string), 
-        offset: parseInt(offset as string) 
+      const reviews = await storage.getReviewsForServer(serverId, {
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string)
       });
       res.json(reviews);
     } catch (error) {
@@ -1786,9 +1786,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Here you could add Discord DM integration
       // The Discord bot will handle sending DMs to the user and admins
 
-      res.status(201).json({ 
+      res.status(201).json({
         message: "Support ticket created successfully",
-        ticketId: ticket.id 
+        ticketId: ticket.id
       });
     } catch (error) {
       console.error("Error creating support ticket:", error);
@@ -1888,8 +1888,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, partnership });
     } catch (error) {
       console.error("Partnership creation error:", error);
-      res.status(400).json({ 
-        message: error instanceof Error ? error.message : "Failed to create partnership" 
+      res.status(400).json({
+        message: error instanceof Error ? error.message : "Failed to create partnership"
       });
     }
   });
@@ -1977,13 +1977,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const roles = await rolesResponse.json();
 
       // Filter out bot-specific roles and @everyone
-      const filteredRoles = roles.filter((role: any) => 
+      const filteredRoles = roles.filter((role: any) =>
         !role.managed && role.name !== '@everyone'
       );
 
       res.json({
         serverName: inviteData.guild.name,
-        serverIcon: inviteData.guild.icon ? 
+        serverIcon: inviteData.guild.icon ?
           `https://cdn.discordapp.com/icons/${guildId}/${inviteData.guild.icon}.png` : null,
         channels: channels.map((channel: any) => ({
           name: channel.name,
@@ -2018,6 +2018,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error validating template:", error);
       res.status(500).json({ message: "Failed to validate template" });
+    }
+  });
+
+  // User coins routes
+  app.get("/api/user/coins", requireAuth, async (req, res) => {
+    try {
+      const coins = await storage.getUserCoins(req.user!.id);
+      res.json({ coins });
+    } catch (error) {
+      console.error("Error fetching user coins:", error);
+      res.status(500).json({ message: "Failed to fetch coins" });
+    }
+  });
+
+  app.post("/api/user/coins/update", requireAuth, async (req, res) => {
+    try {
+      const { amount } = req.body;
+      if (typeof amount !== 'number') {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+
+      await storage.updateUserCoins(req.user!.id, amount);
+      const newCoins = await storage.getUserCoins(req.user!.id);
+      res.json({ coins: newCoins });
+    } catch (error) {
+      console.error("Error updating user coins:", error);
+      res.status(500).json({ message: "Failed to update coins" });
     }
   });
 

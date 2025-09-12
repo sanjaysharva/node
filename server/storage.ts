@@ -328,6 +328,22 @@ export class DatabaseStorage implements IStorage {
     return updatedUser || undefined;
   }
 
+  // The following are updated methods for user coins
+  async updateUserCoins(userId: number, amount: number): Promise<void> {
+    try {
+      await this.db
+        .update(users)
+        .set({
+          coins: sql`COALESCE(${users.coins}, 0) + ${amount}`,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error('Error updating user coins:', error);
+      throw error;
+    }
+  }
+
   async incrementUserInviteCount(userId: string) {
     const user = await this.getUser(userId);
     if (!user) return undefined;
@@ -983,7 +999,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(serverTemplates)
         .where(eq(serverTemplates.templateLink, templateLink));
-      
+
       return template || null;
     } catch (error) {
       console.error("Database error getting template by link:", error);

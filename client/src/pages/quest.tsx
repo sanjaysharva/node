@@ -27,7 +27,7 @@ interface ServerStatus {
 }
 
 export default function Quest() {
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated, refreshUser: refreshUserData } = useAuth(); // Renamed for clarity and to match potential usage in changes
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);

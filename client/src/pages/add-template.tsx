@@ -80,13 +80,12 @@ export default function AddTemplate() {
 
   const createTemplateMutation = useMutation({
     mutationFn: async (templateInfo: any) => {
-      
       try {
         const templatePayload = {
           name: formData.name,
           description: formData.description,
           category: formData.category,
-          previewImage: formData.previewImage,
+          previewImage: templateData?.serverIcon,
           channels: JSON.stringify(templateData?.channels || []),
           roles: JSON.stringify(templateData?.roles || []),
           templateLink: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -97,8 +96,13 @@ export default function AddTemplate() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(templatePayload),
         });
-      if (!response.ok) throw new Error("Failed to create template");
-      return response.json();
+        
+        if (!response.ok) throw new Error("Failed to create template");
+        return response.json();
+      } catch (error) {
+        console.error('Template creation error:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       setGeneratedLink(data.templateLink);
