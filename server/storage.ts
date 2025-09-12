@@ -818,35 +818,13 @@ export class DatabaseStorage implements IStorage {
     limit: number;
     offset: number;
   }) {
-    // Mock data for now
-    return [
-      {
-        id: '1',
-        title: 'Gaming Partnership Opportunity',
-        description: 'Looking for gaming communities to partner with for events and member exchange.',
-        serverName: 'Epic Gaming Hub',
-        serverIcon: 'https://cdn.discordapp.com/icons/123/icon.png',
-        memberCount: 5000,
-        partnershipType: 'server_partnership',
-        requirements: ['1000+ members', 'Active moderation', 'Gaming focus'],
-        benefits: ['Cross promotion', 'Joint events', 'Member exchange'],
-        contactInfo: 'DM @admin',
-        discordLink: 'https://discord.gg/example',
-        verified: true,
-        featured: false,
-        createdAt: '2024-01-01',
-        ownerUsername: 'gameradmin',
-      }
-    ];
+    // No partnerships exist yet - return empty array
+    return [];
   }
 
   async createPartnership(partnershipData: any) {
-    // Mock implementation - would save to database
-    return {
-      id: `partnership_${Date.now()}`,
-      ...partnershipData,
-      createdAt: new Date(),
-    };
+    // Partnership creation not implemented yet
+    throw new Error('Partnership creation not available');
   }
 
   // Server Templates
@@ -856,63 +834,23 @@ export class DatabaseStorage implements IStorage {
     limit: number;
     offset: number;
   }) {
-    // Mock data for now
-    return [
-      {
-        id: '1',
-        name: 'Gaming Community Template',
-        description: 'Perfect setup for gaming communities with voice channels, game-specific text channels, and moderation roles.',
-        category: 'gaming',
-        previewImage: null,
-        channels: [
-          { name: 'GENERAL', type: 'category', position: 0 },
-          { name: 'general-chat', type: 'text', position: 1, category: 'GENERAL' },
-          { name: 'announcements', type: 'text', position: 2, category: 'GENERAL' },
-          { name: 'GAMING', type: 'category', position: 3 },
-          { name: 'game-chat', type: 'text', position: 4, category: 'GAMING' },
-          { name: 'Gaming Voice', type: 'voice', position: 5, category: 'GAMING' },
-        ],
-        roles: [
-          { name: 'Admin', color: '#ff0000', permissions: ['ADMINISTRATOR'], position: 5, mentionable: false },
-          { name: 'Moderator', color: '#00ff00', permissions: ['MANAGE_MESSAGES'], position: 4, mentionable: true },
-          { name: 'Member', color: '#0099ff', permissions: ['SEND_MESSAGES'], position: 1, mentionable: true },
-        ],
-        templateLink: 'template_1234567890_abcdef',
-        downloads: 150,
-        rating: 4.5,
-        verified: true,
-        featured: true,
-        createdBy: 'templatecreator',
-        createdAt: '2024-01-01',
-      }
-    ];
+    // No server templates exist yet - return empty array
+    return [];
   }
 
   async createServerTemplate(templateData: any) {
-    // Mock implementation - would save to database
-    return {
-      id: `template_${Date.now()}`,
-      ...templateData,
-      channels: JSON.stringify(templateData.channels),
-      roles: JSON.stringify(templateData.roles),
-      createdAt: new Date(),
-    };
+    // Server template creation not implemented yet
+    throw new Error('Server template creation not available');
   }
 
   async getTemplateByLink(templateLink: string) {
-    // Mock implementation - would query database
-    return {
-      id: 'template_123',
-      name: 'Gaming Template',
-      templateLink: templateLink,
-      channels: [],
-      roles: [],
-    };
+    // Template lookup not implemented yet
+    return null;
   }
 
   async setPendingTemplate(guildId: string, data: any) {
-    // Mock implementation - would store in cache/database
-    console.log(`Setting pending template for guild ${guildId}:`, data);
+    // Pending template storage not implemented yet
+    console.log(`Template functionality not available for guild ${guildId}`);
   }
 
   async getTemplateProcess(guildId: string) {
