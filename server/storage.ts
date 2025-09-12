@@ -1,4 +1,4 @@
-import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
 
@@ -74,6 +74,44 @@ export interface IStorage {
   // Voting operations
   voteOnServer(serverId: string, userId: string, voteType: 'up' | 'down'): Promise<{ voteType: 'up' | 'down' | null }>;
   getUserVoteStatus(serverId: string, userId: string): Promise<{ voteType: 'up' | 'down' | null }>;
+
+  // Support tickets
+  createSupportTicket(ticketData: {
+    userId?: string;
+    discordUserId: string;
+    username: string;
+    message: string;
+    guildName?: string;
+    status: string;
+  }): Promise<any>;
+
+  getSupportTickets(): Promise<any[]>;
+
+  // Partnerships
+  getPartnerships(options: {
+    search?: string;
+    type?: string;
+    limit: number;
+    offset: number;
+  }): Promise<any[]>;
+
+  createPartnership(partnershipData: any): Promise<any>;
+
+  // Server Templates
+  getServerTemplates(options: {
+    search?: string;
+    category?: string;
+    limit: number;
+    offset: number;
+  }): Promise<any[]>;
+
+  createServerTemplate(templateData: any): Promise<any>;
+
+  getTemplateByLink(templateLink: string): Promise<any | undefined>;
+
+  setPendingTemplate(guildId: string, data: any): Promise<void>;
+
+  getTemplateProcess(guildId: string): Promise<any | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -360,6 +398,8 @@ export class DatabaseStorage implements IStorage {
     userId: string;
     serverId: string;
     coinsToAward: number;
+    currentCoins: number;
+    advertisingMembersNeeded: number
   }): Promise<{ newBalance: number; advertisingComplete: boolean }> {
     const { userId, serverId, coinsToAward } = params;
 
@@ -686,6 +726,127 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(votes.serverId, serverId), eq(votes.userId, userId)));
 
     return { voteType: vote?.voteType || null };
+  }
+
+  // Partnerships
+  async getPartnerships(options: {
+    search?: string;
+    type?: string;
+    limit: number;
+    offset: number;
+  }) {
+    // Mock data for now
+    return [
+      {
+        id: '1',
+        title: 'Gaming Partnership Opportunity',
+        description: 'Looking for gaming communities to partner with for events and member exchange.',
+        serverName: 'Epic Gaming Hub',
+        serverIcon: 'https://cdn.discordapp.com/icons/123/icon.png',
+        memberCount: 5000,
+        partnershipType: 'server_partnership',
+        requirements: ['1000+ members', 'Active moderation', 'Gaming focus'],
+        benefits: ['Cross promotion', 'Joint events', 'Member exchange'],
+        contactInfo: 'DM @admin',
+        discordLink: 'https://discord.gg/example',
+        verified: true,
+        featured: false,
+        createdAt: '2024-01-01',
+        ownerUsername: 'gameradmin',
+      }
+    ];
+  }
+
+  async createPartnership(partnershipData: any) {
+    // Mock implementation - would save to database
+    return {
+      id: `partnership_${Date.now()}`,
+      ...partnershipData,
+      createdAt: new Date(),
+    };
+  }
+
+  // Server Templates
+  async getServerTemplates(options: {
+    search?: string;
+    category?: string;
+    limit: number;
+    offset: number;
+  }) {
+    // Mock data for now
+    return [
+      {
+        id: '1',
+        name: 'Gaming Community Template',
+        description: 'Perfect setup for gaming communities with voice channels, game-specific text channels, and moderation roles.',
+        category: 'gaming',
+        previewImage: null,
+        channels: [
+          { name: 'GENERAL', type: 'category', position: 0 },
+          { name: 'general-chat', type: 'text', position: 1, category: 'GENERAL' },
+          { name: 'announcements', type: 'text', position: 2, category: 'GENERAL' },
+          { name: 'GAMING', type: 'category', position: 3 },
+          { name: 'game-chat', type: 'text', position: 4, category: 'GAMING' },
+          { name: 'Gaming Voice', type: 'voice', position: 5, category: 'GAMING' },
+        ],
+        roles: [
+          { name: 'Admin', color: '#ff0000', permissions: ['ADMINISTRATOR'], position: 5, mentionable: false },
+          { name: 'Moderator', color: '#00ff00', permissions: ['MANAGE_MESSAGES'], position: 4, mentionable: true },
+          { name: 'Member', color: '#0099ff', permissions: ['SEND_MESSAGES'], position: 1, mentionable: true },
+        ],
+        templateLink: 'template_1234567890_abcdef',
+        downloads: 150,
+        rating: 4.5,
+        verified: true,
+        featured: true,
+        createdBy: 'templatecreator',
+        createdAt: '2024-01-01',
+      }
+    ];
+  }
+
+  async createServerTemplate(templateData: any) {
+    // Mock implementation - would save to database
+    return {
+      id: `template_${Date.now()}`,
+      ...templateData,
+      channels: JSON.stringify(templateData.channels),
+      roles: JSON.stringify(templateData.roles),
+      createdAt: new Date(),
+    };
+  }
+
+  async getTemplateByLink(templateLink: string) {
+    // Mock implementation - would query database
+    return {
+      id: 'template_123',
+      name: 'Gaming Template',
+      templateLink: templateLink,
+      channels: [],
+      roles: [],
+    };
+  }
+
+  async setPendingTemplate(guildId: string, data: any) {
+    // Mock implementation - would store in cache/database
+    console.log(`Setting pending template for guild ${guildId}:`, data);
+  }
+
+  async getTemplateProcess(guildId: string) {
+    // Mock implementation - would query database
+    return {
+      templateName: 'Gaming Template',
+      status: 'In Progress',
+      startedAt: Date.now() - 30000, // 30 seconds ago
+      channelsDeleted: 5,
+      rolesDeleted: 3,
+      channelsCreated: 8,
+      rolesCreated: 4,
+      totalChannels: 12,
+      totalRoles: 6,
+      eta: '2 minutes',
+      errors: [],
+    };
   }
 }
 

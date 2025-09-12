@@ -1418,6 +1418,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Partnerships routes
+  app.get("/api/partnerships", async (req, res) => {
+    try {
+      const { search, type, limit = "20", offset = "0" } = req.query;
+      const partnerships = await storage.getPartnerships({
+        search: search as string,
+        type: type as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(partnerships);
+    } catch (error) {
+      console.error("Error fetching partnerships:", error);
+      res.status(500).json({ message: "Failed to fetch partnerships" });
+    }
+  });
+
+  app.post("/api/partnerships", requireAuth, async (req, res) => {
+    try {
+      const partnershipData = req.body;
+      const partnership = await storage.createPartnership({
+        ...partnershipData,
+        ownerId: req.user!.id,
+      });
+      res.status(201).json(partnership);
+    } catch (error) {
+      console.error("Error creating partnership:", error);
+      res.status(500).json({ message: "Failed to create partnership" });
+    }
+  });
+
+  // Templates routes
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const { search, category, limit = "20", offset = "0" } = req.query;
+      const templates = await storage.getServerTemplates({
+        search: search as string,
+        category: category as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  app.post("/api/templates", requireAuth, async (req, res) => {
+    try {
+      const templateData = req.body;
+      const template = await storage.createServerTemplate({
+        ...templateData,
+        ownerId: req.user!.id,
+        templateLink: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      });
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      res.status(500).json({ message: "Failed to create template" });
+    }
+  });
+
+  app.post("/api/templates/analyze", requireAuth, async (req, res) => {
+    try {
+      const { serverLink } = req.body;
+      const inviteCode = serverLink.split('/').pop().split('?')[0];
+      
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      // Get invite info
+      const inviteResponse = await fetch(`https://discord.com/api/v10/invites/${inviteCode}`);
+      if (!inviteResponse.ok) {
+        return res.status(400).json({ message: "Invalid server link" });
+      }
+      
+      const inviteData = await inviteResponse.json();
+      const guildId = inviteData.guild.id;
+
+      // Get guild channels and roles
+      const [channelsResponse, rolesResponse] = await Promise.all([
+        fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+          headers: { 'Authorization': `Bot ${botToken}` }
+        }),
+        fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+          headers: { 'Authorization': `Bot ${botToken}` }
+        })
+      ]);
+
+      if (!channelsResponse.ok || !rolesResponse.ok) {
+        return res.status(400).json({ message: "Bot is not in this server or lacks permissions" });
+      }
+
+      const channels = await channelsResponse.json();
+      const roles = await rolesResponse.json();
+
+      // Filter out bot-specific roles and @everyone
+      const filteredRoles = roles.filter((role: any) => 
+        !role.managed && role.name !== '@everyone'
+      );
+
+      res.json({
+        serverName: inviteData.guild.name,
+        serverIcon: inviteData.guild.icon ? 
+          `https://cdn.discordapp.com/icons/${guildId}/${inviteData.guild.icon}.png` : null,
+        channels: channels.map((channel: any) => ({
+          name: channel.name,
+          type: channel.type === 4 ? 'category' : channel.type === 2 ? 'voice' : 'text',
+          position: channel.position,
+          category: channel.parent_id,
+        })),
+        roles: filteredRoles.map((role: any) => ({
+          name: role.name,
+          color: role.color ? `#${role.color.toString(16).padStart(6, '0')}` : null,
+          permissions: role.permissions,
+          position: role.position,
+          mentionable: role.mentionable,
+        }))
+      });
+    } catch (error) {
+      console.error("Error analyzing server:", error);
+      res.status(500).json({ message: "Failed to analyze server" });
+    }
+  });
+
+  app.post("/api/templates/validate", async (req, res) => {
+    try {
+      const { templateLink, guildId } = req.body;
+      const template = await storage.getTemplateByLink(templateLink);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      res.json(template);
+    } catch (error) {
+      console.error("Error validating template:", error);
+      res.status(500).json({ message: "Failed to validate template" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

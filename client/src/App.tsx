@@ -25,6 +25,9 @@ import HelpCenter from "./pages/help-center";
 import TermsOfService from "./pages/terms-of-service";
 import PrivacyPolicy from "./pages/privacy-policy";
 import Blog from "./pages/blog";
+import Partnership from "@/pages/partnership";
+import ServerTemplates from "@/pages/server-templates";
+import AddTemplate from "@/pages/add-template";
 
 
 function Router() {
@@ -53,6 +56,9 @@ function Router() {
       <Route path="/help-center" component={HelpCenter} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/partnership" component={Partnership} />
+      <Route path="/server-templates" component={ServerTemplates} />
+      <Route path="/add-template" component={AddTemplate} />
       <Route component={NotFound} />
     </Switch>
   );

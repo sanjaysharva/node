@@ -152,6 +152,60 @@ export const bumpChannels = pgTable("bump_channels", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const partnerships = pgTable("partnerships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  serverName: text("server_name").notNull(),
+  serverIcon: text("server_icon"),
+  memberCount: integer("member_count").default(0),
+  partnershipType: text("partnership_type").notNull(),
+  requirements: text("requirements").array().default([]),
+  benefits: text("benefits").array().default([]),
+  contactInfo: text("contact_info"),
+  discordLink: text("discord_link").notNull(),
+  verified: boolean("verified").default(false),
+  featured: boolean("featured").default(false),
+  ownerId: varchar("owner_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const serverTemplates = pgTable("server_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  previewImage: text("preview_image"),
+  channels: text("channels").notNull(), // JSON string
+  roles: text("roles").notNull(), // JSON string
+  templateLink: text("template_link").notNull().unique(),
+  downloads: integer("downloads").default(0),
+  rating: integer("rating").default(0),
+  verified: boolean("verified").default(false),
+  featured: boolean("featured").default(false),
+  ownerId: varchar("owner_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const templateProcesses = pgTable("template_processes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  guildId: text("guild_id").notNull(),
+  templateId: varchar("template_id").references(() => serverTemplates.id),
+  templateName: text("template_name"),
+  status: text("status").default('in_progress'), // 'in_progress', 'completed', 'failed'
+  totalChannels: integer("total_channels").default(0),
+  totalRoles: integer("total_roles").default(0),
+  channelsCreated: integer("channels_created").default(0),
+  rolesCreated: integer("roles_created").default(0),
+  channelsDeleted: integer("channels_deleted").default(0),
+  rolesDeleted: integer("roles_deleted").default(0),
+  errors: text("errors").array().default([]),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   servers: many(servers),
@@ -243,6 +297,27 @@ export const votes = pgTable("votes", {
 
 export const bumpChannelsRelations = relations(bumpChannels, ({ one }) => ({
   // No direct relations needed for now
+}));
+
+export const partnershipsRelations = relations(partnerships, ({ one }) => ({
+  owner: one(users, {
+    fields: [partnerships.ownerId],
+    references: [users.id],
+  }),
+}));
+
+export const serverTemplatesRelations = relations(serverTemplates, ({ one }) => ({
+  owner: one(users, {
+    fields: [serverTemplates.ownerId],
+    references: [users.id],
+  }),
+}));
+
+export const templateProcessesRelations = relations(templateProcesses, ({ one }) => ({
+  template: one(serverTemplates, {
+    fields: [templateProcesses.templateId],
+    references: [serverTemplates.id],
+  }),
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
@@ -349,6 +424,24 @@ export const insertVoteSchema = createInsertSchema(votes).omit({
   createdAt: true,
 });
 
+export const insertPartnershipSchema = createInsertSchema(partnerships).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertServerTemplateSchema = createInsertSchema(serverTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTemplateProcessSchema = createInsertSchema(templateProcesses).omit({
+  id: true,
+  startedAt: true,
+  completedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -373,3 +466,9 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Vote = typeof votes.$inferSelect;
 export type InsertVote = z.infer<typeof insertVoteSchema>;
 export type CommentLike = typeof commentLikes.$inferSelect;
+export type Partnership = typeof partnerships.$inferSelect;
+export type InsertPartnership = z.infer<typeof insertPartnershipSchema>;
+export type ServerTemplate = typeof serverTemplates.$inferSelect;
+export type InsertServerTemplate = z.infer<typeof insertServerTemplateSchema>;
+export type TemplateProcess = typeof templateProcesses.$inferSelect;
+export type InsertTemplateProcess = z.infer<typeof insertTemplateProcessSchema>;

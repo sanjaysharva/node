@@ -9,8 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, Plus, LogOut, Server, Bot, Calendar, Gift } from "lucide-react";
+import { User, Server, Trophy, ShoppingCart, LogOut, Menu, Bot, Calendar, Plus, Users, Hash } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -69,16 +70,7 @@ export default function Navbar() {
                 Smart Serve
               </span>
             </Link>
-            <div className="hidden md:flex space-x-6 items-center">
-              <Link
-                href="/advertise"
-                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
-                  location === "/advertise" ? "text-primary" : "text-muted-foreground"
-                }`}
-                data-testid="link-advertise"
-              >
-                Advertise
-              </Link>
+            <div className="hidden md:flex items-center space-x-8">
               <Link
                 href="/explore"
                 className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
@@ -96,6 +88,24 @@ export default function Navbar() {
                 data-testid="link-events"
               >
                 Events
+              </Link>
+              <Link
+                href="/partnership"
+                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
+                  location === "/partnership" ? "text-primary" : "text-muted-foreground"
+                }`}
+                data-testid="link-partnership"
+              >
+                Partnership
+              </Link>
+              <Link
+                href="/server-templates"
+                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
+                  location === "/server-templates" ? "text-primary" : "text-muted-foreground"
+                }`}
+                data-testid="link-server-templates"
+              >
+                Templates
               </Link>
               <Link
                 href="/join-members"
@@ -133,55 +143,6 @@ export default function Navbar() {
               >
                 Help
               </Link>
-
-              {/* Three dots dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)]"
-                    data-testid="button-menu-dots"
-                  >
-                    <i className="fas fa-ellipsis-h"></i>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-sm border border-purple-400/20">
-                  <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-premium">
-                    <i className="fas fa-crown mr-2 h-4 w-4 text-yellow-500"></i>
-                    Premium
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-purple-400/20" />
-                  {/* Categories inside dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild className="w-full px-2 py-1.5 text-sm outline-none cursor-pointer focus:bg-accent focus:text-accent-foreground">
-                      <div className="flex items-center">
-                        <i className="fas fa-sitemap mr-2 h-4 w-4 text-blue-400"></i>
-                        Categories
-                      </div>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-48 bg-card/95 backdrop-blur-sm border border-blue-400/20 ml-2">
-                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-support">
-                        <i className="fas fa-question-circle mr-2 h-4 w-4 text-blue-400"></i>
-                        Support
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-feedback">
-                        <i className="fas fa-comment mr-2 h-4 w-4 text-green-400"></i>
-                        Feedback
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-submit-ticket">
-                        <i className="fas fa-ticket-alt mr-2 h-4 w-4 text-green-400"></i>
-                        Submit Ticket
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-blue-400/20" />
-                      <DropdownMenuItem className="focus:bg-primary/20" data-testid="button-discord-menu">
-                        <i className="fab fa-discord mr-2 h-4 w-4 text-primary"></i>
-                        Discord
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 
@@ -204,7 +165,9 @@ export default function Navbar() {
                   <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile" data-testid="button-profile">
                     <User className="mr-2 h-4 w-4" />
@@ -228,6 +191,14 @@ export default function Navbar() {
                     <Bot className="mr-2 h-4 w-4" />
                     Add Bot
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/partnership')}>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Partnership Hub</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/server-templates')}>
+                  <Hash className="mr-2 h-4 w-4" />
+                  <span>Server Templates</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem data-testid="button-settings">

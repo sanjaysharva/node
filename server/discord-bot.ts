@@ -42,17 +42,26 @@ const commands = [
     ),
 
   new SlashCommandBuilder()
-    .setName('setbump')
-    .setDescription('Get your server management link (only visible to you)'),
-
-  new SlashCommandBuilder()
     .setName('support')
     .setDescription('Contact Smart Serve support team')
     .addStringOption(option =>
       option.setName('message')
         .setDescription('Your support message')
         .setRequired(true)
-    )
+    ),
+
+  new SlashCommandBuilder()
+    .setName('addtemplate')
+    .setDescription('Apply a server template to your server')
+    .addStringOption(option =>
+      option.setName('link')
+        .setDescription('The template link to apply')
+        .setRequired(true)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('templateprocess')
+    .setDescription('Check the progress of template application')
 ];
 
 client.once(Events.ClientReady, async () => {
@@ -102,11 +111,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       case 'bumpchannel':
         await handleBumpChannelCommand(interaction);
         break;
-      case 'setbump':
-        await handleSetBumpCommand(interaction);
-        break;
       case 'support':
         await handleSupportCommand(interaction);
+        break;
+      case 'addtemplate':
+        await handleAddTemplateCommand(interaction);
+        break;
+      case 'templateprocess':
+        await handleTemplateProcessCommand(interaction);
         break;
     }
   } catch (error) {
@@ -276,29 +288,112 @@ async function handleBumpChannelCommand(interaction: any) {
   }
 }
 
-async function handleSetBumpCommand(interaction: any) {
-  // Check if user has manage server permission
-  if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+async function handleAddTemplateCommand(interaction: any) {
+  // Check if user has administrator permission
+  if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.reply({
-      content: '❌ You need **Manage Server** permission to use this command.',
+      content: '❌ You need **Administrator** permission to apply server templates.',
       ephemeral: true
     });
     return;
   }
 
-  const serverManageUrl = `${process.env.APP_URL || 'https://smartserve.com'}/your-servers`;
+  await interaction.deferReply();
 
-  const embed = new EmbedBuilder()
-    .setTitle('⚙️ Server Management')
-    .setDescription('Manage your server settings on Smart Serve')
-    .setColor('#7C3AED')
-    .addFields(
-      { name: '🔗 Management Link', value: `[Click here to manage your servers](${serverManageUrl})`, inline: false },
-      { name: '📝 What you can do:', value: '• Enable/disable bump feature\n• Update server description\n• Manage advertising\n• View analytics', inline: false }
-    )
-    .setFooter({ text: 'This link is only visible to you' });
+  try {
+    const templateLink = interaction.options.getString('link');
+    const guildId = interaction.guild.id;
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+    // Validate template link
+    const response = await fetch(`${process.env.APP_URL || 'https://smartserve.com'}/api/templates/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ templateLink, guildId }),
+    });
+
+    if (!response.ok) {
+      await interaction.editReply({
+        content: '❌ Invalid template link or template not found.'
+      });
+      return;
+    }
+
+    const templateData = await response.json();
+
+    // Confirmation embed
+    const confirmEmbed = new EmbedBuilder()
+      .setTitle('⚠️ Template Application Warning')
+      .setDescription(`You are about to apply the template: **${templateData.name}**`)
+      .setColor('#FF6B6B')
+      .addFields(
+        { name: '🗑️ This will:', value: '• Delete ALL existing channels\n• Delete ALL existing roles (except @everyone and bot roles)\n• Create new channels and roles from template', inline: false },
+        { name: '📊 Template includes:', value: `• ${templateData.channels?.length || 0} channels\n• ${templateData.roles?.length || 0} roles`, inline: false },
+        { name: '⚠️ Warning:', value: 'This action cannot be undone! Make sure you have backed up any important settings.', inline: false }
+      )
+      .setFooter({ text: 'Use the command again within 60 seconds to confirm' });
+
+    await interaction.editReply({ embeds: [confirmEmbed] });
+
+    // Store pending template application
+    await storage.setPendingTemplate(guildId, {
+      templateLink,
+      templateData,
+      userId: interaction.user.id,
+      timestamp: Date.now(),
+    });
+
+  } catch (error) {
+    console.error('Add template command error:', error);
+    await interaction.editReply({
+      content: '❌ An error occurred while processing the template.'
+    });
+  }
+}
+
+async function handleTemplateProcessCommand(interaction: any) {
+  await interaction.deferReply();
+
+  try {
+    const guildId = interaction.guild.id;
+    const process = await storage.getTemplateProcess(guildId);
+
+    if (!process) {
+      await interaction.editReply({
+        content: '📊 No template application process found for this server.'
+      });
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('📊 Template Application Progress')
+      .setColor('#7C3AED')
+      .addFields(
+        { name: '🏷️ Template Name', value: process.templateName || 'Unknown', inline: true },
+        { name: '📈 Status', value: process.status || 'In Progress', inline: true },
+        { name: '📅 Started', value: `<t:${Math.floor(process.startedAt / 1000)}:R>`, inline: true },
+        { name: '🗑️ Channels Deleted', value: `${process.channelsDeleted || 0}`, inline: true },
+        { name: '🛡️ Roles Deleted', value: `${process.rolesDeleted || 0}`, inline: true },
+        { name: '➕ Channels Created', value: `${process.channelsCreated || 0}/${process.totalChannels || 0}`, inline: true },
+        { name: '🎭 Roles Created', value: `${process.rolesCreated || 0}/${process.totalRoles || 0}`, inline: true },
+        { name: '⏱️ Estimated Time Remaining', value: process.eta || 'Calculating...', inline: true }
+      );
+
+    if (process.errors && process.errors.length > 0) {
+      embed.addFields({
+        name: '❌ Errors', 
+        value: process.errors.slice(0, 3).join('\n') + (process.errors.length > 3 ? '\n...and more' : ''),
+        inline: false
+      });
+    }
+
+    await interaction.editReply({ embeds: [embed] });
+
+  } catch (error) {
+    console.error('Template process command error:', error);
+    await interaction.editReply({
+      content: '❌ An error occurred while checking the template process.'
+    });
+  }
 }
 
 async function handleSupportCommand(interaction: any) {
