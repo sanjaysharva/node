@@ -173,6 +173,10 @@ export default function Navbar() {
                       <p className="text-xs leading-none text-muted-foreground">
                         {user?.email}
                       </p>
+                      <div className="flex items-center gap-1 text-xs text-yellow-500">
+                        <Coins className="w-3 h-3" />
+                        <span>{user?.coins || 0} coins</span>
+                      </div>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

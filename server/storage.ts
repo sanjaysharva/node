@@ -912,18 +912,82 @@ export class DatabaseStorage implements IStorage {
     limit: number;
     offset: number;
   }) {
-    // No server templates exist yet - return empty array
-    return [];
+    try {
+      let query = this.db
+        .select({
+          id: serverTemplates.id,
+          name: serverTemplates.name,
+          description: serverTemplates.description,
+          category: serverTemplates.category,
+          previewImage: serverTemplates.previewImage,
+          channels: serverTemplates.channels,
+          roles: serverTemplates.roles,
+          templateLink: serverTemplates.templateLink,
+          downloads: serverTemplates.downloads,
+          rating: serverTemplates.rating,
+          createdBy: users.username,
+          verified: serverTemplates.verified,
+          featured: serverTemplates.featured,
+          createdAt: serverTemplates.createdAt,
+        })
+        .from(serverTemplates)
+        .leftJoin(users, eq(serverTemplates.ownerId, users.id))
+        .orderBy(desc(serverTemplates.createdAt))
+        .limit(options.limit)
+        .offset(options.offset);
+
+      if (options.search) {
+        query = query.where(
+          or(
+            ilike(serverTemplates.name, `%${options.search}%`),
+            ilike(serverTemplates.description, `%${options.search}%`)
+          )
+        );
+      }
+
+      if (options.category && options.category !== "all") {
+        query = query.where(eq(serverTemplates.category, options.category));
+      }
+
+      const results = await query;
+      return results;
+    } catch (error) {
+      console.error("Database error fetching server templates:", error);
+      return [];
+    }
   }
 
   async createServerTemplate(templateData: any) {
-    // Server template creation not implemented yet
-    throw new Error('Server template creation not available');
+    try {
+      const [template] = await this.db
+        .insert(serverTemplates)
+        .values({
+          ...templateData,
+          id: crypto.randomUUID(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      return template;
+    } catch (error) {
+      console.error("Database error creating server template:", error);
+      throw new Error("Failed to create server template in database");
+    }
   }
 
   async getTemplateByLink(templateLink: string) {
-    // Template lookup not implemented yet
-    return null;
+    try {
+      const [template] = await this.db
+        .select()
+        .from(serverTemplates)
+        .where(eq(serverTemplates.templateLink, templateLink));
+      
+      return template || null;
+    } catch (error) {
+      console.error("Database error getting template by link:", error);
+      return null;
+    }
   }
 
   async setPendingTemplate(guildId: string, data: any) {

@@ -30,18 +30,21 @@ import AddPartnership from "@/pages/add-partnership";
 import ServerTemplates from "@/pages/server-templates";
 import AddTemplate from "@/pages/add-template";
 import Login from "@/pages/login";
-import { lazy } from "react";
-
+import Jobs from "@/pages/jobs";
 
 function Router() {
   const { user } = useAuth();
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       <Route path="/advertise" component={Advertise} />
       <Route path="/advertise-server" component={AddServer} />
       <Route path="/add-bot" component={AddBot} />
       <Route path="/add-server" component={AddServer} />
+      <Route path="/add-event" component={AddEvent} />
+      <Route path="/add-partnership" component={AddPartnership} />
+      <Route path="/add-template" component={AddTemplate} />
       <Route path="/your-servers" component={YourServers} />
       <Route path="/events" component={Events} />
       <Route path="/explore" component={Explore} />
@@ -50,7 +53,15 @@ function Router() {
       <Route path="/quest" component={Quest} />
       <Route path="/partnership" component={Partnership} />
       <Route path="/server-templates" component={ServerTemplates} />
-      <Route path="/jobs" component={lazy(() => import("./pages/jobs"))} />
+      <Route path="/jobs" component={Jobs} />
+      <Route path="/profile" component={Profile} />
+      <Route path="/admin" component={AdminPage} />
+      <Route path="/search" component={SearchPage} />
+      <Route path="/server/:id" component={ServerDetail} />
+      <Route path="/help-center" component={HelpCenter} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/blog" component={Blog} />
       <Route component={NotFound} />
     </Switch>
   );
