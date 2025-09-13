@@ -185,12 +185,12 @@ export default function Home() {
                   </SelectContent>
                 </Select>
                 
-                <Select onValueChange={(value) => setSearchQuery(value)}>
+                <Select onValueChange={(value) => setSearchQuery(value === 'all' ? '' : value)}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     <SelectItem value="gaming">Gaming</SelectItem>
                     <SelectItem value="community">Community</SelectItem>
                     <SelectItem value="education">Education</SelectItem>
