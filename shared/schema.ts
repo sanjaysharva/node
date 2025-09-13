@@ -210,6 +210,27 @@ export const templateProcesses = pgTable("template_processes", {
   completedAt: timestamp("completed_at"),
 });
 
+export const jobs = pgTable("jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(), // 'job_needed' or 'job_giving'
+  category: text("category").notNull(),
+  userId: text("user_id").notNull(),
+  skills: text("skills").array().default([]),
+  websiteUrl: text("website_url"),
+  serverInviteLink: text("server_invite_link"),
+  currency: text("currency").array().default([]),
+  contactInfo: text("contact_info").notNull(),
+  location: text("location").default("Remote"),
+  salary: text("salary"),
+  company: text("company"),
+  urgent: boolean("urgent").default(false),
+  ownerId: varchar("owner_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   servers: many(servers),
@@ -321,6 +342,13 @@ export const templateProcessesRelations = relations(templateProcesses, ({ one })
   template: one(serverTemplates, {
     fields: [templateProcesses.templateId],
     references: [serverTemplates.id],
+  }),
+}));
+
+export const jobsRelations = relations(jobs, ({ one }) => ({
+  owner: one(users, {
+    fields: [jobs.ownerId],
+    references: [users.id],
   }),
 }));
 
@@ -446,6 +474,12 @@ export const insertTemplateProcessSchema = createInsertSchema(templateProcesses)
   completedAt: true,
 });
 
+export const insertJobSchema = createInsertSchema(jobs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -476,3 +510,5 @@ export type ServerTemplate = typeof serverTemplates.$inferSelect;
 export type InsertServerTemplate = z.infer<typeof insertServerTemplateSchema>;
 export type TemplateProcess = typeof templateProcesses.$inferSelect;
 export type InsertTemplateProcess = z.infer<typeof insertTemplateProcessSchema>;
+export type Job = typeof jobs.$inferSelect;
+export type InsertJob = z.infer<typeof insertJobSchema>;

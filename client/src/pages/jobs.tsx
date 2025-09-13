@@ -1,12 +1,11 @@
 
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Plus, MapPin, Clock, DollarSign, Users, Briefcase } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
@@ -14,17 +13,21 @@ interface Job {
   id: string;
   title: string;
   description: string;
-  company: string;
-  location: string;
-  type: "remote" | "onsite" | "hybrid";
-  category: "job_needed" | "job_giving";
-  salary?: string;
-  requirements: string[];
-  benefits?: string[];
+  type: string;
+  category: string;
+  userId: string;
+  skills: string[];
+  websiteUrl?: string;
+  serverInviteLink?: string;
+  currency: string[];
   contactInfo: string;
-  postedBy: string;
-  postedDate: string;
+  location: string;
+  salary?: string;
+  company?: string;
   urgent?: boolean;
+  ownerId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function Jobs() {
@@ -32,36 +35,19 @@ export default function Jobs() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { isAuthenticated } = useAuth();
 
-  // Mock data for now
-  const jobs: Job[] = [
-    {
-      id: "1",
-      title: "Discord Bot Developer",
-      description: "Looking for an experienced Discord bot developer to create custom moderation and economy bots.",
-      company: "Gaming Community",
-      location: "Remote",
-      type: "remote",
-      category: "job_needed",
-      salary: "$500-1000",
-      requirements: ["JavaScript/Python", "Discord.js/discord.py", "Database knowledge"],
-      contactInfo: "dm @admin#1234",
-      postedBy: "admin",
-      postedDate: "2 days ago"
+  // Fetch jobs from database
+  const { data: jobs = [], isLoading } = useQuery<Job[]>({
+    queryKey: ["/api/jobs", searchQuery, selectedCategory],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("search", searchQuery);
+      if (selectedCategory !== "all") params.append("type", selectedCategory);
+      
+      const response = await fetch(`/api/jobs?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch jobs");
+      return response.json();
     },
-    {
-      id: "2", 
-      title: "Community Manager Position",
-      description: "Offering community management services for Discord servers. Experienced in growth and engagement.",
-      company: "FreelanceHub",
-      location: "Remote",
-      type: "remote", 
-      category: "job_giving",
-      requirements: ["Community management", "Discord experience", "Engagement strategies"],
-      contactInfo: "contact@freelancehub.com",
-      postedBy: "freelancer",
-      postedDate: "1 week ago"
-    }
-  ];
+  });
 
   const categories = [
     { value: "all", label: "All Jobs" },
@@ -69,12 +55,7 @@ export default function Jobs() {
     { value: "job_giving", label: "Jobs Available" },
   ];
 
-  const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         job.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || job.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredJobs = jobs;
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,11 +120,11 @@ export default function Jobs() {
                       <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
                       <CardDescription className="flex items-center gap-2 mb-2">
                         <Briefcase className="w-4 h-4" />
-                        {job.company}
+                        {job.company || "Not specified"}
                       </CardDescription>
                     </div>
-                    <Badge variant={job.category === "job_needed" ? "destructive" : "default"}>
-                      {job.category === "job_needed" ? "Needed" : "Available"}
+                    <Badge variant={job.type === "job_needed" ? "destructive" : "default"}>
+                      {job.type === "job_needed" ? "Needed" : "Available"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -158,7 +139,7 @@ export default function Jobs() {
                       <MapPin className="w-4 h-4 text-blue-400" />
                       <span>{job.location}</span>
                       <Badge variant="outline" className="text-xs">
-                        {job.type}
+                        {job.category}
                       </Badge>
                     </div>
                     
@@ -171,17 +152,17 @@ export default function Jobs() {
                     
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-gray-400" />
-                      <span>{job.postedDate}</span>
+                      <span>{new Date(job.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
 
-                  {job.requirements && job.requirements.length > 0 && (
+                  {job.skills && job.skills.length > 0 && (
                     <div>
-                      <h4 className="font-medium text-sm mb-2">Requirements:</h4>
+                      <h4 className="font-medium text-sm mb-2">Skills:</h4>
                       <div className="flex flex-wrap gap-1">
-                        {job.requirements.slice(0, 3).map((req, idx) => (
+                        {job.skills.slice(0, 3).map((skill, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
-                            {req}
+                            {skill}
                           </Badge>
                         ))}
                       </div>
@@ -193,8 +174,15 @@ export default function Jobs() {
                       size="sm" 
                       className="flex-1"
                       onClick={() => {
-                        const userId = job.contactInfo.replace('User ID: ', '').trim();
-                        window.open(`https://discord.com/users/${userId}`, '_blank');
+                        if (job.contactInfo.includes('discord.com/users/') || job.contactInfo.match(/^\d+$/)) {
+                          const userId = job.contactInfo.includes('discord.com/users/') 
+                            ? job.contactInfo.split('/').pop() 
+                            : job.contactInfo;
+                          window.open(`https://discord.com/users/${userId}`, '_blank');
+                        } else {
+                          navigator.clipboard.writeText(job.contactInfo);
+                          alert('Contact info copied to clipboard: ' + job.contactInfo);
+                        }
                       }}
                     >
                       Contact
@@ -203,7 +191,7 @@ export default function Jobs() {
                       size="sm" 
                       variant="outline"
                       onClick={() => {
-                        alert(`Job Details:\n\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location}\nDescription: ${job.description}\n\nRequirements: ${job.requirements?.join(', ')}\n\nContact: ${job.contactInfo}`);
+                        alert(`Job Details:\n\nTitle: ${job.title}\nCompany: ${job.company || 'Not specified'}\nLocation: ${job.location}\nDescription: ${job.description}\n\nSkills: ${job.skills?.join(', ') || 'None specified'}\n\nContact: ${job.contactInfo}`);
                       }}
                     >
                       Details
@@ -214,7 +202,21 @@ export default function Jobs() {
             ))}
           </div>
 
-          {filteredJobs.length === 0 && (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="animate-pulse border-border bg-card">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="w-full h-6 bg-muted rounded"></div>
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : filteredJobs.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
                 <Briefcase className="w-8 h-8 text-white" />
@@ -229,7 +231,7 @@ export default function Jobs() {
                 </Button>
               )}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

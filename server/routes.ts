@@ -12,14 +12,16 @@ import {
   reviews,
   serverJoins,
   bumpChannels,
+  jobs,
   insertServerSchema,
   insertBotSchema,
   insertEventSchema,
   insertAdSchema,
   insertServerJoinSchema,
   insertSlideshowSchema,
-  insertPartnershipSchema, // Import the new schema
-  insertServerTemplateSchema // Import the new schema
+  insertPartnershipSchema,
+  insertServerTemplateSchema,
+  insertJobSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm";
@@ -2194,48 +2196,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Job posting endpoints
+  // Job routes
+  app.get("/api/jobs", async (req, res) => {
+    try {
+      const { search, type, limit = "20", offset = "0" } = req.query;
+      const jobs = await storage.getJobs({
+        search: search as string,
+        type: type as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      res.status(500).json({ message: "Failed to fetch jobs" });
+    }
+  });
+
   app.post("/api/jobs", requireAuth, async (req, res) => {
     try {
-      const {
-        type,
-        title,
-        description,
-        userId,
-        skills,
-        websiteUrl,
-        serverInviteLink,
-        currency,
-        contactInfo,
-        postedBy
-      } = req.body;
+      const jobData = insertJobSchema.parse({
+        ...req.body,
+        ownerId: req.user!.id,
+      });
+      const job = await storage.createJob(jobData);
+      res.status(201).json(job);
+    } catch (error) {
+      console.error("Error creating job:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create job" });
+    }
+  });
 
-      // Basic validation
-      if (!type || !title || !description || !userId) {
-        return res.status(400).json({ error: "Missing required fields" });
+  app.get("/api/jobs/:id", async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error("Error fetching job:", error);
+      res.status(500).json({ message: "Failed to fetch job" });
+    }
+  });
+
+  app.delete("/api/jobs/:id", requireAuth, async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
       }
 
-      // Here you would typically save to database
-      // For now, we'll just return success
-      const job = {
-        id: Date.now().toString(),
-        type,
-        title,
-        description,
-        userId,
-        skills: skills || [],
-        websiteUrl: websiteUrl || null,
-        serverInviteLink: serverInviteLink || null,
-        currency: currency || [],
-        contactInfo,
-        postedBy,
-        postedDate: new Date().toISOString()
-      };
+      if (job.ownerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only delete your own jobs" });
+      }
 
-      res.json({ success: true, job });
+      await storage.deleteJob(req.params.id);
+      res.status(204).send();
     } catch (error) {
-      console.error("Error creating job posting:", error);
-      res.status(500).json({ error: "Failed to create job posting" });
+      console.error("Error deleting job:", error);
+      res.status(500).json({ message: "Failed to delete job" });
     }
   });
 

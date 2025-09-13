@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
@@ -31,7 +30,7 @@ export default function AddJob() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("job-needed");
-  
+
   // Job Needed Form State
   const [jobNeededData, setJobNeededData] = useState<JobNeededFormData>({
     userId: "",
@@ -40,7 +39,7 @@ export default function AddJob() {
     description: ""
   });
   const [skillInput, setSkillInput] = useState("");
-  
+
   // Job Giving Form State
   const [jobGivingData, setJobGivingData] = useState<JobGivingFormData>({
     userId: "",
@@ -107,11 +106,11 @@ export default function AddJob() {
           postedBy: user?.username || "Anonymous"
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to create job posting');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -157,11 +156,11 @@ export default function AddJob() {
           postedBy: user?.username || "Anonymous"
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to create job posting');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -206,7 +205,7 @@ export default function AddJob() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}

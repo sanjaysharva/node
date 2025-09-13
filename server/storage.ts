@@ -1,4 +1,4 @@
-import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes, jobs, type Job, type InsertJob } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
 import crypto from "crypto";
@@ -120,29 +120,19 @@ export interface IStorage {
   }): Promise<any[]>;
 
   createPartnership(partnershipData: any): Promise<any>;
+  analyzePartnershipServer(serverLink: string): Promise<any>;
 
-  // Server Templates
-  getServerTemplates(options: {
-    search?: string;
-    category?: string;
-    limit: number;
-    offset: number;
-  }): Promise<any[]>;
+  // Template operations
+  getServerTemplates(options?: { search?: string; category?: string; limit?: number; offset?: number }): Promise<any[]>;
+  createServerTemplate(template: any): Promise<any>;
+  getTemplateByLink(templateLink: string): Promise<any>;
+  analyzePartnershipServer(serverLink: string): Promise<any>;
 
-  createServerTemplate(templateData: any): Promise<any>;
-
-  getTemplateByLink(templateLink: string): Promise<any | undefined>;
-
-  setPendingTemplate(guildId: string, data: any): Promise<void>;
-
-  getTemplateProcess(guildId: string): Promise<any | undefined>;
-
-  // Guild Settings
-  updateGuildSettings(guildId: string, settings: any): Promise<void>;
-
-  // Reaction Roles
-  addReactionRole(guildId: string, messageId: string, emoji: string, roleId: string): Promise<void>;
-  getReactionRole(guildId: string, messageId: string, emoji: string): Promise<any>;
+  // Job operations
+  getJobs(options?: { search?: string; type?: string; limit?: number; offset?: number }): Promise<Job[]>;
+  createJob(job: InsertJob): Promise<Job>;
+  getJob(id: string): Promise<Job | undefined>;
+  deleteJob(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -335,11 +325,11 @@ export class DatabaseStorage implements IStorage {
   // Wallet operations
   async getAdvertisingServers(advertisingType?: string): Promise<Server[]> {
     const conditions = [eq(servers.isAdvertising, true)];
-    
+
     if (advertisingType) {
       conditions.push(eq(servers.advertisingType, advertisingType));
     }
-    
+
     return await this.db.select().from(servers)
       .where(and(...conditions))
       .orderBy(desc(servers.memberCount));
@@ -1017,7 +1007,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async analyzePartnershipServer(serverLink: string) {
+  async analyzePartnershipServer(serverLink: string): Promise<any> {
     // Mock server analysis for now - in real implementation, this would use Discord API
     // Extract invite code from the server link
     const inviteCode = serverLink.match(/discord\.gg\/([a-zA-Z0-9]+)/)?.[1] ||
@@ -1253,6 +1243,47 @@ export class DatabaseStorage implements IStorage {
   async createBlogPost(blogData: any): Promise<any> {
     // Mock implementation - no blog table exists yet
     return { id: 'mock-blog-id', ...blogData };
+  }
+
+  // Job operations
+  async getJobs(options?: { search?: string; type?: string; limit?: number; offset?: number }): Promise<Job[]> {
+    const conditions = [];
+
+    if (options?.search) {
+      conditions.push(
+        or(
+          ilike(jobs.title, `%${options.search}%`),
+          ilike(jobs.description, `%${options.search}%`)
+        )
+      );
+    }
+
+    if (options?.type && options.type !== 'all') {
+      conditions.push(eq(jobs.type, options.type));
+    }
+
+    const baseQuery = this.db.select().from(jobs);
+    const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+    const withOrder = withWhere.orderBy(desc(jobs.createdAt));
+    const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
+    const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
+
+    return await finalQuery;
+  }
+
+  async createJob(job: InsertJob): Promise<Job> {
+    const [newJob] = await this.db.insert(jobs).values(job).returning();
+    return newJob;
+  }
+
+  async getJob(id: string): Promise<Job | undefined> {
+    const [job] = await this.db.select().from(jobs).where(eq(jobs.id, id));
+    return job || undefined;
+  }
+
+  async deleteJob(id: string): Promise<boolean> {
+    const result = await this.db.delete(jobs).where(eq(jobs.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
