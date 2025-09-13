@@ -431,13 +431,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: guild.name,
         description: guild.description || `${guild.name} Discord Server`,
         inviteCode: '', // We don't have invite codes from guilds API
-        icon: guild.icon,
+        inviteUrl: '', // No direct invite URL
+        imageUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png` : null,
         memberCount: guild.approximate_member_count || 0,
         onlineCount: guild.approximate_presence_count || 0,
         ownerId: req.params.userId,
+        discordId: guild.id, // Store Discord guild ID
+        category: 'general',
         tags: [], // Don't use Discord features as tags
         verified: guild.features?.includes('VERIFIED') || guild.features?.includes('PARTNERED') || false,
         featured: guild.features?.includes('FEATURED') || guild.features?.includes('DISCOVERABLE') || false,
+        isAdvertising: false,
+        advertisingType: 'none',
         createdAt: new Date(),
         updatedAt: new Date(),
       }));
@@ -1055,6 +1060,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(500).json({ message: "Failed to process server join" });
+    }
+  });
+
+  // Purchase members for advertising (works with Discord servers)
+  app.post("/api/servers/purchase-members", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { serverId, members } = req.body;
+      const userId = req.user.id;
+
+      if (!members || typeof members !== 'number' || members <= 0) {
+        return res.status(400).json({ message: "Valid members count required" });
+      }
+
+      const costPerMember = 2;
+      const totalCost = members * costPerMember;
+
+      // Get current user to check balance
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const currentCoins = currentUser.coins || 0;
+      if (currentCoins < totalCost) {
+        return res.status(400).json({
+          message: "Insufficient coins",
+          required: totalCost,
+          available: currentCoins,
+        });
+      }
+
+      // Verify the user owns/admins the server (using Discord API)
+      if (!currentUser.discordAccessToken) {
+        return res.status(400).json({ message: "Discord access required" });
+      }
+
+      // Fetch user's guilds to verify ownership
+      const guildsResponse = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+        headers: {
+          'Authorization': `Bearer ${currentUser.discordAccessToken}`,
+        },
+      });
+
+      if (!guildsResponse.ok) {
+        return res.status(400).json({ message: "Failed to verify server ownership" });
+      }
+
+      const guilds = await guildsResponse.json();
+      const userGuild = guilds.find((guild: any) => guild.id === serverId && (guild.permissions & 0x8) === 0x8); // ADMINISTRATOR permission
+
+      if (!userGuild) {
+        return res.status(403).json({ message: "You must be an admin of this server" });
+      }
+
+      // Check or create server in database for advertising
+      let serverData = await storage.getServerByDiscordId(serverId);
+      if (!serverData) {
+        // Create server entry for advertising
+        serverData = await storage.createServer({
+          name: userGuild.name,
+          description: userGuild.description || `${userGuild.name} Discord Server`,
+          discordId: serverId,
+          ownerId: userId,
+          memberCount: userGuild.approximate_member_count || 0,
+          category: 'general',
+          tags: [],
+          inviteCode: '',
+          inviteUrl: '',
+          isAdvertising: false,
+          advertisingType: 'none',
+        });
+      }
+
+      // ATOMIC OPERATION: Deduct coins and set server as member-exchange advertising
+      const newCoinBalance = currentCoins - totalCost;
+      await Promise.all([
+        storage.updateUserCoins(userId, newCoinBalance),
+        storage.updateServer(serverData.id, {
+          isAdvertising: true,
+          advertisingMembersNeeded: members,
+          advertisingUserId: userId,
+          advertisingType: "member_exchange", // Set as member-exchange advertising
+        }),
+      ]);
+
+      res.json({
+        message: "Successfully purchased advertising",
+        members: members,
+        costPaid: totalCost,
+        newBalance: newCoinBalance,
+      });
+    } catch (error) {
+      console.error("Member purchase error:", error);
+      res.status(500).json({ message: "Failed to process member purchase" });
     }
   });
 

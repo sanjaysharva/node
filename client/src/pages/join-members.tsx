@@ -61,12 +61,12 @@ export default function JoinMembers() {
     enabled: isAuthenticated,
   });
 
-  // Fetch user's servers from database (not Discord API)
+  // Fetch user's Discord admin servers
   const { data: userServers, isLoading: loadingUserServers } = useQuery<Server[]>({
-    queryKey: ["/api/servers/user-database", user?.id],
+    queryKey: ["/api/servers/user", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const response = await fetch(`/api/servers?owner=${user.id}`);
+      const response = await fetch(`/api/servers/user/${user.id}`);
       if (!response.ok) throw new Error("Failed to fetch user servers");
       return response.json();
     },
@@ -107,7 +107,7 @@ export default function JoinMembers() {
   const botCheckMutation = useMutation({
     mutationFn: async (serverId: string) => {
       const server = userServers?.find(s => s.id === serverId);
-      const guildId = server?.discordId ?? server?.id;
+      const guildId = server?.id; // Use the Discord guild ID directly
       if (!guildId) {
         throw new Error("Server ID not found");
       }
@@ -333,7 +333,7 @@ export default function JoinMembers() {
                               <div className="flex items-center justify-between w-full">
                                 <span>{server.name}</span>
                                 <Badge variant="outline" className="ml-2 text-xs border-gray-600 text-gray-400">
-                                  {server.memberCount}
+                                  {server.memberCount || 0}
                                 </Badge>
                               </div>
                             </SelectItem>
