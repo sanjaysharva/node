@@ -73,12 +73,13 @@ export default function Jobs() {
             </p>
             
             {isAuthenticated && (
-              <Button 
-                onClick={() => window.location.href = '/add-job'}
+              <Button asChild
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Post Job
+                <a href="/add-job">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Post Job
+                </a>
               </Button>
             )}
           </div>
@@ -226,8 +227,10 @@ export default function Jobs() {
                 {searchQuery ? "Try adjusting your search terms" : "Be the first to post a job"}
               </p>
               {isAuthenticated && (
-                <Button onClick={() => window.location.href = '/add-job'}>
-                  Post First Job
+                <Button asChild>
+                  <a href="/add-job">
+                    Post First Job
+                  </a>
                 </Button>
               )}
             </div>

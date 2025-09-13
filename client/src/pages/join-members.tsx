@@ -61,14 +61,32 @@ export default function JoinMembers() {
     enabled: isAuthenticated,
   });
 
-  // Fetch user's Discord admin servers
+  // Fetch user's Discord admin servers with bot presence check
   const { data: userServers, isLoading: loadingUserServers } = useQuery<Server[]>({
     queryKey: ["/api/servers/user", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const response = await fetch(`/api/servers/user/${user.id}`);
       if (!response.ok) throw new Error("Failed to fetch user servers");
-      return response.json();
+      const servers = await response.json();
+      
+      // Filter servers to only include those with bot present
+      const serversWithBot = [];
+      for (const server of servers) {
+        try {
+          const botCheckResponse = await fetch(`/api/discord/bot-check/${server.id}`);
+          if (botCheckResponse.ok) {
+            const botData = await botCheckResponse.json();
+            if (botData.botPresent) {
+              serversWithBot.push(server);
+            }
+          }
+        } catch (error) {
+          console.error(`Bot check failed for server ${server.name}:`, error);
+        }
+      }
+      
+      return serversWithBot;
     },
     enabled: isAuthenticated && !!user?.id,
   });
@@ -112,13 +130,21 @@ export default function JoinMembers() {
         throw new Error("Server ID not found");
       }
       const res = await fetch(`/api/discord/bot-check/${guildId}`);
-      if (!res.ok) throw new Error("Bot check failed");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Bot check failed");
+      }
       return res.json();
     },
     onSuccess: (data) => {
       setBotCheckData(data);
       if (!data.botPresent) {
         setBotCheckDialogOpen(true);
+        toast({
+          title: "Bot Required",
+          description: "Please add our bot to your server to continue.",
+          variant: "destructive",
+        });
       } else {
         // Bot is present, proceed with purchase
         proceedWithPurchase();
@@ -127,7 +153,7 @@ export default function JoinMembers() {
     onError: (error: any) => {
       toast({
         title: "Bot Check Failed",
-        description: error.message || "Failed to check bot presence",
+        description: error.message || "Failed to check bot presence. Please try again.",
         variant: "destructive",
       });
     },
@@ -328,16 +354,22 @@ export default function JoinMembers() {
                           <SelectValue placeholder="Select your server" />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-800 border-gray-700">
-                          {userServers?.map((server) => (
-                            <SelectItem key={server.id} value={server.id} className="text-white hover:bg-gray-700">
-                              <div className="flex items-center justify-between w-full">
-                                <span>{server.name}</span>
-                                <Badge variant="outline" className="ml-2 text-xs border-gray-600 text-gray-400">
-                                  {server.memberCount || 0}
-                                </Badge>
-                              </div>
+                          {userServers && userServers.length > 0 ? (
+                            userServers.map((server) => (
+                              <SelectItem key={server.id} value={server.id} className="text-white hover:bg-gray-700">
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{server.name}</span>
+                                  <Badge variant="outline" className="ml-2 text-xs border-gray-600 text-gray-400">
+                                    {server.memberCount || 0}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-servers" disabled className="text-gray-500">
+                              No eligible servers found
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
