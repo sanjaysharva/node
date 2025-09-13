@@ -101,6 +101,13 @@ export default function ServerCard({ server, onJoin, onView }: ServerCardProps) 
             </div>
           </div>
 
+          {/* Tags */}
+          <div className="mb-4">
+            <Badge variant="outline" className="text-xs">
+              {Array.isArray(server.tags) ? server.tags.join(", ") : "No tags"}
+            </Badge>
+          </div>
+
           {/* Enhanced Join Button */}
           <Button
             onClick={() => onJoin(server.id)}

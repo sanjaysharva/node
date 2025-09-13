@@ -100,7 +100,7 @@ export default function SearchPage() {
     }
 
     // Ensure searchResults is treated as an array of ServerType
-    const server = (searchResults as ServerType[] | undefined)?.find((s: ServerType) => s.id === serverId);
+    const server = Array.isArray(searchResults) ? searchResults.find((s: any) => s.id === serverId) : undefined;
     if (server?.inviteCode) {
       window.open(`https://discord.gg/${server.inviteCode}`, '_blank');
     } else {

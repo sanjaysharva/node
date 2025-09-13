@@ -64,23 +64,7 @@ interface CommunityReply {
   isSolution: boolean;
 }
 
-// Interface for Ads - Added missing properties based on the provided changes
-interface Ad {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl?: string;
-  targetUrl: string;
-  isActive: boolean;
-  impressions: number;
-  clicks: number;
-  budget: number;
-  spent: number;
-  createdAt: string;
-  ctr?: number;
-  conversions?: number;
-  cost?: number;
-}
+
 
 export default function HelpCenter() {
   const { user, isAuthenticated } = useAuth();
@@ -183,20 +167,7 @@ export default function HelpCenter() {
     { value: "server-setup", label: "Server Setup", icon: Users, color: "green" },
   ];
 
-  // Note: The original code did not contain any state or logic related to the 'Ad' interface. 
-  // The 'formData' state and its usage were also not present in the original code snippet provided.
-  // Therefore, the following additions are based on the assumption that this was intended 
-  // for a separate feature or was a remnant of a previous change that wasn't fully integrated.
-  // For the purpose of fulfilling the request to fix errors and missing properties based on the changes,
-  // I've included the 'Ad' interface and a placeholder 'formData' state as described in the changes.
   
-  // State for Ad management (added based on changes)
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    imageUrl: "",
-    targetUrl: "",
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
