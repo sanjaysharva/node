@@ -1059,7 +1059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You must be an admin of this server" });
       }
 
-      // ATOMIC OPERATION: Deduct coins and set server as advertising
+      // ATOMIC OPERATION: Deduct coins and set server as member-exchange advertising
       const newCoinBalance = currentCoins - totalCost;
       await Promise.all([
         storage.updateUserCoins(userId, newCoinBalance),
@@ -1067,6 +1067,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isAdvertising: true,
           advertisingMembersNeeded: members,
           advertisingUserId: userId,
+          advertisingType: "member_exchange", // Set as member-exchange advertising
         }),
       ]);
 
