@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import backgroundImage from "@assets/generated_images/Purple_pixel_art_background_e8a9aea8.png";
+import backgroundImage from "@assets/generated_images/Purple_space_nebula_pixel_48325d29.png";
+import purpleCrystal from "@assets/generated_images/Purple_crystal_formation_background_904bf0eb.png";
 
 interface HeroSearchProps {
   onSearch: (query: string) => void;
@@ -29,15 +30,15 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
         alt="Background"
         className="absolute z-0 w-auto min-w-full min-h-full max-w-none"
       />
-      <div className="relative z-10 max-w-4xl mx-auto px-4 text-center text-white">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-          <span className="block text-white">Find Your Perfect</span>
-          <span className="block bg-gradient-to-r from-purple-800 via-purple-600 to-purple-900 bg-clip-text text-transparent animate-gradient-x bg-300%">
+          <span className="block text-white drop-shadow-lg">Find Your Perfect</span>
+          <span className="block bg-gradient-to-r from-purple-300 via-pink-200 to-cyan-300 bg-clip-text text-transparent animate-gradient-x bg-300% drop-shadow-lg">
             Discord Community
           </span>
         </h1>
 
-        <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-xl text-purple-100 mb-10 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
           Discover amazing Discord servers and powerful bots. Join thousands of active communities.
         </p>
 
