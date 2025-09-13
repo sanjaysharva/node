@@ -217,17 +217,17 @@ export default function JoinMembers() {
           </div>
 
           {/* Wallet Display */}
-          <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-2 border-yellow-300 dark:border-yellow-800 shadow-lg">
+          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-700 shadow-lg">
             <CardContent className="pt-4">
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Coins className="w-6 h-6 text-yellow-500" />
-                  <span className="text-lg font-semibold">Your Wallet</span>
+                  <Coins className="w-6 h-6 text-yellow-400" />
+                  <span className="text-lg font-semibold text-white">Your Wallet</span>
                 </div>
-                <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                <div className="text-3xl font-bold text-yellow-400">
                   {user?.coins || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">coins</div>
+                <div className="text-sm text-gray-400">coins</div>
               </div>
             </CardContent>
           </Card>
@@ -237,49 +237,49 @@ export default function JoinMembers() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className="lg:w-64 space-y-4">
-            <Card className="bg-card border-2 border-purple-200 dark:border-purple-800 shadow-lg">
+            <Card className="bg-gray-900 border-2 border-gray-700 shadow-lg">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                <CardTitle className="text-lg font-bold text-purple-400">
                   Quick Actions
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Link href="/trade">
-                  <Button variant="outline" className="w-full justify-start border-green-300 hover:bg-green-50 dark:hover:bg-green-950/20">
-                    <Coins className="w-4 h-4 mr-2 text-green-600" />
+                  <Button variant="outline" className="w-full justify-start border-gray-600 hover:bg-gray-800 text-white">
+                    <Coins className="w-4 h-4 mr-2 text-green-400" />
                     Trade Coins
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full justify-start border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/20">
-                  <TrendingUp className="w-4 h-4 mr-2 text-blue-600" />
+                <Button variant="outline" className="w-full justify-start border-gray-600 hover:bg-gray-800 text-white">
+                  <TrendingUp className="w-4 h-4 mr-2 text-blue-400" />
                   Analytics
                 </Button>
-                <Button variant="outline" className="w-full justify-start border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/20">
-                  <Crown className="w-4 h-4 mr-2 text-purple-600" />
+                <Button variant="outline" className="w-full justify-start border-gray-600 hover:bg-gray-800 text-white">
+                  <Crown className="w-4 h-4 mr-2 text-purple-400" />
                   Premium
                 </Button>
               </CardContent>
             </Card>
 
             {/* Fair Play Rules */}
-            <Card className="bg-card border border-border shadow-sm">
+            <Card className="bg-gray-900 border border-gray-700 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-green-600" />
-                  <CardTitle className="text-sm font-semibold text-green-600">Fair Play Rules</CardTitle>
+                  <Shield className="w-5 h-5 text-green-400" />
+                  <CardTitle className="text-sm font-semibold text-green-400">Fair Play Rules</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2 text-xs text-muted-foreground">
+              <CardContent className="space-y-2 text-xs text-gray-300">
                 <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
                   <span>Stay in servers for 24h minimum</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
                   <span>No fake or bot accounts</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
                   <span>Respect server rules</span>
                 </div>
               </CardContent>
@@ -289,17 +289,17 @@ export default function JoinMembers() {
           {/* Main Content */}
           <div className="flex-1 space-y-8">
             {/* Member Purchase Section */}
-            <Card className="bg-card border-2 border-purple-200 dark:border-purple-800 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-purple-950/20 to-blue-950/20 dark:from-purple-950/30 dark:to-blue-950/30">
+            <Card className="bg-gray-900 border-2 border-gray-700 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-700">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    <CardTitle className="text-2xl font-bold text-white">
                       🚀 Grow Your Server Community
                     </CardTitle>
-                    <CardDescription className="text-lg">
+                    <CardDescription className="text-lg text-gray-300">
                       Transform your earned coins into real members for your Discord server!
                     </CardDescription>
                   </div>
@@ -325,11 +325,11 @@ export default function JoinMembers() {
                       </div>
                       <div>
                         <Label className="text-base font-medium">Cost Calculator</Label>
-                        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-700 rounded-md">
-                          <div className="text-2xl font-bold text-blue-600">
+                        <div className="mt-2 p-3 bg-gray-800 border border-gray-600 rounded-md">
+                          <div className="text-2xl font-bold text-blue-400">
                             {membersToGet ? parseInt(membersToGet) * 2 : 0} coins
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-gray-400">
                             Rate: 2 coins per member
                           </div>
                         </div>
@@ -373,11 +373,11 @@ export default function JoinMembers() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Join Reward:</span>
-                        <Badge variant="secondary" className="bg-green-500/20 text-green-600">+1 coin</Badge>
+                        <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-700">+1 coin</Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Member Cost:</span>
-                        <Badge variant="outline" className="border-blue-600 text-blue-600">2 coins</Badge>
+                        <span className="text-gray-400">Member Cost:</span>
+                        <Badge variant="outline" className="border-blue-400 text-blue-400">2 coins</Badge>
                       </div>
                     </div>
                   </div>
@@ -388,10 +388,10 @@ export default function JoinMembers() {
             {/* Servers to Join Section */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold text-white">
                   🎯 Servers to Join (Earn Coins)
                 </h2>
-                <Badge variant="secondary" className="bg-green-500/20 text-green-600">
+                <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-700">
                   +1 coin per join
                 </Badge>
               </div>
@@ -413,7 +413,7 @@ export default function JoinMembers() {
               ) : advertisingServers && advertisingServers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {advertisingServers.map((server) => (
-                    <Card key={server.id} className="group hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-green-300">
+                    <Card key={server.id} className="group hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 border-gray-700 hover:border-green-500 bg-gray-900">
                       <CardContent className="pt-6">
                         <div className="space-y-4">
                           {server.imageUrl && (
@@ -426,21 +426,21 @@ export default function JoinMembers() {
                             </div>
                           )}
                           <div>
-                            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                            <h3 className="font-semibold text-lg text-white group-hover:text-purple-400 transition-colors">
                               {server.name}
                             </h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
+                            <p className="text-sm text-gray-400 line-clamp-2">
                               {server.description}
                             </p>
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
-                              <Users className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">
+                              <Users className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm text-gray-400">
                                 {server.memberCount.toLocaleString()} members
                               </span>
                             </div>
-                            <Badge variant="secondary" className="bg-green-500/20 text-green-600">
+                            <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-700">
                               +1 coin
                             </Badge>
                           </div>
@@ -481,26 +481,26 @@ export default function JoinMembers() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-secondary/20 p-4 rounded-lg space-y-2">
+            <div className="bg-gray-800 p-4 rounded-lg space-y-2 border border-gray-600">
               <div className="flex justify-between">
-                <span>Members:</span>
-                <span className="font-semibold">{membersToGet}</span>
+                <span className="text-gray-300">Members:</span>
+                <span className="font-semibold text-white">{membersToGet}</span>
               </div>
               <div className="flex justify-between">
-                <span>Cost per member:</span>
-                <span>2 coins</span>
+                <span className="text-gray-300">Cost per member:</span>
+                <span className="text-white">2 coins</span>
               </div>
-              <div className="flex justify-between border-t pt-2">
-                <span className="font-semibold">Total cost:</span>
-                <span className="font-semibold">{membersToGet ? parseInt(membersToGet) * 2 : 0} coins</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Your balance:</span>
-                <span>{user?.coins || 0} coins</span>
+              <div className="flex justify-between border-t border-gray-600 pt-2">
+                <span className="font-semibold text-gray-300">Total cost:</span>
+                <span className="font-semibold text-white">{membersToGet ? parseInt(membersToGet) * 2 : 0} coins</span>
               </div>
               <div className="flex justify-between">
-                <span>After purchase:</span>
-                <span>{(user?.coins || 0) - (membersToGet ? parseInt(membersToGet) * 2 : 0)} coins</span>
+                <span className="text-gray-300">Your balance:</span>
+                <span className="text-white">{user?.coins || 0} coins</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">After purchase:</span>
+                <span className="text-white">{(user?.coins || 0) - (membersToGet ? parseInt(membersToGet) * 2 : 0)} coins</span>
               </div>
             </div>
             <div className="flex justify-end space-x-2">
@@ -529,11 +529,11 @@ export default function JoinMembers() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <div className="bg-gray-800 p-4 rounded-lg border border-gray-600">
+              <p className="text-sm text-yellow-400">
                 The bot is required to:
               </p>
-              <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside space-y-1">
+              <ul className="mt-2 text-sm text-gray-300 list-disc list-inside space-y-1">
                 <li>Send invites to members</li>
                 <li>Track successful joins</li>
                 <li>Manage member delivery</li>
