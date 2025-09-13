@@ -64,71 +64,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Animated Galaxy Background */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
-          {/* Animated stars */}
-          <div className="absolute inset-0">
-            {[...Array(50)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 2}s`,
-                  animationDuration: `${2 + Math.random() * 3}s`
-                }}
-              />
-            ))}
-          </div>
-          
-          {/* Floating Discord-like 3D elements */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Discord logo elements */}
-            <div className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-2xl animate-float opacity-20 transform rotate-12">
-              <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                <i className="fab fa-discord"></i>
-              </div>
-            </div>
-            
-            <div className="absolute top-40 right-20 w-12 h-12 bg-gradient-to-br from-pink-400 to-red-400 rounded-xl animate-float opacity-30 transform -rotate-12" style={{ animationDelay: '1s' }}>
-              <div className="w-full h-full flex items-center justify-center text-white text-lg">
-                <i className="fas fa-gamepad"></i>
-              </div>
-            </div>
-            
-            <div className="absolute bottom-40 left-20 w-20 h-20 bg-gradient-to-br from-cyan-400 to-blue-400 rounded-3xl animate-float opacity-25 transform rotate-45" style={{ animationDelay: '2s' }}>
-              <div className="w-full h-full flex items-center justify-center text-white text-2xl">
-                <i className="fas fa-users"></i>
-              </div>
-            </div>
-            
-            <div className="absolute top-60 left-1/2 w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-400 rounded-2xl animate-float opacity-20 transform -rotate-6" style={{ animationDelay: '0.5s' }}>
-              <div className="w-full h-full flex items-center justify-center text-white text-xl">
-                <i className="fas fa-comments"></i>
-              </div>
-            </div>
-            
-            <div className="absolute bottom-60 right-10 w-18 h-18 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl animate-float opacity-30 transform rotate-12" style={{ animationDelay: '1.5s' }}>
-              <div className="w-full h-full flex items-center justify-center text-white text-xl">
-                <i className="fas fa-robot"></i>
-              </div>
-            </div>
-          </div>
-          
-          {/* Animated gradient orbs */}
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
 
-      <div className="relative z-10">
-        <Navbar />
+      
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <HeroSearch onSearch={handleSearch} />
         
         <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
@@ -150,7 +91,7 @@ export default function Home() {
         <AdBanner position="header" className="mt-8" />
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Popular Servers Showcase */}
         <section className="mb-16">
           <div className="flex items-center justify-between mb-8">
@@ -406,7 +347,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card/80 backdrop-blur-sm border-t border-border mt-16 relative z-10">
+      <footer className="bg-card border-t border-border mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
@@ -454,7 +395,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-      </div>
     </div>
   );
 }

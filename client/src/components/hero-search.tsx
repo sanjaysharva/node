@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import backgroundImage from "@assets/images.jpeg";
 
 interface HeroSearchProps {
   onSearch: (query: string) => void;
@@ -22,7 +23,12 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
   };
 
   return (
-    <section className="gradient-bg py-20 w-full">
+    <section className="relative py-20 w-full overflow-hidden">
+      <img
+        src={backgroundImage}
+        alt="Background"
+        className="absolute z-0 w-auto min-w-full min-h-full max-w-none"
+      />
       <div className="relative z-10 max-w-4xl mx-auto px-4 text-center text-white">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
           <span className="block text-white">Find Your Perfect</span>
