@@ -291,44 +291,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
       const offset = parseInt(req.query.offset as string) || 0;
       const search = req.query.search as string;
+
+      // Use the storage method with includeNormalAdvertising to show normal ads + regular servers
+      // But exclude member-exchange advertising servers
+      const serverList = await storage.getServers({
+        search,
+        limit,
+        offset,
+        includeNormalAdvertising: true
+      });
+
+      // TODO: Add back support for language, timezone, activity filters in storage.getServers
+      // For now, filter here to maintain existing functionality
+      let filteredServers = serverList;
+      
       const language = req.query.language as string;
       const timezone = req.query.timezone as string;
       const activity = req.query.activity as string;
 
-      let query = db.select().from(servers).limit(limit).offset(offset);
-
-      const conditions = [
-        // Only show normal servers for browsing (exclude advertising servers for member exchange)
-        eq(servers.isAdvertising, false)
-      ];
-
-      if (search) {
-        conditions.push(
-          or(
-            ilike(servers.name, `%${search}%`),
-            ilike(servers.description, `%${search}%`)
-          )
-        );
-      }
-
       if (language) {
-        conditions.push(eq(servers.language, language));
+        filteredServers = filteredServers.filter(server => server.language === language);
       }
-
       if (timezone) {
-        conditions.push(eq(servers.timezone, timezone));
+        filteredServers = filteredServers.filter(server => server.timezone === timezone);
       }
-
       if (activity) {
-        conditions.push(eq(servers.activityLevel, activity));
+        filteredServers = filteredServers.filter(server => server.activityLevel === activity);
       }
 
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
-      }
-
-      const serverList = await query;
-      res.json(serverList);
+      res.json(filteredServers);
     } catch (error) {
       console.error("Error fetching servers:", error);
       res.status(500).json({ message: "Failed to fetch servers" });
@@ -339,9 +330,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit = "6" } = req.query;
       const servers = await storage.getPopularServers(parseInt(limit as string));
-      // Filter out advertising servers - only show normal servers for browsing
-      const normalServers = servers.filter(server => !server.isAdvertising);
-      res.json(normalServers);
+      // Filter to include normal advertising and non-advertising servers, exclude member-exchange
+      const popularServers = servers.filter(server => 
+        !server.isAdvertising || 
+        (server.isAdvertising && server.advertisingType !== "member_exchange")
+      );
+      res.json(popularServers);
     } catch (error) {
       console.error("Failed to fetch popular servers:", error);
       res.status(500).json({ message: "Failed to fetch popular servers" });
@@ -351,7 +345,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advertising servers route (must come before /:id route)
   app.get("/api/servers/advertising", async (req, res) => {
     try {
-      const advertisingServers = await storage.getAdvertisingServers();
+      const advertisingType = req.query.type as string;
+      
+      // Validate advertising type
+      if (advertisingType && !["normal", "member_exchange"].includes(advertisingType)) {
+        return res.status(400).json({ message: "Invalid advertising type. Must be 'normal' or 'member_exchange'." });
+      }
+      
+      const advertisingServers = await storage.getAdvertisingServers(advertisingType);
       res.json(advertisingServers);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch advertising servers" });
