@@ -31,13 +31,13 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
       />
       <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-          <span className="block text-white drop-shadow-lg">Find Your Perfect</span>
-          <span className="block bg-gradient-to-r from-purple-300 via-pink-200 to-cyan-300 bg-clip-text text-transparent animate-gradient-x bg-300% drop-shadow-lg">
+          <span className="block text-gray-900 drop-shadow-lg">Find Your Perfect</span>
+          <span className="block bg-gradient-to-r from-gray-800 via-black to-purple-900 bg-clip-text text-transparent animate-gradient-x bg-300%">
             Discord Community
           </span>
         </h1>
 
-        <p className="text-xl text-purple-100 mb-10 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
+        <p className="text-xl text-gray-800 mb-10 max-w-3xl mx-auto leading-relaxed font-medium">
           Discover amazing Discord servers and powerful bots. Join thousands of active communities.
         </p>
 
