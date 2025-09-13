@@ -74,7 +74,7 @@ export default function Login() {
               size="lg"
               data-testid="button-login-discord"
             >
-              <i className="fab fa-discord mr-2 text-lg"></i>
+              <i className="fa-brands fa-discord mr-2 text-lg"></i>
               Continue with Discord
             </Button>
 

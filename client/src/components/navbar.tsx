@@ -276,7 +276,7 @@ export default function Navbar() {
               data-testid="button-login"
             >
               <Link href="/login">
-                <i className="fab fa-discord fa-bounce" style={{ color: '#ffffff', marginRight: '0.5rem' }}></i>
+                <i className="fa-brands fa-discord fa-bounce" style={{ color: '#ffffff', marginRight: '0.5rem' }}></i>
                 Login
               </Link>
             </Button>
