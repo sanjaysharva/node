@@ -942,7 +942,7 @@ client.on('GuildMemberAdd', async (member) => {
 // Quest tracking for member join events
 client.on('guildMemberAdd', async (member) => {
   // Only process joins for our main server
-  const MAIN_SERVER_ID = "1372226433191247983";
+  const MAIN_SERVER_ID = "1416385340922658838";
   if (member.guild.id !== MAIN_SERVER_ID) return;
 
   try {
@@ -1016,7 +1016,7 @@ client.on('guildMemberAdd', async (member) => {
 // Handle server boost events
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
   // Only process boosts for our main server
-  const MAIN_SERVER_ID = "1372226433191247983";
+  const MAIN_SERVER_ID = "1416385340922658838";
   if (newMember.guild.id !== MAIN_SERVER_ID) return;
 
   try {
