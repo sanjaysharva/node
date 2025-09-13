@@ -917,6 +917,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Discord access required for verification" });
       }
 
+      // Get server data to get Discord guild ID
+      const serverData = await storage.getServer(serverId);
+      if (!serverData) {
+        return res.status(404).json({ message: "Server not found" });
+      }
+
+      const discordGuildId = serverData.discordId;
+      if (!discordGuildId) {
+        return res.status(400).json({ message: "Server Discord ID not found" });
+      }
+
       // DISCORD MEMBERSHIP VERIFICATION: Verify user is actually a member of the Discord server
       const botToken = process.env.DISCORD_BOT_TOKEN;
       if (!botToken) {
@@ -925,7 +936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       try {
         // Check if user is a member of the guild using bot token
-        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverId}/members/${currentUser.discordId}`, {
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${discordGuildId}/members/${currentUser.discordId}`, {
           headers: {
             'Authorization': `Bot ${botToken}`,
           },
@@ -948,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ATOMIC TRANSACTION: All validation and state checks are now inside the transaction
       const userForTransaction = await storage.getUser(userId);
-      const serverForTransaction = await storage.getServer(serverId);
+      const serverForTransaction = serverData; // Use already fetched server data
       const result = await storage.atomicServerJoin({
         userId,
         serverId,
