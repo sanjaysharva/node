@@ -23,7 +23,7 @@ export default function JoinMembers() {
   const [selectedServer, setSelectedServer] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   // Fetch advertising servers (servers that give coins when joined)
   const { data: advertisingServers, isLoading: loadingServers } = useQuery<Server[]>({
