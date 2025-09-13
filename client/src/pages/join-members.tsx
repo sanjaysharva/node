@@ -304,7 +304,7 @@ export default function JoinMembers() {
         {(loadingUserServers || userServers !== undefined) && (
           <div className="mb-8">
             {loadingUserServers ? (
-              <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+              <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-950/20 to-blue-950/20 dark:from-purple-950/20 dark:to-blue-950/20">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
                     <Skeleton className="w-10 h-10 rounded-lg" />
@@ -334,7 +334,7 @@ export default function JoinMembers() {
                 </CardContent>
               </Card>
             ) : userServers && userServers.filter(s => s.isAdvertising).length === 0 ? (
-              <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+              <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-950/20 to-blue-950/20 dark:from-purple-950/20 dark:to-blue-950/20">
                 <CardContent className="text-center py-8">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
                     <TrendingUp className="w-8 h-8 text-white" />
@@ -352,7 +352,7 @@ export default function JoinMembers() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+              <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-950/20 to-blue-950/20 dark:from-purple-950/20 dark:to-blue-950/20">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -379,7 +379,7 @@ export default function JoinMembers() {
                     ?.filter(server => server.isAdvertising)
                     .map(server => {
                       return (
-                        <Card key={server.id} className="border border-purple-200 dark:border-purple-700 bg-white dark:bg-purple-950/10">
+                        <Card key={server.id} className="border border-purple-200 dark:border-purple-700 bg-card/50 dark:bg-purple-950/20">
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                               <CardTitle className="text-lg font-semibold truncate" title={server.name}>
@@ -598,7 +598,7 @@ export default function JoinMembers() {
         {/* Member Purchase Section - Below */}
         <section id="member-purchase-section" className="mb-8">
         <Card className="bg-card border-2 border-purple-200 dark:border-purple-800 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+          <CardHeader className="bg-gradient-to-r from-purple-950/20 to-blue-950/20 dark:from-purple-950/30 dark:to-blue-950/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
@@ -751,7 +751,7 @@ export default function JoinMembers() {
                     </DialogHeader>
 
                     <div className="space-y-4">
-                      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="bg-blue-950/20 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                         <div className="flex items-start space-x-3">
                           <Bot className="w-5 h-5 text-blue-500 mt-0.5" />
                           <div>
@@ -810,7 +810,7 @@ export default function JoinMembers() {
 
               {/* Enhanced Info Section */}
               <div className="space-y-4">
-                <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="bg-gradient-to-br from-green-950/20 to-blue-950/20 dark:from-green-950/20 dark:to-blue-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                   <h4 className="font-semibold text-green-700 dark:text-green-400 mb-3 flex items-center">
                     <CheckCircle className="w-4 h-4 mr-2" />
                     How Advertising Works
@@ -835,7 +835,7 @@ export default function JoinMembers() {
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <div className="bg-gradient-to-br from-purple-950/20 to-pink-950/20 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                   <h4 className="font-semibold text-purple-700 dark:text-purple-400 mb-2 flex items-center">
                     <Star className="w-4 h-4 mr-2" />
                     Success Rate
@@ -852,7 +852,7 @@ export default function JoinMembers() {
                   </div>
                 </div>
                 
-                <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="bg-orange-950/20 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
                   <h4 className="font-semibold text-orange-700 dark:text-orange-400 mb-2 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-2" />
                     Fair Play Rules
