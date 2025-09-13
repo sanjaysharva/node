@@ -42,7 +42,7 @@ export default function ServerCard({ server, onJoin, onView }: ServerCardProps) 
             <div className="w-16 h-16 bg-background border-4 border-background rounded-2xl flex items-center justify-center text-foreground font-bold text-xl shadow-2xl group-hover:scale-110 transition-transform duration-300">
               {server.icon ? (
                 <img
-                  src={`https://cdn.discordapp.com/icons/${server.id}/${server.icon}.png`}
+                  src={`https://cdn.discordapp.com/icons/${server.discordId || server.id}/${server.icon}.png`}
                   alt={server.name}
                   className="w-full h-full rounded-xl object-cover"
                 />

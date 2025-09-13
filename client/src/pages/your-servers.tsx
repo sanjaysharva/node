@@ -232,7 +232,7 @@ export default function YourServers() {
                         <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
                           {server.icon ? (
                             <img 
-                              src={`https://cdn.discordapp.com/icons/${server.id}/${server.icon}.png`} 
+                              src={`https://cdn.discordapp.com/icons/${server.discordId || server.id}/${server.icon}.png`} 
                               alt={server.name}
                               className="w-full h-full rounded-xl object-cover"
                             />
@@ -454,7 +454,7 @@ export default function YourServers() {
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
                   {selectedServer.icon ? (
                     <img 
-                      src={`https://cdn.discordapp.com/icons/${selectedServer.id}/${selectedServer.icon}.png`} 
+                      src={`https://cdn.discordapp.com/icons/${selectedServer.discordId || selectedServer.id}/${selectedServer.icon}.png`} 
                       alt={selectedServer.name}
                       className="w-full h-full rounded-xl object-cover"
                     />
