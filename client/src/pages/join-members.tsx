@@ -74,7 +74,8 @@ export default function JoinMembers() {
       const serversWithBot = [];
       for (const server of servers) {
         try {
-          const botCheckResponse = await fetch(`/api/discord/bot-check/${server.id}`);
+          const guildId = server.discordId || server.id;
+          const botCheckResponse = await fetch(`/api/discord/bot-check/${guildId}`);
           if (botCheckResponse.ok) {
             const botData = await botCheckResponse.json();
             if (botData.botPresent) {
@@ -94,10 +95,12 @@ export default function JoinMembers() {
   // Purchase members mutation
   const purchaseMembersMutation = useMutation({
     mutationFn: async ({ serverId, members }: { serverId: string; members: number }) => {
+      const server = userServers?.find(s => s.id === serverId);
+      const guildId = server?.discordId || server?.id; // Use Discord guild ID for the API call
       const response = await fetch("/api/servers/purchase-members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serverId, members }),
+        body: JSON.stringify({ serverId: guildId, members }),
       });
       if (!response.ok) throw new Error("Failed to purchase members");
       return response.json();
@@ -125,7 +128,7 @@ export default function JoinMembers() {
   const botCheckMutation = useMutation({
     mutationFn: async (serverId: string) => {
       const server = userServers?.find(s => s.id === serverId);
-      const guildId = server?.id; // Use the Discord guild ID directly
+      const guildId = server?.discordId || server?.id; // Use Discord guild ID
       if (!guildId) {
         throw new Error("Server ID not found");
       }

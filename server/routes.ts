@@ -1070,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const { serverId, members } = req.body;
+      const { serverId, members } = req.body; // serverId here is the Discord guild ID
       const userId = req.user.id;
 
       if (!members || typeof members !== 'number' || members <= 0) {

@@ -66,8 +66,9 @@ export default function YourServers() {
 
   const handleAdvertiseClick = async (server: Server) => {
     try {
-      console.log(`Checking bot presence for server: ${server.name} (${server.id})`);
-      const response = await fetch(`/api/discord/bot-check/${server.id}`);
+      console.log(`Checking bot presence for server: ${server.name} (${server.discordId || server.id})`);
+      const guildId = server.discordId || server.id;
+      const response = await fetch(`/api/discord/bot-check/${guildId}`);
       
       let data;
       if (response.ok) {
@@ -75,7 +76,7 @@ export default function YourServers() {
         console.log(`Bot check result:`, data);
         
         if (data.botPresent) {
-          // Bot is present, redirect to advertise page
+          // Bot is present, redirect to add-server page
           console.log(`✅ Bot is present in ${server.name}, redirecting to add-server`);
           window.location.href = '/add-server';
           return;
@@ -88,7 +89,7 @@ export default function YourServers() {
           botPresent: false,
           checkMethod: "http_error",
           errorDetails: errorData.message,
-          inviteUrl: `https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.id}`
+          inviteUrl: `https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
         };
       }
       
@@ -107,7 +108,7 @@ export default function YourServers() {
       // Fallback: show modal to invite bot
       console.log(`❌ Fallback: showing invite modal for ${server.name}`);
       setSelectedServer(server);
-      setBotInviteUrl(`https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.id}`);
+      setBotInviteUrl(`https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.discordId || server.id}`);
       setShowBotModal(true);
     }
   };
