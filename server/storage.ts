@@ -45,6 +45,10 @@ export interface IStorage {
   atomicServerJoin(params: { userId: string; serverId: string; coinsToAward: number; currentCoins: number; advertisingMembersNeeded: number }): Promise<{ newBalance: number; advertisingComplete: boolean }>;
   transferCoins(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; fromBalance: number; toBalance: number }>;
   getUserByDiscordUsername(username: string): Promise<User | undefined>;
+  
+  // Count operations
+  getServerCount(): Promise<number>;
+  getBotCount(): Promise<number>;
 
   // Slideshow operations
   getSlideshows(page?: string, includeInactive?: boolean): Promise<Slideshow[]>;
@@ -1349,6 +1353,17 @@ export class DatabaseStorage implements IStorage {
     
     const newBalance = (user.coins || 0) + amount;
     return await this.updateUserCoins(userId, newBalance);
+  }
+
+  // Count operations
+  async getServerCount(): Promise<number> {
+    const [result] = await this.db.select({ count: sql<number>`count(*)` }).from(servers);
+    return result?.count || 0;
+  }
+
+  async getBotCount(): Promise<number> {
+    const [result] = await this.db.select({ count: sql<number>`count(*)` }).from(bots);
+    return result?.count || 0;
   }
 }
 
