@@ -1,6 +1,7 @@
 import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes, jobs, type Job, type InsertJob } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
+import type { PgTransaction } from 'drizzle-orm/pg-core';
 import crypto from "crypto";
 
 export interface IStorage {
@@ -475,7 +476,7 @@ export class DatabaseStorage implements IStorage {
 
   // Handle server leave and coin deduction
   async handleServerLeave(userId: string, serverId: string): Promise<{ coinsDeducted: number; newBalance: number } | null> {
-    return await this.db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx: any) => {
       // Find the server join record
       const [serverJoin] = await tx.select().from(serverJoins)
         .where(and(
@@ -605,7 +606,7 @@ export class DatabaseStorage implements IStorage {
   }): Promise<{ newBalance: number; advertisingComplete: boolean }> {
     const { userId, serverId, coinsToAward } = params;
 
-    return await this.db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx: any) => {
       // Fetch current user and server state inside transaction for consistency
       const [currentUser] = await tx.select({ coins: users.coins }).from(users)
         .where(eq(users.id, userId));

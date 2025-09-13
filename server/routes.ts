@@ -1133,10 +1133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           discordId: serverId,
           ownerId: userId,
           memberCount: userGuild.approximate_member_count || 0,
-          category: 'general',
           tags: [],
           inviteCode: '',
-          inviteUrl: '',
           isAdvertising: false,
           advertisingType: 'none',
         });
