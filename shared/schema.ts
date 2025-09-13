@@ -55,6 +55,7 @@ export const servers = pgTable("servers", {
   isAdvertising: boolean("is_advertising").default(false),
   advertisingMembersNeeded: integer("advertising_members_needed").default(0),
   advertisingUserId: varchar("advertising_user_id").references(() => users.id),
+  advertisingType: text("advertising_type").default("none"), // "none", "normal", "member_exchange"
   bumpEnabled: boolean("bump_enabled").default(false),
   lastBumpAt: timestamp("last_bump_at"),
   discordId: text("discord_id").unique(),
