@@ -239,16 +239,16 @@ export default function SearchPage() {
                   contentType === "servers" ? (
                     <ServerCard
                       key={item.id}
-                      server={item}
+                      server={item as ServerType}
                       onJoin={handleJoinServer}
                     />
                   ) : (
-                    // Bot Card Component (Assuming it exists or needs to be created)
+                    // Bot Card Component
                     <Card key={item.id} className="border border-gray-700 bg-gray-900/50 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
                       <CardContent className="p-0">
                         <div className="flex items-start space-x-4 mb-4">
                           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                            <i className="fas fa-robot text-2xl text-white"></i> {/* Assuming Font Awesome is available */}
+                            <Bot className="w-8 h-8 text-white" />
                           </div>
                           <div className="flex-1">
                             <h3 className="font-bold text-lg text-white mb-1">{item.name}</h3>
@@ -261,7 +261,10 @@ export default function SearchPage() {
                             </div>
                           </div>
                         </div>
-                        <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => window.open(item.inviteUrl, '_blank')}>
+                        <Button 
+                          className="w-full bg-blue-600 hover:bg-blue-700" 
+                          onClick={() => item.inviteUrl && window.open(item.inviteUrl, '_blank')}
+                        >
                           Add Bot
                         </Button>
                       </CardContent>

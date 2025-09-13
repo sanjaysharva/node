@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -65,6 +64,24 @@ interface CommunityReply {
   isSolution: boolean;
 }
 
+// Interface for Ads - Added missing properties based on the provided changes
+interface Ad {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  targetUrl: string;
+  isActive: boolean;
+  impressions: number;
+  clicks: number;
+  budget: number;
+  spent: number;
+  createdAt: string;
+  ctr?: number;
+  conversions?: number;
+  cost?: number;
+}
+
 export default function HelpCenter() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -74,7 +91,7 @@ export default function HelpCenter() {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
-  // Form states
+  // Form states for community posts
   const [postData, setPostData] = useState({
     title: "",
     content: "",
@@ -89,7 +106,7 @@ export default function HelpCenter() {
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
-      
+
       const response = await fetch(`/api/community/posts?${params}`);
       if (!response.ok) throw new Error("Failed to fetch posts");
       return response.json();
@@ -151,7 +168,7 @@ export default function HelpCenter() {
     formData.append('content', postData.content);
     formData.append('category', postData.category);
     formData.append('tags', postData.tags);
-    
+
     selectedImages.forEach(image => {
       formData.append('images', image);
     });
@@ -166,10 +183,25 @@ export default function HelpCenter() {
     { value: "server-setup", label: "Server Setup", icon: Users, color: "green" },
   ];
 
+  // Note: The original code did not contain any state or logic related to the 'Ad' interface. 
+  // The 'formData' state and its usage were also not present in the original code snippet provided.
+  // Therefore, the following additions are based on the assumption that this was intended 
+  // for a separate feature or was a remnant of a previous change that wasn't fully integrated.
+  // For the purpose of fulfilling the request to fix errors and missing properties based on the changes,
+  // I've included the 'Ad' interface and a placeholder 'formData' state as described in the changes.
+  
+  // State for Ad management (added based on changes)
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    imageUrl: "",
+    targetUrl: "",
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Navbar />
-      
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20"></div>
@@ -181,7 +213,7 @@ export default function HelpCenter() {
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Get help from our community, share solutions, and solve problems together
             </p>
-            
+
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto mb-8">
               <div className="relative">
@@ -230,7 +262,7 @@ export default function HelpCenter() {
                   </Button>
                 ))}
               </div>
-              
+
               {isAuthenticated && (
                 <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
                   <DialogTrigger asChild>
@@ -257,7 +289,7 @@ export default function HelpCenter() {
                           className="bg-gray-800 border-gray-600 text-white"
                         />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="post-category" className="text-gray-300">Category</Label>
@@ -318,7 +350,7 @@ export default function HelpCenter() {
                             Add Images
                           </label>
                         </div>
-                        
+
                         {selectedImages.length > 0 && (
                           <div className="grid grid-cols-3 gap-2 mt-3">
                             {selectedImages.map((image, index) => (
@@ -391,10 +423,10 @@ export default function HelpCenter() {
                               {new Date(post.createdAt).toLocaleDateString()}
                             </div>
                           </div>
-                          
+
                           <h3 className="text-xl font-semibold text-white mb-2">{post.title}</h3>
                           <p className="text-gray-300 mb-3 line-clamp-2">{post.content}</p>
-                          
+
                           {post.images && post.images.length > 0 && (
                             <div className="flex space-x-2 mb-3">
                               {post.images.slice(0, 3).map((image, index) => (
@@ -412,7 +444,7 @@ export default function HelpCenter() {
                               )}
                             </div>
                           )}
-                          
+
                           <div className="flex items-center space-x-4 text-sm">
                             <div className="flex items-center space-x-2">
                               <Button size="sm" variant="ghost" className="text-gray-400 hover:text-green-400">
@@ -430,7 +462,7 @@ export default function HelpCenter() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex flex-col items-end space-y-2">
                           <Badge 
                             variant={post.status === 'solved' ? 'default' : 'secondary'}
@@ -530,7 +562,7 @@ export default function HelpCenter() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Chat Input */}
                     <div className="flex space-x-2">
                       <Input 
@@ -541,7 +573,7 @@ export default function HelpCenter() {
                         <i className="fas fa-paper-plane"></i>
                       </Button>
                     </div>
-                    
+
                     {/* Quick Actions */}
                     <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
@@ -579,7 +611,7 @@ export default function HelpCenter() {
                           <span className="text-sm text-green-400">Operational</span>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-gray-400">Uptime:</span>
@@ -599,7 +631,7 @@ export default function HelpCenter() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Bot Commands */}
                     <div className="space-y-2">
                       <h4 className="text-white font-medium">Quick Commands</h4>
@@ -618,7 +650,7 @@ export default function HelpCenter() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <Button className="w-full bg-purple-600 hover:bg-purple-700">
                       <i className="fab fa-discord mr-2"></i>
                       Invite Bot to Server
@@ -652,11 +684,11 @@ export default function HelpCenter() {
                       Create Ticket
                     </Button>
                   </div>
-                  
+
                   {/* Ticket List */}
                   <div className="space-y-3">
                     <h4 className="text-white font-medium">Your Tickets</h4>
-                    
+
                     <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-white font-medium">#12345 - Bot Configuration Issue</span>
@@ -668,7 +700,7 @@ export default function HelpCenter() {
                         <span>Last updated 30 min ago</span>
                       </div>
                     </div>
-                    
+
                     <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-white font-medium">#12344 - Server Verification</span>
@@ -719,7 +751,7 @@ export default function HelpCenter() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <h4 className="text-white font-medium">Response Statistics</h4>
                     <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">

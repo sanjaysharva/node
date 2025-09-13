@@ -32,6 +32,9 @@ interface Ad {
   budget: number;
   spent: number;
   createdAt: string;
+  ctr?: number;
+  conversions?: number;
+  cost?: number;
 }
 
 interface LiveChatMessage {
@@ -116,12 +119,12 @@ export default function AdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
 
-  const [formData, setFormData] = useState<Omit<Ad, 'id' | 'createdAt' | 'impressions' | 'clicks' | 'isActive' | 'budget' | 'spent'>>({
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     imageUrl: "",
     targetUrl: "",
-    position: "header", // This field seems to be from the original code's form but not in the new Ad interface. It might need to be removed or mapped.
+    position: "header",
   });
 
   // Google Ad Preview Component
@@ -657,7 +660,7 @@ export default function AdminPage() {
 
                           <div>
                             <Label htmlFor="ad-position" className="text-gray-300">Placement</Label>
-                            <Select onValueChange={(value) => setFormData({ ...formData, position: value })} value={formData.position}>
+                            <Select onValueChange={(value) => setFormData({ ...formData, position: value })} defaultValue={formData.position}>
                               <SelectTrigger className="bg-gray-800 border-gray-600">
                                 <SelectValue placeholder="Select position" />
                               </SelectTrigger>

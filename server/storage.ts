@@ -328,8 +328,7 @@ export class DatabaseStorage implements IStorage {
     return updatedUser || undefined;
   }
 
-  // The following are updated methods for user coins
-  async updateUserCoins(userId: number, amount: number): Promise<void> {
+  async addUserCoins(userId: string, amount: number): Promise<void> {
     try {
       await this.db
         .update(users)
