@@ -11,7 +11,7 @@ export interface IStorage {
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
 
   // Server operations
-  getServers(options?: { tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Server[]>;
+  getServers(options?: { tags?: string[]; search?: string; limit?: number; offset?: number; includeNormalAdvertising?: boolean }): Promise<Server[]>;
   getPopularServers(limit?: number): Promise<Server[]>;
   getServer(id: string): Promise<Server | undefined>;
   getServersByOwner(ownerId: string): Promise<Server[]>;
@@ -36,7 +36,7 @@ export interface IStorage {
   deleteAd(id: string): Promise<boolean>;
 
   // Wallet operations
-  getAdvertisingServers(): Promise<Server[]>;
+  getAdvertisingServers(advertisingType?: string): Promise<Server[]>;
   createServerJoin(join: InsertServerJoin): Promise<ServerJoin>;
   hasUserJoinedServer(userId: string, serverId: string): Promise<boolean>;
   getUserCoins(userId: string): Promise<number>;
@@ -167,8 +167,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Server operations
-  async getServers(options?: { tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Server[]> {
+  async getServers(options?: { tags?: string[]; search?: string; limit?: number; offset?: number; includeNormalAdvertising?: boolean }): Promise<Server[]> {
     const conditions = [];
+
+    // Exclude member-exchange advertising servers from normal browsing
+    // Include normal advertising and non-advertising servers
+    if (options?.includeNormalAdvertising) {
+      // Include non-advertising and normal advertising servers, but ALWAYS exclude member-exchange
+      conditions.push(
+        and(
+          or(
+            eq(servers.advertisingType, "none"),
+            eq(servers.advertisingType, "normal"),
+            // Fallback for servers without advertisingType set (only if not advertising)
+            and(
+              sql`${servers.advertisingType} IS NULL`,
+              eq(servers.isAdvertising, false)
+            )
+          ),
+          // Explicitly exclude member-exchange servers regardless of advertising status
+          sql`${servers.advertisingType} != 'member_exchange' OR ${servers.advertisingType} IS NULL`
+        )
+      );
+    } else {
+      // Default behavior: exclude all advertising servers (backward compatibility)
+      conditions.push(eq(servers.isAdvertising, false));
+    }
 
     if (options?.search) {
       conditions.push(
@@ -306,9 +330,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Wallet operations
-  async getAdvertisingServers(): Promise<Server[]> {
+  async getAdvertisingServers(advertisingType?: string): Promise<Server[]> {
+    const conditions = [eq(servers.isAdvertising, true)];
+    
+    if (advertisingType) {
+      conditions.push(eq(servers.advertisingType, advertisingType));
+    }
+    
     return await this.db.select().from(servers)
-      .where(eq(servers.isAdvertising, true))
+      .where(and(...conditions))
       .orderBy(desc(servers.memberCount));
   }
 
@@ -566,7 +596,8 @@ export class DatabaseStorage implements IStorage {
 
       const [currentServer] = await tx.select({
         advertisingMembersNeeded: servers.advertisingMembersNeeded,
-        isAdvertising: servers.isAdvertising
+        isAdvertising: servers.isAdvertising,
+        advertisingType: servers.advertisingType
       }).from(servers)
         .where(eq(servers.id, serverId));
 
@@ -578,6 +609,9 @@ export class DatabaseStorage implements IStorage {
       }
       if (!currentServer.isAdvertising || (currentServer.advertisingMembersNeeded || 0) <= 0) {
         throw new Error("Server is not currently advertising or quota exhausted");
+      }
+      if (currentServer.advertisingType !== "member_exchange") {
+        throw new Error("Coins can only be earned from member-exchange advertising servers");
       }
 
       try {
