@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +35,7 @@ export default function Jobs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch jobs from database
   const { data: jobs = [], isLoading } = useQuery<Job[]>({
@@ -73,13 +75,12 @@ export default function Jobs() {
             </p>
             
             {isAuthenticated && (
-              <Button asChild
+              <Button 
+                onClick={() => navigate('/add-job')}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
               >
-                <a href="/add-job">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Post Job
-                </a>
+                <Plus className="w-4 h-4 mr-2" />
+                Post Job
               </Button>
             )}
           </div>
@@ -227,10 +228,8 @@ export default function Jobs() {
                 {searchQuery ? "Try adjusting your search terms" : "Be the first to post a job"}
               </p>
               {isAuthenticated && (
-                <Button asChild>
-                  <a href="/add-job">
-                    Post First Job
-                  </a>
+                <Button onClick={() => navigate('/add-job')}>
+                  Post First Job
                 </Button>
               )}
             </div>
