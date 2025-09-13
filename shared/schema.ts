@@ -64,6 +64,13 @@ export const servers = pgTable("servers", {
   upvotes: integer("upvotes").default(0),
   downvotes: integer("downvotes").default(0),
   totalComments: integer("total_comments").default(0),
+  // Server boosting fields
+  isBoosted: boolean("is_boosted").default(false),
+  boostExpiresAt: timestamp("boost_expires_at"),
+  boostType: text("boost_type").default("none"), // "none", "24hours", "1month"
+  boostedById: varchar("boosted_by_id").references(() => users.id),
+  boostedAt: timestamp("boosted_at"),
+  boostPriority: integer("boost_priority").default(0), // Higher number = higher priority
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

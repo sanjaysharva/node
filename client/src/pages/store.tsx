@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Coins, Zap, Crown, ShoppingCart } from "lucide-react";
+import { Coins, Zap, Crown, ShoppingCart, Server } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -18,6 +18,13 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Stripe is optional for now - payment integration will be added later
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
@@ -32,7 +39,7 @@ interface PaymentFormProps {
   onSuccess: () => void;
 }
 
-const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
+const PaymentForm = ({ amount, description, onSuccess, paymentMetadata }: PaymentFormProps & { paymentMetadata?: any }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -45,11 +52,12 @@ const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
 
     setIsProcessing(true);
 
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
         return_url: `${window.location.origin}/store?success=true`,
       },
+      redirect: "if_required"
     });
 
     if (error) {
@@ -58,12 +66,34 @@ const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Payment Successful",
-        description: "Thank you for your purchase!",
-      });
-      onSuccess();
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // Call payment success endpoint to give user what they paid for
+      try {
+        const response = await apiRequest("POST", "/api/payment-success", {
+          paymentIntentId: paymentIntent.id
+        });
+        
+        const data = await response.json();
+        
+        toast({
+          title: "Payment Successful",
+          description: data.message,
+        });
+        
+        onSuccess();
+        
+        // Refresh the page to update coin balance
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (successError) {
+        console.error("Payment success handling error:", successError);
+        toast({
+          title: "Payment Completed",
+          description: "Your payment was successful! Please refresh the page to see your rewards.",
+        });
+        onSuccess();
+      }
     }
 
     setIsProcessing(false);
@@ -91,18 +121,32 @@ const PaymentForm = ({ amount, description, onSuccess }: PaymentFormProps) => {
 const CheckoutDialog = ({
   amount,
   description,
-  children
+  children,
+  paymentType = "coins",
+  coins = 0,
+  serverId = "",
+  boostType = ""
 }: {
   amount: number;
   description: string;
   children: React.ReactNode;
+  paymentType?: string;
+  coins?: number;
+  serverId?: string;
+  boostType?: string;
 }) => {
   const [clientSecret, setClientSecret] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && !clientSecret && stripePromise) {
-      apiRequest("POST", "/api/create-payment-intent", { amount })
+      apiRequest("POST", "/api/create-payment-intent", { 
+        amount,
+        type: paymentType,
+        coins,
+        serverId,
+        boostType
+      })
         .then((res) => res.json())
         .then((data) => {
           setClientSecret(data.clientSecret);
@@ -111,7 +155,7 @@ const CheckoutDialog = ({
           console.error("Failed to create payment intent");
         });
     }
-  }, [isOpen, amount, clientSecret]);
+  }, [isOpen, amount, clientSecret, paymentType, coins, serverId, boostType]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

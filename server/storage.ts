@@ -74,6 +74,13 @@ export interface IStorage {
   updateLastBump(guildId: string): Promise<void>;
   updateServerBumpSettings(serverId: string, bumpEnabled: boolean): Promise<void>;
 
+  // Server boosting operations
+  boostServer(serverId: string, userId: string, boostType: '24hours' | '1month'): Promise<Server | undefined>;
+  getBoostedServers(): Promise<Server[]>;
+  getServersByUser(userId: string): Promise<Server[]>;
+  removeExpiredBoosts(): Promise<void>;
+  addCoins(userId: string, amount: number): Promise<User | undefined>;
+
   // Comment operations
   getCommentsForServer(serverId: string, options: { limit: number; offset: number }): Promise<any[]>;
   createComment(data: { serverId: string; userId: string; content: string; parentId?: string | null }): Promise<any>;
@@ -1285,6 +1292,63 @@ export class DatabaseStorage implements IStorage {
   async deleteJob(id: string): Promise<boolean> {
     const result = await this.db.delete(jobs).where(eq(jobs.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Server boosting operations
+  async boostServer(serverId: string, userId: string, boostType: '24hours' | '1month'): Promise<Server | undefined> {
+    const boostDuration = boostType === '24hours' ? 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // 24 hours or 30 days in milliseconds
+    const boostExpiresAt = new Date(Date.now() + boostDuration);
+    const boostPriority = boostType === '24hours' ? 1 : 2; // 1month gets higher priority
+    
+    const [updatedServer] = await this.db.update(servers).set({
+      isBoosted: true,
+      boostExpiresAt,
+      boostType,
+      boostedById: userId,
+      boostedAt: new Date(),
+      boostPriority,
+      updatedAt: new Date()
+    }).where(eq(servers.id, serverId)).returning();
+    
+    return updatedServer || undefined;
+  }
+
+  async getBoostedServers(): Promise<Server[]> {
+    const now = new Date();
+    return await this.db.select().from(servers)
+      .where(and(
+        eq(servers.isBoosted, true),
+        sql`${servers.boostExpiresAt} > ${now}`
+      ))
+      .orderBy(desc(servers.boostPriority), desc(servers.boostedAt));
+  }
+
+  async getServersByUser(userId: string): Promise<Server[]> {
+    return await this.db.select().from(servers).where(eq(servers.ownerId, userId));
+  }
+
+  async removeExpiredBoosts(): Promise<void> {
+    const now = new Date();
+    await this.db.update(servers).set({
+      isBoosted: false,
+      boostExpiresAt: null,
+      boostType: "none",
+      boostedById: null,
+      boostedAt: null,
+      boostPriority: 0,
+      updatedAt: new Date()
+    }).where(and(
+      eq(servers.isBoosted, true),
+      sql`${servers.boostExpiresAt} <= ${now}`
+    ));
+  }
+
+  async addCoins(userId: string, amount: number): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    
+    const newBalance = (user.coins || 0) + amount;
+    return await this.updateUserCoins(userId, newBalance);
   }
 }
 

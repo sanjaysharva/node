@@ -32,6 +32,12 @@ import {
   validateReview
 } from "./middleware/security";
 import crypto from "crypto";
+import Stripe from "stripe";
+
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2023-10-16",
+});
 
 declare global {
   namespace Express {
@@ -283,6 +289,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Clear session - cookie-session API
     req.session = null;
     res.redirect('/');
+  });
+
+  // Payment endpoints
+  app.post("/api/create-payment-intent", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { amount, type, coins, serverId, boostType } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Valid amount required" });
+      }
+
+      // Create payment intent with metadata
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          userId: req.user.id,
+          type: type || "coins", // "coins", "24hour_boost", "1month_boost"
+          coins: coins?.toString() || "0",
+          serverId: serverId || "",
+          boostType: boostType || ""
+        },
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Payment intent creation error:", error);
+      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  app.post("/api/payment-success", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { paymentIntentId } = req.body;
+      
+      if (!paymentIntentId) {
+        return res.status(400).json({ message: "Payment intent ID required" });
+      }
+
+      // Retrieve payment intent from Stripe to verify completion
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ message: "Payment not completed" });
+      }
+
+      const metadata = paymentIntent.metadata;
+      const userId = metadata.userId;
+      
+      // Verify user matches session
+      if (userId !== req.user.id) {
+        return res.status(403).json({ message: "Payment user mismatch" });
+      }
+
+      // Handle different purchase types
+      if (metadata.type === "coins") {
+        const coins = parseInt(metadata.coins) || 0;
+        if (coins > 0) {
+          await storage.addCoins(userId, coins);
+        }
+        
+        res.json({ 
+          message: `Successfully added ${coins} coins to your account!`,
+          type: "coins",
+          coins
+        });
+      } else if (metadata.type === "24hour_boost" || metadata.type === "1month_boost") {
+        const serverId = metadata.serverId;
+        const boostType = metadata.type === "24hour_boost" ? "24hours" : "1month";
+        
+        if (serverId) {
+          await storage.boostServer(serverId, userId, boostType);
+          
+          res.json({
+            message: `Successfully boosted your server for ${boostType === "24hours" ? "24 hours" : "1 month"}!`,
+            type: "boost",
+            boostType,
+            serverId
+          });
+        } else {
+          res.status(400).json({ message: "Server ID required for boost" });
+        }
+      } else {
+        res.status(400).json({ message: "Unknown purchase type" });
+      }
+
+    } catch (error: any) {
+      console.error("Payment success handling error:", error);
+      res.status(500).json({ message: "Error processing payment: " + error.message });
+    }
+  });
+
+  app.get("/api/user-servers", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const userServers = await storage.getServersByUser(req.user.id);
+      res.json(userServers);
+    } catch (error) {
+      console.error("Error fetching user servers:", error);
+      res.status(500).json({ message: "Failed to fetch user servers" });
+    }
   });
 
   // Categories
