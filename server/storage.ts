@@ -39,6 +39,7 @@ export interface IStorage {
   getAdvertisingServers(): Promise<Server[]>;
   createServerJoin(join: InsertServerJoin): Promise<ServerJoin>;
   hasUserJoinedServer(userId: string, serverId: string): Promise<boolean>;
+  getUserCoins(userId: string): Promise<number>;
   updateUserCoins(userId: string, coins: number): Promise<User | undefined>;
   atomicServerJoin(params: { userId: string; serverId: string; coinsToAward: number; currentCoins: number; advertisingMembersNeeded: number }): Promise<{ newBalance: number; advertisingComplete: boolean }>;
 
@@ -318,6 +319,12 @@ export class DatabaseStorage implements IStorage {
     const [join] = await this.db.select().from(serverJoins)
       .where(and(eq(serverJoins.userId, userId), eq(serverJoins.serverId, serverId)));
     return !!join;
+  }
+
+  async getUserCoins(userId: string): Promise<number> {
+    const [user] = await this.db.select({ coins: users.coins }).from(users)
+      .where(eq(users.id, userId));
+    return user?.coins || 0;
   }
 
   async updateUserCoins(userId: string, coins: number): Promise<User | undefined> {
