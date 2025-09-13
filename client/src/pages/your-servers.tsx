@@ -29,7 +29,9 @@ export default function YourServers() {
       if (!user?.id) return [];
       const response = await fetch(`/api/servers/user/${user.id}`);
       if (!response.ok) throw new Error("Failed to fetch your servers");
-      return response.json();
+      const servers = await response.json();
+      console.log('Fetched servers with icon data:', servers);
+      return servers;
     },
     enabled: !!user?.id,
   });
