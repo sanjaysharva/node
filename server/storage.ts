@@ -46,7 +46,10 @@ export interface IStorage {
   getUserByDiscordUsername(username: string): Promise<User | undefined>;
 
   // Slideshow operations
-  getSlideshows(page?: string): Promise<Slideshow[]>;
+  getSlideshows(page?: string, includeInactive?: boolean): Promise<Slideshow[]>;
+  createSlideshow(slideshow: InsertSlideshow): Promise<Slideshow>;
+  updateSlideshow(id: string, slideshow: Partial<InsertSlideshow>): Promise<Slideshow | undefined>;
+  deleteSlideshow(id: string): Promise<boolean>;
 
   // Event operations
   getEvents(options?: { search?: string; limit?: number; offset?: number }): Promise<Event[]>;
@@ -540,16 +543,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Slideshow operations
-  async getSlideshows(page?: string): Promise<Slideshow[]> {
-    const conditions = [eq(slideshows.isActive, true)];
+  async getSlideshows(page?: string, includeInactive?: boolean): Promise<Slideshow[]> {
+    const conditions = [];
+
+    if (!includeInactive) {
+      conditions.push(eq(slideshows.isActive, true));
+    }
 
     if (page) {
       conditions.push(eq(slideshows.page, page));
     }
 
     return await this.db.select().from(slideshows)
-      .where(and(...conditions))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(slideshows.position, desc(slideshows.createdAt));
+  }
+
+  async createSlideshow(insertSlideshow: InsertSlideshow): Promise<Slideshow> {
+    const [slideshow] = await this.db.insert(slideshows).values(insertSlideshow).returning();
+    return slideshow;
+  }
+
+  async updateSlideshow(id: string, updateData: Partial<InsertSlideshow>): Promise<Slideshow | undefined> {
+    const [slideshow] = await this.db.update(slideshows)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(slideshows.id, id))
+      .returning();
+    return slideshow;
+  }
+
+  async deleteSlideshow(id: string): Promise<boolean> {
+    const result = await this.db.delete(slideshows)
+      .where(eq(slideshows.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Event operations

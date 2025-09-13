@@ -854,11 +854,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Slideshow routes
   app.get("/api/slideshows", async (req, res) => {
     try {
-      const { page } = req.query;
-      const slideshows = await storage.getSlideshows(page as string);
+      const { page, includeInactive } = req.query;
+      
+      // Only admins can see inactive slideshows
+      const showInactive = includeInactive === "true" && req.user?.isAdmin;
+      
+      const slideshows = await storage.getSlideshows(page as string, showInactive);
       res.json(slideshows);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch slideshows" });
+    }
+  });
+
+  app.post("/api/slideshows", requireAdmin, async (req, res) => {
+    try {
+      const slideshowData = insertSlideshowSchema.parse(req.body);
+      const slideshow = await storage.createSlideshow(slideshowData);
+      res.status(201).json(slideshow);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create slideshow" });
+    }
+  });
+
+  app.put("/api/slideshows/:id", requireAdmin, async (req, res) => {
+    try {
+      const slideshowData = insertSlideshowSchema.partial().parse(req.body);
+      const slideshow = await storage.updateSlideshow(req.params.id, slideshowData);
+      if (!slideshow) {
+        return res.status(404).json({ message: "Slideshow not found" });
+      }
+      res.json(slideshow);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update slideshow" });
+    }
+  });
+
+  app.delete("/api/slideshows/:id", requireAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteSlideshow(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Slideshow not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete slideshow" });
     }
   });
 

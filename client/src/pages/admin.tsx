@@ -18,6 +18,8 @@ import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/navbar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { apiRequest } from "@/lib/queryClient";
+import { insertSlideshowSchema, type Slideshow } from "@shared/schema";
 
 // Interface definitions
 interface Ad {
@@ -115,6 +117,95 @@ export default function AdminPage() {
     enabled: !!user?.isAdmin,
   });
 
+  // Fetch all slideshows for admin management
+  const { data: allSlideshows, isLoading: slideshowsLoading, refetch: refetchSlideshows } = useQuery<Slideshow[]>({
+    queryKey: ["/api/slideshows", "admin"],
+    queryFn: async () => {
+      // Fetch all slideshows (admin can see inactive ones too)
+      const response = await fetch("/api/slideshows?includeInactive=true");
+      if (!response.ok) throw new Error("Failed to fetch slideshows");
+      return response.json();
+    },
+    enabled: !!user?.isAdmin,
+  });
+
+  // Slideshow mutations
+  const createSlideshowMutation = useMutation({
+    mutationFn: async (slideshowData: any) => {
+      const response = await apiRequest("POST", "/api/slideshows", slideshowData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/slideshows"] });
+      refetchSlideshows();
+      setShowSlideshowForm(false);
+      setSlideshowFormData({
+        title: "",
+        imageUrl: "",
+        linkUrl: "",
+        position: 0,
+        page: "explore",
+        isActive: true,
+      });
+      toast({
+        title: "Success!",
+        description: "Slideshow created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create slideshow",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateSlideshowMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest("PUT", `/api/slideshows/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/slideshows"] });
+      refetchSlideshows();
+      setEditingSlideshow(null);
+      setShowSlideshowForm(false);
+      toast({
+        title: "Success!",
+        description: "Slideshow updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to update slideshow",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteSlideshowMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/slideshows/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/slideshows"] });
+      refetchSlideshows();
+      toast({
+        title: "Success!",
+        description: "Slideshow deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete slideshow",
+        variant: "destructive",
+      });
+    },
+  });
+
   // State for forms
   const [showForm, setShowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
@@ -125,6 +216,18 @@ export default function AdminPage() {
     imageUrl: "",
     targetUrl: "",
     position: "header",
+  });
+
+  // Slideshow management state
+  const [showSlideshowForm, setShowSlideshowForm] = useState(false);
+  const [editingSlideshow, setEditingSlideshow] = useState<Slideshow | null>(null);
+  const [slideshowFormData, setSlideshowFormData] = useState({
+    title: "",
+    imageUrl: "",
+    linkUrl: "",
+    position: 0,
+    page: "explore",
+    isActive: true,
   });
 
   // Google Ad Preview Component
@@ -479,9 +582,10 @@ export default function AdminPage() {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-7 bg-gray-800/50 border border-gray-700">
+          <TabsList className="grid w-full grid-cols-8 bg-gray-800/50 border border-gray-700">
             <TabsTrigger value="overview" className="data-[state=active]:bg-purple-600">Overview</TabsTrigger>
             <TabsTrigger value="ads" className="data-[state=active]:bg-purple-600">Google Ads</TabsTrigger>
+            <TabsTrigger value="slideshows" className="data-[state=active]:bg-purple-600">Slideshows</TabsTrigger>
             <TabsTrigger value="analytics" className="data-[state=active]:bg-purple-600">Analytics</TabsTrigger>
             <TabsTrigger value="servers" className="data-[state=active]:bg-purple-600">Servers</TabsTrigger>
             <TabsTrigger value="support" className="data-[state=active]:bg-purple-600">Live Support</TabsTrigger>
@@ -723,6 +827,247 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="slideshows" className="space-y-6">
+            <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Image className="w-5 h-5 mr-2 text-cyan-400" />
+                  Slideshow Management
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Manage slideshows for explore and events pages
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-white">Current Slideshows</h3>
+                  <Dialog open={showSlideshowForm} onOpenChange={setShowSlideshowForm}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600" data-testid="button-create-slideshow">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Slideshow
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl bg-gray-900 border-gray-700">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">
+                          {editingSlideshow ? "Edit Slideshow" : "Create Slideshow"}
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-400">
+                          {editingSlideshow ? "Update slideshow details" : "Create a new slideshow for explore or events pages"}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="slideshow-title" className="text-gray-300">Title</Label>
+                          <Input
+                            id="slideshow-title"
+                            value={slideshowFormData.title}
+                            onChange={(e) => setSlideshowFormData({ ...slideshowFormData, title: e.target.value })}
+                            placeholder="Slideshow title"
+                            className="bg-gray-800 border-gray-600 text-white"
+                            data-testid="input-slideshow-title"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="slideshow-image" className="text-gray-300">Image URL</Label>
+                          <Input
+                            id="slideshow-image"
+                            value={slideshowFormData.imageUrl}
+                            onChange={(e) => setSlideshowFormData({ ...slideshowFormData, imageUrl: e.target.value })}
+                            placeholder="https://example.com/image.jpg"
+                            className="bg-gray-800 border-gray-600 text-white"
+                            data-testid="input-slideshow-image"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="slideshow-link" className="text-gray-300">Link URL (Optional)</Label>
+                          <Input
+                            id="slideshow-link"
+                            value={slideshowFormData.linkUrl}
+                            onChange={(e) => setSlideshowFormData({ ...slideshowFormData, linkUrl: e.target.value })}
+                            placeholder="https://example.com"
+                            className="bg-gray-800 border-gray-600 text-white"
+                            data-testid="input-slideshow-link"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="slideshow-page" className="text-gray-300">Page</Label>
+                            <Select value={slideshowFormData.page} onValueChange={(value) => setSlideshowFormData({ ...slideshowFormData, page: value })}>
+                              <SelectTrigger className="bg-gray-800 border-gray-600 text-white" data-testid="select-slideshow-page">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-800 border-gray-600">
+                                <SelectItem value="explore">Explore</SelectItem>
+                                <SelectItem value="events">Events</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="slideshow-position" className="text-gray-300">Position</Label>
+                            <Input
+                              id="slideshow-position"
+                              type="number"
+                              value={slideshowFormData.position}
+                              onChange={(e) => setSlideshowFormData({ ...slideshowFormData, position: parseInt(e.target.value) || 0 })}
+                              placeholder="0"
+                              className="bg-gray-800 border-gray-600 text-white"
+                              data-testid="input-slideshow-position"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={slideshowFormData.isActive}
+                            onCheckedChange={(checked) => setSlideshowFormData({ ...slideshowFormData, isActive: checked })}
+                            data-testid="switch-slideshow-active"
+                          />
+                          <Label className="text-gray-300">Active</Label>
+                        </div>
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowSlideshowForm(false);
+                              setEditingSlideshow(null);
+                              setSlideshowFormData({
+                                title: "",
+                                imageUrl: "",
+                                linkUrl: "",
+                                position: 0,
+                                page: "explore",
+                                isActive: true,
+                              });
+                            }}
+                            className="border-gray-600 text-gray-300"
+                            data-testid="button-cancel-slideshow"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              if (editingSlideshow) {
+                                updateSlideshowMutation.mutate({
+                                  id: editingSlideshow.id,
+                                  data: slideshowFormData
+                                });
+                              } else {
+                                createSlideshowMutation.mutate(slideshowFormData);
+                              }
+                            }}
+                            disabled={createSlideshowMutation.isPending || updateSlideshowMutation.isPending}
+                            className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                            data-testid="button-save-slideshow"
+                          >
+                            {editingSlideshow ? "Update" : "Create"} Slideshow
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {slideshowsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                        <div className="animate-pulse">
+                          <div className="h-4 bg-gray-700 rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {allSlideshows?.map((slideshow) => (
+                      <div key={slideshow.id} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            {slideshow.imageUrl && (
+                              <img
+                                src={slideshow.imageUrl}
+                                alt={slideshow.title}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            )}
+                            <div>
+                              <h4 className="text-white font-medium" data-testid={`text-slideshow-title-${slideshow.id}`}>
+                                {slideshow.title}
+                              </h4>
+                              <div className="flex items-center space-x-2 text-sm text-gray-400">
+                                <Badge variant={slideshow.page === "explore" ? "default" : "secondary"}>
+                                  {slideshow.page}
+                                </Badge>
+                                <span>Position: {slideshow.position}</span>
+                                <Badge variant={slideshow.isActive ? "default" : "destructive"}>
+                                  {slideshow.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingSlideshow(slideshow);
+                                setSlideshowFormData({
+                                  title: slideshow.title,
+                                  imageUrl: slideshow.imageUrl,
+                                  linkUrl: slideshow.linkUrl || "",
+                                  position: slideshow.position || 0,
+                                  page: slideshow.page,
+                                  isActive: slideshow.isActive || false,
+                                });
+                                setShowSlideshowForm(true);
+                              }}
+                              className="border-gray-600 text-gray-300"
+                              data-testid={`button-edit-slideshow-${slideshow.id}`}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                updateSlideshowMutation.mutate({
+                                  id: slideshow.id,
+                                  data: { isActive: !slideshow.isActive }
+                                });
+                              }}
+                              className="border-gray-600 text-gray-300"
+                              data-testid={`button-toggle-slideshow-${slideshow.id}`}
+                            >
+                              {slideshow.isActive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteSlideshowMutation.mutate(slideshow.id)}
+                              className="border-red-500 text-red-400"
+                              data-testid={`button-delete-slideshow-${slideshow.id}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {allSlideshows?.length === 0 && (
+                      <div className="text-center py-8">
+                        <Image className="w-12 h-12 text-gray-600 mx-auto mb-2" />
+                        <p className="text-gray-400">No slideshows created yet</p>
+                        <p className="text-sm text-gray-500">Create your first slideshow to get started</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
