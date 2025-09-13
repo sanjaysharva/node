@@ -344,6 +344,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Advertising servers route (must come before /:id route)
+  app.get("/api/servers/advertising", async (req, res) => {
+    try {
+      const advertisingServers = await storage.getAdvertisingServers();
+      res.json(advertisingServers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch advertising servers" });
+    }
+  });
+
   app.get("/api/servers/:id", async (req, res) => {
     try {
       const server = await storage.getServer(req.params.id);
@@ -886,14 +896,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Wallet system routes
-  app.get("/api/servers/advertising", async (req, res) => {
-    try {
-      const advertisingServers = await storage.getAdvertisingServers();
-      res.json(advertisingServers);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch advertising servers" });
-    }
-  });
 
   app.post("/api/servers/:serverId/join", async (req, res) => {
     if (!req.user) {
