@@ -27,7 +27,7 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
       <img
         src={backgroundImage}
         alt="Background"
-        className="absolute z-0 w-auto min-w-full min-h-full max-w-none"
+        className="absolute z-0 inset-0 w-full h-full object-cover object-bottom"
       />
       <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
