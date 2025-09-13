@@ -991,6 +991,20 @@ client.on('guildMemberAdd', async (member) => {
 
     console.log(`✅ User ${user.discordId} completed join-server quest and earned ${coinsEarned} coins`);
 
+    // Send notification to quest bot channel if configured
+    try {
+      const { sendQuestNotification } = await import('./quest-bot');
+      await sendQuestNotification(MAIN_SERVER_ID, user.discordId, {
+        questId: "join-server",
+        questName: "Join Server",
+        reward: coinsEarned,
+        userTag: member.user.tag,
+        newBalance: newCoins
+      });
+    } catch (error) {
+      console.log('Quest notification system not available:', error.message);
+    }
+
     // Send welcome DM with quest completion notification
     try {
       await member.send({

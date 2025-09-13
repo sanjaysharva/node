@@ -131,6 +131,14 @@ app.use((req, res, next) => {
 
   // Start Discord bot for economy rewards
   startDiscordBot();
+  
+  // Start Quest Bot for notifications and channel management
+  try {
+    import('./quest-bot');
+    console.log('🎯 Quest Bot starting...');
+  } catch (error) {
+    console.error('❌ Failed to start Quest Bot:', error);
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -3292,6 +3292,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Page Information API for Discord bot
+  app.get("/api/page-info/:pageName", async (req, res) => {
+    try {
+      const { pageName } = req.params;
+      
+      const pageInfoMap: Record<string, any> = {
+        'home': {
+          title: 'Smart Serve - Discord Community Hub',
+          description: 'Discover amazing Discord servers, bots, and earn coins through our quest system!',
+          url: '/',
+          features: [
+            '🏆 Browse top Discord servers',
+            '🤖 Discover useful bots',  
+            '💰 Complete quests for rewards',
+            '🎯 Interactive community features'
+          ],
+          stats: {
+            'Total Servers': await storage.getServerCount(),
+            'Active Users': 'Coming Soon',
+            'Coins Distributed': 'Coming Soon'
+          }
+        },
+        'servers': {
+          title: 'Discord Server Directory',
+          description: 'Find and join the best Discord communities across all categories',
+          url: '/servers',
+          features: [
+            '🔍 Advanced server search',
+            '⭐ Popular server rankings',
+            '📊 Real-time member counts',
+            '✅ Verified server badges'
+          ],
+          stats: {
+            'Listed Servers': await storage.getServerCount(),
+            'Categories': 'Gaming, Tech, Art, Music & More'
+          }
+        },
+        'bots': {
+          title: 'Discord Bot Marketplace',
+          description: 'Discover powerful Discord bots to enhance your server',
+          url: '/bots',
+          features: [
+            '🤖 Curated bot collection',
+            '⚡ Easy bot integration',
+            '📈 Bot statistics & reviews',
+            '🔧 Setup guides & support'
+          ],
+          stats: {
+            'Available Bots': await storage.getBotCount(),
+            'Categories': 'Moderation, Music, Games, Utility'
+          }
+        },
+        'store': {
+          title: 'Coin Store',
+          description: 'Spend your earned coins on server boosts, badges, and premium features',
+          url: '/store',
+          features: [
+            '💎 Premium server features',
+            '🏅 Exclusive badges',
+            '⚡ Server boosts',
+            '🎁 Special rewards'
+          ],
+          stats: {
+            'Available Items': 'Coming Soon',
+            'Coin Exchange Rate': '1 Coin = Premium Features'
+          }
+        },
+        'quests': {
+          title: 'Quest System',
+          description: 'Complete challenges and earn coins by participating in the community',
+          url: '/quests',
+          features: [
+            '🎯 Daily & weekly quests',
+            '💰 Coin rewards',
+            '🏆 Achievement system',
+            '📊 Progress tracking'
+          ],
+          stats: {
+            'Active Quests': 'Join Server, Boost Server, Invite Friends',
+            'Reward Range': '2-50 coins per quest'
+          }
+        }
+      };
+
+      const pageInfo = pageInfoMap[pageName.toLowerCase()];
+      
+      if (!pageInfo) {
+        return res.status(404).json({ 
+          error: 'Page not found',
+          availablePages: Object.keys(pageInfoMap)
+        });
+      }
+
+      res.json(pageInfo);
+    } catch (error) {
+      console.error('Error fetching page info:', error);
+      res.status(500).json({ message: "Failed to fetch page information" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
