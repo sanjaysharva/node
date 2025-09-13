@@ -31,9 +31,14 @@ export default function JoinMembers() {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
-  // Fetch advertising servers (servers that give coins when joined)
+  // Fetch member-exchange advertising servers (servers that give coins when joined)
   const { data: advertisingServers, isLoading: loadingServers } = useQuery<Server[]>({
-    queryKey: ["/api/servers/advertising"],
+    queryKey: ["/api/servers/advertising", "member_exchange"],
+    queryFn: async () => {
+      const response = await fetch("/api/servers/advertising?type=member_exchange");
+      if (!response.ok) throw new Error("Failed to fetch advertising servers");
+      return response.json();
+    },
     enabled: isAuthenticated,
   });
 
@@ -51,7 +56,7 @@ export default function JoinMembers() {
     },
     onSuccess: async (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/servers/advertising"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/servers/advertising", "member_exchange"] });
       toast({
         title: "Success!",
         description: `You earned ${data.coinsEarned || 1} coins for joining the server!`,
