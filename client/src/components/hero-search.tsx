@@ -31,7 +31,8 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
       />
       <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-          <span className="block text-white drop-shadow-lg">Find Your Perfect</span>
+          <span className="block text-white drop-shadow-lg">
+            Find Your Perfect</span>
           <span className="block bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 bg-clip-text text-transparent animate-gradient-x bg-300% text-primary  shadow-md">
             Discord Community
           </span>
@@ -39,7 +40,9 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
 
         <p className="text-xl text-gray-800 mb-10 max-w-3xl mx-auto leading-relaxed font-medium">
 
-          ‎ ‎ ‎ ‎ 
+          ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ 
+          ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ 
+          ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ 
         </p>
 
         {/* Search Bar */}
