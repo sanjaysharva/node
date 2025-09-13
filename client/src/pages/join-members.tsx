@@ -17,7 +17,10 @@ import {
   Users, 
   Crown,
   Shield,
-  Zap
+  Zap,
+  ArrowUpRight,
+  Calculator,
+  Wallet
 } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { Link } from "wouter";
@@ -173,11 +176,11 @@ export default function JoinMembers() {
       <div className="min-h-screen bg-gray-950">
         <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <Card className="w-full max-w-md bg-gray-900 border-gray-700">
+          <Card className="w-full max-w-md bg-gray-900 border-gray-800">
             <CardHeader className="text-center">
-              <CardTitle className="text-white">Login Required</CardTitle>
+              <CardTitle className="text-white">Authentication Required</CardTitle>
               <CardDescription className="text-gray-400">
-                You need to be logged in to access the member exchange.
+                Please log in to access the member exchange platform.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -190,165 +193,141 @@ export default function JoinMembers() {
     <div className="min-h-screen bg-gray-950">
       <Navbar />
 
-      {/* Header with Title and Wallet */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Join Members Exchange
-            </h1>
-            <p className="text-xl text-gray-300 max-w-2xl">
-              Join amazing Discord servers to earn coins, then use those coins to get members for your own server!
-            </p>
-            <div className="mt-6 flex items-center space-x-8 text-sm text-gray-400">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span>Earn 1 coin per join</span>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header Section */}
+        <div className="flex justify-between items-start mb-12">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-300"></div>
-                <span>2 coins per member</span>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Member Exchange</h1>
+                <p className="text-gray-400">Professional server growth platform</p>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-700"></div>
-                <span>Fair & Fast</span>
+            </div>
+            <div className="flex items-center space-x-6 text-sm">
+              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span className="text-green-400">1 coin per join</span>
+              </div>
+              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span className="text-blue-400">2 coins per member</span>
               </div>
             </div>
           </div>
 
-          {/* Wallet Display */}
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-700 shadow-lg">
-            <CardContent className="pt-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Coins className="w-6 h-6 text-yellow-400" />
-                  <span className="text-lg font-semibold text-white">Your Wallet</span>
+          {/* Wallet Card */}
+          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-yellow-400" />
                 </div>
-                <div className="text-3xl font-bold text-yellow-400">
-                  {user?.coins || 0}
+                <div>
+                  <p className="text-sm text-gray-400">Current Balance</p>
+                  <p className="text-2xl font-bold text-white">{user?.coins || 0}</p>
                 </div>
-                <div className="text-sm text-gray-400">coins</div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content with Sidebar */}
-        <div className="flex flex-col lg:flex-row gap-8">
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
-          <div className="lg:w-64 space-y-4">
-            <Card className="bg-gray-900 border-2 border-gray-700 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold text-purple-400">
-                  Quick Actions
-                </CardTitle>
+          <div className="lg:col-span-1 space-y-6">
+            {/* Navigation */}
+            <Card className="bg-gray-900 border border-gray-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg text-white">Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2">
                 <Link href="/trade">
-                  <Button variant="outline" className="w-full justify-start border-gray-600 hover:bg-gray-800 text-white">
-                    <Coins className="w-4 h-4 mr-2 text-green-400" />
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                    <Coins className="w-4 h-4 mr-3" />
                     Trade Coins
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full justify-start border-gray-600 hover:bg-gray-800 text-white">
-                  <TrendingUp className="w-4 h-4 mr-2 text-blue-400" />
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <TrendingUp className="w-4 h-4 mr-3" />
                   Analytics
                 </Button>
-                <Button variant="outline" className="w-full justify-start border-gray-600 hover:bg-gray-800 text-white">
-                  <Crown className="w-4 h-4 mr-2 text-purple-400" />
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <Crown className="w-4 h-4 mr-3" />
                   Premium
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Fair Play Rules */}
-            <Card className="bg-gray-900 border border-gray-700 shadow-sm">
-              <CardHeader className="pb-3">
+            {/* Guidelines */}
+            <Card className="bg-gray-900 border border-gray-800">
+              <CardHeader className="pb-4">
                 <div className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-green-400" />
-                  <CardTitle className="text-sm font-semibold text-green-400">Fair Play Rules</CardTitle>
+                  <Shield className="w-5 h-5 text-emerald-400" />
+                  <CardTitle className="text-sm text-emerald-400">Platform Guidelines</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2 text-xs text-gray-300">
-                <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-                  <span>Stay in servers for 24h minimum</span>
+              <CardContent className="space-y-3 text-sm text-gray-400">
+                <div className="flex items-start space-x-2">
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <span>Maintain membership for 24+ hours</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-                  <span>No fake or bot accounts</span>
+                <div className="flex items-start space-x-2">
+                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <span>Authentic accounts only</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                  <span>Respect server rules</span>
+                <div className="flex items-start space-x-2">
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <span>Follow community standards</span>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 space-y-8">
-            {/* Member Purchase Section */}
-            <Card className="bg-gray-900 border-2 border-gray-700 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl font-bold text-white">
-                      🚀 Grow Your Server Community
-                    </CardTitle>
-                    <CardDescription className="text-lg text-gray-300">
-                      Transform your earned coins into real members for your Discord server!
-                    </CardDescription>
-                  </div>
-                </div>
+          <div className="lg:col-span-3 space-y-8">
+            {/* Purchase Members Section */}
+            <Card className="bg-gray-900 border border-gray-800">
+              <CardHeader className="border-b border-gray-800">
+                <CardTitle className="text-xl text-white flex items-center">
+                  <Calculator className="w-5 h-5 mr-2 text-purple-400" />
+                  Purchase Members
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Invest your earned coins to grow your server community
+                </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Input Section */}
-                  <div className="lg:col-span-2 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="members-input" className="text-base font-medium text-white">Members to Get</Label>
-                        <Input
-                          id="members-input"
-                          type="number"
-                          min="1"
-                          placeholder="Enter number of members"
-                          value={membersToGet}
-                          onChange={(e) => setMembersToGet(e.target.value)}
-                          className="mt-2 text-lg bg-gray-800 border-gray-600 text-white"
-                          data-testid="input-members"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-base font-medium text-white">Cost Calculator</Label>
-                        <div className="mt-2 p-3 bg-gray-800 border border-gray-600 rounded-md">
-                          <div className="text-2xl font-bold text-blue-400">
-                            {membersToGet ? parseInt(membersToGet) * 2 : 0} coins
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            Rate: 2 coins per member
-                          </div>
-                        </div>
-                      </div>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-300">Members Quantity</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        placeholder="100"
+                        value={membersToGet}
+                        onChange={(e) => setMembersToGet(e.target.value)}
+                        className="mt-2 bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                        data-testid="input-members"
+                      />
                     </div>
 
                     <div>
-                      <Label className="text-base font-medium text-white">Select Your Server</Label>
+                      <Label className="text-sm font-medium text-gray-300">Target Server</Label>
                       <Select value={selectedServer} onValueChange={setSelectedServer}>
-                        <SelectTrigger className="mt-2 text-lg bg-gray-800 border-gray-600 text-white">
-                          <SelectValue placeholder="Choose server to advertise" />
+                        <SelectTrigger className="mt-2 bg-gray-800 border-gray-700 text-white">
+                          <SelectValue placeholder="Select your server" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-600">
+                        <SelectContent className="bg-gray-800 border-gray-700">
                           {userServers?.map((server) => (
                             <SelectItem key={server.id} value={server.id} className="text-white hover:bg-gray-700">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center justify-between w-full">
                                 <span>{server.name}</span>
-                                <Badge variant="outline" className="text-xs border-gray-500 text-gray-300">
-                                  {server.memberCount} members
+                                <Badge variant="outline" className="ml-2 text-xs border-gray-600 text-gray-400">
+                                  {server.memberCount}
                                 </Badge>
                               </div>
                             </SelectItem>
@@ -356,102 +335,103 @@ export default function JoinMembers() {
                         </SelectContent>
                       </Select>
                     </div>
-
-                    <Button
-                      onClick={() => setDialogOpen(true)}
-                      disabled={!membersToGet || !selectedServer || loadingUserServers}
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg py-6"
-                      data-testid="button-purchase"
-                    >
-                      <Zap className="w-5 h-5 mr-2" />
-                      Purchase {membersToGet || 0} Members for {membersToGet ? parseInt(membersToGet) * 2 : 0} Coins
-                    </Button>
                   </div>
 
-                  {/* Stats Section */}
-                  <div className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Join Reward:</span>
-                        <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-700">+1 coin</Badge>
+                  <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <h4 className="text-sm font-medium text-gray-300 mb-3">Cost Breakdown</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Members:</span>
+                        <span className="text-white">{membersToGet || 0}</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Member Cost:</span>
-                        <Badge variant="outline" className="border-blue-400 text-blue-400">2 coins</Badge>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Rate:</span>
+                        <span className="text-white">2 coins each</span>
+                      </div>
+                      <div className="border-t border-gray-700 pt-2 flex justify-between font-medium">
+                        <span className="text-gray-300">Total Cost:</span>
+                        <span className="text-purple-400">{membersToGet ? parseInt(membersToGet) * 2 : 0} coins</span>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  disabled={!membersToGet || !selectedServer || loadingUserServers}
+                  className="w-full mt-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-12"
+                  data-testid="button-purchase"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Purchase {membersToGet || 0} Members
+                </Button>
               </CardContent>
             </Card>
 
-            {/* Servers to Join Section */}
+            {/* Available Servers Section */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">
-                  🎯 Servers to Join (Earn Coins)
-                </h2>
-                <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-700">
-                  +1 coin per join
+                <h2 className="text-xl font-bold text-white">Available Servers</h2>
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                  Earn +1 coin per join
                 </Badge>
               </div>
 
               {loadingServers ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {[...Array(6)].map((_, i) => (
-                    <Card key={i} className="animate-pulse bg-gray-900 border-gray-700">
-                      <CardContent className="pt-6">
+                    <Card key={i} className="animate-pulse bg-gray-900 border-gray-800">
+                      <CardContent className="p-4">
                         <div className="space-y-3">
-                          <div className="w-full h-32 bg-gray-700 rounded-md"></div>
-                          <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-                          <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                          <div className="w-full h-24 bg-gray-800 rounded"></div>
+                          <div className="h-4 bg-gray-800 rounded w-3/4"></div>
+                          <div className="h-3 bg-gray-800 rounded w-1/2"></div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
               ) : advertisingServers && advertisingServers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {advertisingServers.map((server) => (
-                    <Card key={server.id} className="group hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 border-gray-700 hover:border-green-500 bg-gray-900">
-                      <CardContent className="pt-6">
+                    <Card key={server.id} className="group bg-gray-900 border border-gray-800 hover:border-gray-700 transition-all duration-200 hover:shadow-lg">
+                      <CardContent className="p-4">
                         <div className="space-y-4">
                           {server.imageUrl && (
                             <div className="relative overflow-hidden rounded-lg">
                               <img
                                 src={server.imageUrl}
                                 alt={server.name}
-                                className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
+                                className="w-full h-24 object-cover group-hover:scale-105 transition-transform duration-200"
                               />
                             </div>
                           )}
                           <div>
-                            <h3 className="font-semibold text-lg text-white group-hover:text-purple-400 transition-colors">
+                            <h3 className="font-semibold text-white text-sm group-hover:text-purple-400 transition-colors">
                               {server.name}
                             </h3>
-                            <p className="text-sm text-gray-400 line-clamp-2">
+                            <p className="text-xs text-gray-400 line-clamp-2 mt-1">
                               {server.description}
                             </p>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Users className="w-4 h-4 text-gray-400" />
-                              <span className="text-sm text-gray-400">
-                                {server.memberCount.toLocaleString()} members
-                              </span>
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center space-x-1 text-gray-400">
+                              <Users className="w-3 h-3" />
+                              <span>{server.memberCount.toLocaleString()}</span>
                             </div>
-                            <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-700">
+                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
                               +1 coin
                             </Badge>
                           </div>
                           <Button
                             asChild
-                            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+                            size="sm"
+                            className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 hover:border-gray-600"
                             data-testid={`button-join-${server.id}`}
                           >
                             <a href={server.inviteUrl} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Join & Earn
+                              <ArrowUpRight className="w-3 h-3 mr-1" />
+                              Join Server
                             </a>
                           </Button>
                         </div>
@@ -460,9 +440,13 @@ export default function JoinMembers() {
                   ))}
                 </div>
               ) : (
-                <Card className="bg-gray-900 border-gray-700">
-                  <CardContent className="pt-6 text-center">
-                    <p className="text-gray-400">No servers available to join at the moment.</p>
+                <Card className="bg-gray-900 border-gray-800">
+                  <CardContent className="p-8 text-center">
+                    <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <p className="text-gray-400">No servers available at the moment</p>
+                    <p className="text-sm text-gray-500 mt-1">Check back later for new opportunities</p>
                   </CardContent>
                 </Card>
               )}
@@ -473,47 +457,45 @@ export default function JoinMembers() {
 
       {/* Purchase Confirmation Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
           <DialogHeader>
-            <DialogTitle className="text-white">Confirm Member Purchase</DialogTitle>
+            <DialogTitle className="text-white">Confirm Purchase</DialogTitle>
             <DialogDescription className="text-gray-400">
-              You're about to purchase {membersToGet} members for {membersToGet ? parseInt(membersToGet) * 2 : 0} coins.
+              Review your member purchase details
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-gray-800 p-4 rounded-lg space-y-2 border border-gray-600">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Members:</span>
-                <span className="font-semibold text-white">{membersToGet}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Cost per member:</span>
-                <span className="text-white">2 coins</span>
-              </div>
-              <div className="flex justify-between border-t border-gray-600 pt-2">
-                <span className="font-semibold text-gray-300">Total cost:</span>
-                <span className="font-semibold text-white">{membersToGet ? parseInt(membersToGet) * 2 : 0} coins</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Your balance:</span>
-                <span className="text-white">{user?.coins || 0} coins</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">After purchase:</span>
-                <span className="text-white">{(user?.coins || 0) - (membersToGet ? parseInt(membersToGet) * 2 : 0)} coins</span>
+            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Members:</span>
+                  <span className="text-white font-medium">{membersToGet}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Rate:</span>
+                  <span className="text-white">2 coins each</span>
+                </div>
+                <div className="border-t border-gray-700 pt-2 flex justify-between font-medium">
+                  <span className="text-gray-300">Total:</span>
+                  <span className="text-purple-400">{membersToGet ? parseInt(membersToGet) * 2 : 0} coins</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">Balance after:</span>
+                  <span className="text-white">{(user?.coins || 0) - (membersToGet ? parseInt(membersToGet) * 2 : 0)} coins</span>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-gray-600 text-white hover:bg-gray-800">
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => setDialogOpen(false)} className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800">
                 Cancel
               </Button>
               <Button
                 onClick={handlePurchaseMembers}
                 disabled={!selectedServer || purchaseMembersMutation.isPending || botCheckMutation.isPending || !userServers}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
                 data-testid="button-confirm-purchase"
-                className="bg-purple-600 hover:bg-purple-700 text-white"
               >
-                {botCheckMutation.isPending ? "Checking Bot..." : purchaseMembersMutation.isPending ? "Processing..." : "Confirm Purchase"}
+                {botCheckMutation.isPending ? "Verifying..." : purchaseMembersMutation.isPending ? "Processing..." : "Confirm"}
               </Button>
             </div>
           </div>
@@ -522,34 +504,28 @@ export default function JoinMembers() {
 
       {/* Bot Check Dialog */}
       <Dialog open={botCheckDialogOpen} onOpenChange={setBotCheckDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
           <DialogHeader>
-            <DialogTitle className="text-white">Bot Required</DialogTitle>
+            <DialogTitle className="text-white">Bot Integration Required</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Our bot needs to be in your server to deliver members. Please add our bot first.
+              Add our bot to enable member delivery
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-gray-800 p-4 rounded-lg border border-gray-600">
-              <p className="text-sm text-yellow-400">
-                The bot is required to:
-              </p>
-              <ul className="mt-2 text-sm text-gray-300 list-disc list-inside space-y-1">
-                <li>Send invites to members</li>
-                <li>Track successful joins</li>
-                <li>Manage member delivery</li>
+            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+              <h4 className="text-sm font-medium text-yellow-400 mb-2">Required Permissions:</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Send member invitations</li>
+                <li>• Track membership status</li>
+                <li>• Deliver purchased members</li>
               </ul>
             </div>
-            <div className="flex justify-between space-x-2">
-              <Button variant="outline" onClick={() => setBotCheckDialogOpen(false)} className="border-gray-600 text-white hover:bg-gray-800">
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => setBotCheckDialogOpen(false)} className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800">
                 Cancel
               </Button>
-              <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
-                <a 
-                  href={botCheckData?.inviteUrl || "#"} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
+              <Button asChild className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
+                <a href={botCheckData?.inviteUrl || "#"} target="_blank" rel="noopener noreferrer">
                   Add Bot
                 </a>
               </Button>
