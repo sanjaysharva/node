@@ -31,6 +31,9 @@ import ServerTemplates from "@/pages/server-templates";
 import AddTemplate from "@/pages/add-template";
 import Login from "@/pages/login";
 import Jobs from "@/pages/jobs";
+import Trade from "@/pages/trade";
+import Profile from "@/pages/profile";
+
 
 function Router() {
   const { user } = useAuth();
@@ -62,6 +65,7 @@ function Router() {
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/blog" component={Blog} />
+      <Route path="/trade" component={Trade} />
       <Route component={NotFound} />
     </Switch>
   );
