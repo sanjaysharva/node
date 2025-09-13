@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // TODO: Add back support for language, timezone, activity filters in storage.getServers
       // For now, filter here to maintain existing functionality
       let filteredServers = serverList;
-      
+
       const language = req.query.language as string;
       const timezone = req.query.timezone as string;
       const activity = req.query.activity as string;
@@ -346,12 +346,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/servers/advertising", async (req, res) => {
     try {
       const advertisingType = req.query.type as string;
-      
+
       // Validate advertising type
       if (advertisingType && !["normal", "member_exchange"].includes(advertisingType)) {
         return res.status(400).json({ message: "Invalid advertising type. Must be 'normal' or 'member_exchange'." });
       }
-      
+
       const advertisingServers = await storage.getAdvertisingServers(advertisingType);
       res.json(advertisingServers);
     } catch (error) {
@@ -855,10 +855,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/slideshows", async (req, res) => {
     try {
       const { page, includeInactive } = req.query;
-      
+
       // Only admins can see inactive slideshows
       const showInactive = includeInactive === "true" && req.user?.isAdmin;
-      
+
       const slideshows = await storage.getSlideshows(page as string, showInactive);
       res.json(slideshows);
     } catch (error) {
@@ -1147,7 +1147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = await storage.transferCoins(senderId, recipientId, amount);
-      
+
       res.json({
         message: "Coins transferred successfully",
         amount,
@@ -1156,7 +1156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Coin transfer error:", error);
-      
+
       if (error instanceof Error) {
         if (error.message.includes("Insufficient coins")) {
           return res.status(400).json({ message: "You don't have enough coins for this transfer" });
@@ -1171,7 +1171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Recipient user not found" });
         }
       }
-      
+
       res.status(500).json({ message: "Failed to transfer coins" });
     }
   });
@@ -1184,13 +1184,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { identifier } = req.params;
-      
+
       // Try to find user by Discord ID first, then by username
       let user = await storage.getUserByDiscordId(identifier);
       if (!user) {
         user = await storage.getUserByDiscordUsername(identifier);
       }
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -1278,6 +1278,968 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user's quest progress and completions
+  app.get("/api/quests/user-progress", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user!.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get quest completions from user metadata - ensure it's properly parsed
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
+      const completions = (questData as any).questCompletions || [];
+      const lastDailyReward = (questData as any).lastDailyReward || null;
+
+      res.json({
+        completions,
+        lastDailyReward
+      });
+    } catch (error) {
+      console.error("Error fetching user quest progress:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Check server membership status
+  app.get("/api/quests/server-status", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user!.id),
+      });
+
+      if (!user || !user.discordAccessToken) {
+        return res.status(404).json({ message: "User not found or no Discord access" });
+      }
+
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        // Check if user is in the server
+        const apiUrl = `https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`;
+        console.log(`Checking server membership: ${apiUrl}`);
+        console.log(`Discord ID: ${user.discordId}, Guild: ${serverGuildId}`);
+
+        const memberResponse = await fetch(apiUrl, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
+
+        console.log(`Discord API Response Status: ${memberResponse.status}`);
+
+        const inServer = memberResponse.ok;
+
+        // Check if user is boosting
+        let isBoosting = false;
+        if (inServer) {
+          const memberData = await memberResponse.json();
+          console.log('Member data:', memberData);
+          isBoosting = memberData.premium_since !== null;
+        } else {
+          // Log the error response
+          const errorText = await memberResponse.text();
+          console.log(`Discord API Error Response: ${errorText}`);
+        }
+
+        console.log(`Server Status Result: inServer=${inServer}, isBoosting=${isBoosting}`);
+
+        res.json({
+          inServer,
+          isBoosting,
+          serverGuildId
+        });
+      } catch (error) {
+        console.error("Discord API error:", error);
+        res.json({ inServer: false, isBoosting: false, serverGuildId });
+      }
+    } catch (error) {
+      console.error("Error checking server status:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Daily reward endpoint
+  app.post("/api/quests/daily-reward", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user!.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
+      const lastDailyReward = (questData as any).lastDailyReward;
+
+      // Check if user can claim daily reward (strict 24-hour check)
+      if (lastDailyReward) {
+        const lastClaim = new Date(lastDailyReward);
+        const now = new Date();
+        const hoursSinceLastClaim = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
+
+        if (hoursSinceLastClaim < 24) {
+          const hoursRemaining = Math.ceil(24 - hoursSinceLastClaim);
+          const minutesRemaining = Math.ceil(((24 - hoursSinceLastClaim) % 1) * 60);
+          return res.status(400).json({
+            message: `Daily reward already claimed. Try again in ${hoursRemaining}h ${minutesRemaining}m.`,
+            timeRemaining: { hours: hoursRemaining, minutes: minutesRemaining }
+          });
+        }
+      }
+
+      // Award coins and update last claim time
+      const coinsEarned = 2;
+      const newCoins = (user.coins || 0) + coinsEarned;
+      const now = new Date().toISOString();
+      const newMetadata = {
+        ...questData,
+        lastDailyReward: now
+      };
+
+      await db.update(users)
+        .set({
+          coins: newCoins,
+          metadata: JSON.stringify(newMetadata)
+        })
+        .where(eq(users.id, req.user!.id));
+
+      console.log(`User ${user.discordId} claimed daily reward: ${coinsEarned} coins (new balance: ${newCoins})`);
+      res.json({ coinsEarned, totalCoins: newCoins });
+    } catch (error) {
+      console.error("Error claiming daily reward:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Join server quest endpoint
+  app.post("/api/quests/join-server", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user!.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
+      const completions = (questData as any).questCompletions || [];
+
+      // Check if already completed
+      if (completions.some((c: any) => c.questId === "join-server")) {
+        return res.status(400).json({ message: "Quest already completed" });
+      }
+
+      // Verify user is actually in the Discord server
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
+
+        if (!memberResponse.ok) {
+          return res.status(400).json({ message: "You must be in the Discord server to complete this quest" });
+        }
+
+        // Award coins and mark quest as completed
+        const coinsEarned = 2;
+        const newCoins = (user.coins || 0) + coinsEarned;
+        const newCompletion = {
+          questId: "join-server",
+          completedAt: new Date().toISOString(),
+          reward: coinsEarned
+        };
+
+        const newMetadata = {
+          ...questData,
+          questCompletions: [...completions, newCompletion]
+        };
+
+        await db.update(users)
+          .set({
+            coins: newCoins,
+            metadata: JSON.stringify(newMetadata)
+          })
+          .where(eq(users.id, req.user!.id));
+
+        console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
+        res.json({ coinsEarned, totalCoins: newCoins });
+      } catch (discordError) {
+        console.error("Discord verification error:", discordError);
+        return res.status(500).json({ message: "Failed to verify Discord membership" });
+      }
+    } catch (error) {
+      console.error("Error completing join server quest:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Check invites quest endpoint
+  app.post("/api/quests/check-invites", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user!.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        // Get invite data from Discord API
+        const invitesResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/invites`, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
+
+        if (!invitesResponse.ok) {
+          return res.status(500).json({ message: "Failed to fetch invite data" });
+        }
+
+        const invites = await invitesResponse.json();
+
+        // Find invites created by this user
+        const userInvites = invites.filter((invite: any) => invite.inviter && invite.inviter.id === user.discordId);
+
+        // Calculate total uses
+        const totalUses = userInvites.reduce((sum: number, invite: any) => sum + (invite.uses || 0), 0);
+        const lastInviteCount = (questData as any).lastInviteCount || 0;
+        const newInvites = Math.max(0, totalUses - lastInviteCount);
+
+        if (newInvites > 0) {
+          const coinsEarned = newInvites * 3; // 3 coins per invite
+          const newCoins = (user.coins || 0) + coinsEarned;
+
+          const newMetadata = {
+            ...questData,
+            lastInviteCount: totalUses
+          };
+
+          await db.update(users)
+            .set({
+              coins: newCoins,
+              metadata: JSON.stringify(newMetadata)
+            })
+            .where(eq(users.id, req.user!.id));
+
+          console.log(`User ${user.discordId} earned ${coinsEarned} coins for ${newInvites} new invites (new balance: ${newCoins})`);
+          res.json({ newInvites, coinsEarned, totalCoins: newCoins });
+        } else {
+          res.json({ newInvites: 0, coinsEarned: 0, totalCoins: user.coins || 0 });
+        }
+      } catch (discordError) {
+        console.error("Discord invite check error:", discordError);
+        return res.status(500).json({ message: "Failed to check invites" });
+      }
+    } catch (error) {
+      console.error("Error checking invites:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Boost server quest endpoint
+  app.post("/api/quests/boost-server", requireAuth, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user!.id),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Parse metadata properly
+      let questData = {};
+      try {
+        questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
+      } catch (parseError) {
+        console.error("Error parsing user metadata:", parseError);
+        questData = {};
+      }
+
+      const completions = (questData as any).questCompletions || [];
+
+      // Check if already completed
+      if (completions.some((c: any) => c.questId === "boost-server")) {
+        return res.status(400).json({ message: "Quest already completed" });
+      }
+
+      // Verify user is actually boosting the Discord server
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      try {
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`, {
+          headers: { 'Authorization': `Bot ${botToken}` },
+        });
+
+        if (!memberResponse.ok) {
+          return res.status(400).json({ message: "You must be in the Discord server first" });
+        }
+
+        const memberData = await memberResponse.json();
+        const isBoosting = memberData.premium_since !== null;
+
+        if (!isBoosting) {
+          return res.status(400).json({ message: "You must be boosting the server to complete this quest" });
+        }
+
+        // Award coins and mark quest as completed
+        const coinsEarned = 50;
+        const newCoins = (user.coins || 0) + coinsEarned;
+        const newCompletion = {
+          questId: "boost-server",
+          completedAt: new Date().toISOString(),
+          reward: coinsEarned
+        };
+
+        const newMetadata = {
+          ...questData,
+          questCompletions: [...completions, newCompletion]
+        };
+
+        await db.update(users)
+          .set({
+            coins: newCoins,
+            metadata: JSON.stringify(newMetadata)
+          })
+          .where(eq(users.id, req.user!.id));
+
+        console.log(`User ${user.discordId} completed boost-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
+        res.json({ coinsEarned, totalCoins: newCoins });
+      } catch (discordError) {
+        console.error("Discord verification error:", discordError);
+        return res.status(500).json({ message: "Failed to verify Discord boost status" });
+      }
+    } catch (error) {
+      console.error("Error completing boost server quest:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Review routes
+  app.post("/api/servers/:serverId/reviews", reviewLimiter, validateReview, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { serverId } = req.params;
+      const { rating, comment } = req.body;
+      const userId = req.user.id;
+
+      // Check if the user has already reviewed this server
+      const existingReview = await storage.getReview(serverId, userId);
+      if (existingReview) {
+        return res.status(400).json({ message: "You have already reviewed this server." });
+      }
+
+      // Check if the user has joined the server (optional, but good for review integrity)
+      // This would require a more complex check, potentially involving serverJoin records or Discord API calls
+
+      const newReview = await storage.createReview({
+        serverId,
+        userId,
+        rating,
+        review: comment,
+      });
+
+      // Update server's average rating
+      await storage.updateServerAverageRating(serverId);
+
+      res.status(201).json(newReview);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ message: "Failed to create review" });
+    }
+  });
+
+  app.get("/api/servers/:serverId/reviews", async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { limit = "10", offset = "0" } = req.query;
+      const reviews = await storage.getReviewsForServer(serverId, {
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string)
+      });
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  // Update review (only by the user who wrote it)
+  app.put("/api/reviews/:reviewId", reviewLimiter, validateReview, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { reviewId } = req.params;
+      const { rating, comment } = req.body;
+      const userId = req.user.id;
+
+      const review = await storage.getReviewById(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      if (review.userId !== userId) {
+        return res.status(403).json({ message: "You can only edit your own reviews" });
+      }
+
+      const updatedReview = await storage.updateReview(reviewId, {
+        rating,
+        review: comment,
+      });
+
+      // Update server's average rating
+      await storage.updateServerAverageRating(review.serverId);
+
+      res.json(updatedReview);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ message: "Failed to update review" });
+    }
+  });
+
+  // Delete review (only by the user who wrote it or admin)
+  app.delete("/api/reviews/:reviewId", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { reviewId } = req.params;
+      const userId = req.user.id;
+      const isAdmin = (req.user as any).isAdmin;
+
+      const review = await storage.getReviewById(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      if (review.userId !== userId && !isAdmin) {
+        return res.status(403).json({ message: "You can only delete your own reviews or as an admin" });
+      }
+
+      await storage.deleteReview(reviewId);
+
+      // Update server's average rating
+      await storage.updateServerAverageRating(review.serverId);
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ message: "Failed to delete review" });
+    }
+  });
+
+  // Comments routes
+  app.get("/api/servers/:serverId/comments", async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { limit = "20", offset = "0" } = req.query;
+      const comments = await storage.getCommentsForServer(serverId, {
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/servers/:serverId/comments", requireAuth, async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { content, parentId } = req.body;
+      const userId = req.user!.id;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (content.length > 1000) {
+        return res.status(400).json({ message: "Comment too long (max 1000 characters)" });
+      }
+
+      const comment = await storage.createComment({
+        serverId,
+        userId,
+        content: content.trim(),
+        parentId: parentId || null,
+      });
+
+      // Update server comment count
+      await storage.incrementServerCommentCount(serverId);
+
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.post("/api/comments/:commentId/like", requireAuth, async (req, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user!.id;
+
+      const result = await storage.toggleCommentLike(commentId, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling comment like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  app.delete("/api/comments/:commentId", requireAuth, async (req, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user!.id;
+      const isAdmin = (req.user as any).isAdmin;
+
+      const comment = await storage.getComment(commentId);
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      if (comment.userId !== userId && !isAdmin) {
+        return res.status(403).json({ message: "You can only delete your own comments" });
+      }
+
+      await storage.deleteComment(commentId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
+  // Voting routes
+  app.post("/api/servers/:serverId/vote", requireAuth, async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { voteType } = req.body;
+      const userId = req.user!.id;
+
+      if (!['up', 'down'].includes(voteType)) {
+        return res.status(400).json({ message: "Invalid vote type" });
+      }
+
+      const result = await storage.voteOnServer(serverId, userId, voteType);
+      res.json(result);
+    } catch (error) {
+      console.error("Error voting on server:", error);
+      res.status(500).json({ message: "Failed to vote" });
+    }
+  });
+
+  app.get("/api/servers/:serverId/vote-status", requireAuth, async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const userId = req.user!.id;
+
+      const voteStatus = await storage.getUserVoteStatus(serverId, userId);
+      res.json(voteStatus);
+    } catch (error) {
+      console.error("Error fetching vote status:", error);
+      res.status(500).json({ message: "Failed to fetch vote status" });
+    }
+  });
+
+  // Support ticket routes
+  app.post("/api/support/ticket", requireAuth, async (req, res) => {
+    try {
+      const { message } = req.body;
+      const userId = req.user!.id;
+
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ message: "Support message is required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const ticket = await storage.createSupportTicket({
+        userId: userId,
+        discordUserId: user.discordId,
+        username: user.username,
+        message: message.trim(),
+        status: 'open',
+      });
+
+      // Here you could add Discord DM integration
+      // The Discord bot will handle sending DMs to the user and admins
+
+      res.status(201).json({
+        message: "Support ticket created successfully",
+        ticketId: ticket.id
+      });
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      res.status(500).json({ message: "Failed to create support ticket" });
+    }
+  });
+
+  app.get("/api/support/tickets", requireAdmin, async (req, res) => {
+    try {
+      const tickets = await storage.getSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+
+  // Blog routes
+  app.get("/api/blog/posts", async (req, res) => {
+    try {
+      const { search, category, limit = "20", offset = "0" } = req.query;
+      const posts = await storage.getBlogPosts({
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+        featured: false,
+      });
+      // Note: search and category filtering will be implemented when blog table is added
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.get("/api/blog/featured", async (req, res) => {
+    try {
+      const posts = await storage.getFeaturedBlogPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching featured blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch featured blog posts" });
+    }
+  });
+
+  app.post("/api/blog/posts", requireAdmin, async (req, res) => {
+    try {
+      const { title, content, excerpt, category, featured } = req.body;
+      const authorId = req.user!.id;
+
+      if (!title || !content || !category) {
+        return res.status(400).json({ message: "Title, content, and category are required" });
+      }
+
+      const post = await storage.createBlogPost({
+        title,
+        content,
+        excerpt: excerpt || content.substring(0, 200) + '...',
+        category,
+        featured: featured || false,
+        authorId,
+      });
+
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ message: "Failed to create blog post" });
+    }
+  });
+
+  // Partnerships routes
+  app.get("/api/partnerships", async (req, res) => {
+    try {
+      const { search, type, limit = "20", offset = "0" } = req.query;
+      const partnerships = await storage.getPartnerships({
+        search: search as string,
+        type: type as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(partnerships);
+    } catch (error) {
+      console.error("Error fetching partnerships:", error);
+      res.status(500).json({ message: "Failed to fetch partnerships" });
+    }
+  });
+
+  // Create partnership
+  app.post("/api/partnerships", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertPartnershipSchema.parse({
+        ...req.body,
+        ownerId: req.user!.id,
+      });
+
+      const partnership = await storage.createPartnership(validatedData);
+      console.log("Partnership created successfully:", partnership.id);
+      res.json({ success: true, partnership });
+    } catch (error) {
+      console.error("Partnership creation error:", error);
+      res.status(400).json({
+        message: error instanceof Error ? error.message : "Failed to create partnership"
+      });
+    }
+  });
+
+  app.post("/api/partnerships/analyze", requireAuth, async (req, res) => {
+    try {
+      const { serverLink } = req.body;
+      const analysis = await storage.analyzePartnershipServer(serverLink);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing server:", error);
+      res.status(500).json({ message: "Failed to analyze server" });
+    }
+  });
+
+  // Templates routes
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const { search, category, limit = "20", offset = "0" } = req.query;
+      const templates = await storage.getServerTemplates({
+        search: search as string,
+        category: category as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  app.post("/api/templates", requireAuth, async (req, res) => {
+    try {
+      const templateData = insertServerTemplateSchema.parse({
+        ...req.body,
+        ownerId: req.user!.id,
+        templateLink: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      });
+      const template = await storage.createServerTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create template" });
+    }
+  });
+
+  app.post("/api/templates/analyze", requireAuth, async (req, res) => {
+    try {
+      const { serverLink } = req.body;
+      const inviteCode = serverLink.split('/').pop().split('?')[0];
+
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      if (!botToken) {
+        return res.status(500).json({ message: "Bot token not configured" });
+      }
+
+      // Get invite info
+      const inviteResponse = await fetch(`https://discord.com/api/v10/invites/${inviteCode}`);
+      if (!inviteResponse.ok) {
+        return res.status(400).json({ message: "Invalid server link" });
+      }
+
+      const inviteData = await inviteResponse.json();
+      const guildId = inviteData.guild.id;
+
+      // Get guild channels and roles
+      const [channelsResponse, rolesResponse] = await Promise.all([
+        fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+          headers: { 'Authorization': `Bot ${botToken}` }
+        }),
+        fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+          headers: { 'Authorization': `Bot ${botToken}` }
+        })
+      ]);
+
+      if (!channelsResponse.ok || !rolesResponse.ok) {
+        return res.status(400).json({ message: "Bot is not in this server or lacks permissions" });
+      }
+
+      const channels = await channelsResponse.json();
+      const roles = await rolesResponse.json();
+
+      // Filter out bot-specific roles and @everyone
+      const filteredRoles = roles.filter((role: any) =>
+        !role.managed && role.name !== '@everyone'
+      );
+
+      res.json({
+        serverName: inviteData.guild.name,
+        serverIcon: inviteData.guild.icon ?
+          `https://cdn.discordapp.com/icons/${guildId}/${inviteData.guild.icon}.png` : null,
+        channels: channels.map((channel: any) => ({
+          name: channel.name,
+          type: channel.type === 4 ? 'category' : channel.type === 2 ? 'voice' : 'text',
+          position: channel.position,
+          category: channel.parent_id,
+        })),
+        roles: filteredRoles.map((role: any) => ({
+          name: role.name,
+          color: role.color ? `#${role.color.toString(16).padStart(6, '0')}` : null,
+          permissions: role.permissions,
+          position: role.position,
+          mentionable: role.mentionable,
+        }))
+      });
+    } catch (error) {
+      console.error("Error analyzing server:", error);
+      res.status(500).json({ message: "Failed to analyze server" });
+    }
+  });
+
+  app.post("/api/templates/validate", async (req, res) => {
+    try {
+      const { templateLink, guildId } = req.body;
+      const template = await storage.getTemplateByLink(templateLink);
+
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      res.json(template);
+    } catch (error) {
+      console.error("Error validating template:", error);
+      res.status(500).json({ message: "Failed to validate template" });
+    }
+  });
+
+  // User coins routes
+  app.get("/api/user/coins", requireAuth, async (req, res) => {
+    try {
+      const coins = await storage.getUserCoins(req.user!.id);
+      res.json({ coins });
+    } catch (error) {
+      console.error("Error fetching user coins:", error);
+      res.status(500).json({ message: "Failed to fetch coins" });
+    }
+  });
+
+  app.post("/api/user/coins/update", requireAuth, async (req, res) => {
+    try {
+      const { amount } = req.body;
+      if (typeof amount !== 'number') {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+
+      await storage.updateUserCoins(req.user!.id, amount);
+      const newCoins = await storage.getUserCoins(req.user!.id);
+      res.json({ coins: newCoins });
+    } catch (error) {
+      console.error("Error updating user coins:", error);
+      res.status(500).json({ message: "Failed to update coins" });
+    }
+  });
+
+  // Job posting endpoints
+  app.post("/api/jobs", requireAuth, async (req, res) => {
+    try {
+      const {
+        type,
+        title,
+        description,
+        userId,
+        skills,
+        websiteUrl,
+        serverInviteLink,
+        currency,
+        contactInfo,
+        postedBy
+      } = req.body;
+
+      // Basic validation
+      if (!type || !title || !description || !userId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Here you would typically save to database
+      // For now, we'll just return success
+      const job = {
+        id: Date.now().toString(),
+        type,
+        title,
+        description,
+        userId,
+        skills: skills || [],
+        websiteUrl: websiteUrl || null,
+        serverInviteLink: serverInviteLink || null,
+        currency: currency || [],
+        contactInfo,
+        postedBy,
+        postedDate: new Date().toISOString()
+      };
+
+      res.json({ success: true, job });
+    } catch (error) {
+      console.error("Error creating job posting:", error);
+      res.status(500).json({ error: "Failed to create job posting" });
+    }
+  });
+
+  // Quest endpoints
   app.get("/api/quests/user-progress", requireAuth, async (req, res) => {
     try {
       const user = await db.query.users.findFirst({

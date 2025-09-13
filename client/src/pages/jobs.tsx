@@ -189,10 +189,23 @@ export default function Jobs() {
                   )}
 
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => {
+                        const userId = job.contactInfo.replace('User ID: ', '').trim();
+                        window.open(`https://discord.com/users/${userId}`, '_blank');
+                      }}
+                    >
                       Contact
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        alert(`Job Details:\n\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location}\nDescription: ${job.description}\n\nRequirements: ${job.requirements?.join(', ')}\n\nContact: ${job.contactInfo}`);
+                      }}
+                    >
                       Details
                     </Button>
                   </div>
