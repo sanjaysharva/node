@@ -11,14 +11,6 @@ interface ServerCardProps {
 }
 
 export default function ServerCard({ server, onJoin, onView }: ServerCardProps) {
-  // Debug server data
-  console.log('Server data for', server.name, {
-    id: server.id,
-    discordId: server.discordId,
-    icon: server.icon,
-    iconUrl: server.icon ? `https://cdn.discordapp.com/icons/${server.discordId || server.id}/${server.icon}.png?size=64` : 'No icon'
-  });
-
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't trigger if clicking the join button
     if ((e.target as HTMLElement).closest('button')) return;
@@ -47,24 +39,34 @@ export default function ServerCard({ server, onJoin, onView }: ServerCardProps) 
 
           {/* Server Avatar */}
           <div className="absolute -bottom-8 left-6">
-            <div className="w-16 h-16 bg-background border-4 border-background rounded-2xl flex items-center justify-center text-foreground font-bold text-xl shadow-2xl group-hover:scale-110 transition-transform duration-300">
-              {server.icon ? (
-                <img
-                  src={`https://cdn.discordapp.com/icons/${server.discordId || server.id}/${server.icon}.png?size=64`}
-                  alt={server.name}
-                  className="w-full h-full rounded-xl object-cover"
-                  onError={(e) => {
-                    console.log(`Failed to load icon for ${server.name}:`, e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div 
-                className={`w-full h-full rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl ${server.icon ? 'hidden' : 'flex'}`}
-              >
-                {server.name.charAt(0).toUpperCase()}
-              </div>
+            <div className="w-16 h-16 bg-background border-4 border-background rounded-2xl flex items-center justify-center text-foreground font-bold text-xl shadow-2xl group-hover:scale-110 transition-transform duration-300 relative overflow-hidden">
+              {server.icon && server.discordId ? (
+                <>
+                  <img
+                    src={`https://cdn.discordapp.com/icons/${server.discordId}/${server.icon}.png?size=64`}
+                    alt={server.name}
+                    className="w-full h-full rounded-xl object-cover absolute inset-0"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      img.style.display = 'none';
+                      const fallback = img.parentElement?.querySelector('.fallback-avatar') as HTMLElement;
+                      if (fallback) {
+                        fallback.style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div 
+                    className="fallback-avatar w-full h-full rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl absolute inset-0"
+                    style={{ display: 'none' }}
+                  >
+                    {server.name.charAt(0).toUpperCase()}
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl">
+                  {server.name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
           </div>
 
