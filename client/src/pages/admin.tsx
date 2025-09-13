@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, Edit, Calendar, Clock, Upload, Image, Play, Pause } from "lucide-react";
+import { Trash2, Plus, Edit, Timer, Upload, Image, Play, Pause, Eye, EyeOff, Zap, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -19,12 +19,7 @@ import {
   Users,
   Server,
   Bot,
-  TrendingUp,
-  Eye,
-  EyeOff,
-  Timer,
   ExternalLink,
-  Zap
 } from "lucide-react";
 
 interface Ad {
@@ -60,17 +55,55 @@ interface Slideshow {
   isActive: boolean;
 }
 
+// Define types for fetched data
+interface AdsData extends Array<Ad> {}
+interface BlogPostsData extends Array<any> {} // Replace 'any' with a proper blog post type if available
+
 export default function AdminPage() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [ads, setAds] = useState<Ad[]>([]);
-  const [slideshows, setSlideshows] = useState<Slideshow[]>([]);
-  const [activeTab, setActiveTab] = useState<'ads' | 'slideshows'>('ads');
+  const queryClient = useQueryClient();
+
+  // Fetch ads
+  const { data: adsData, isLoading: adsLoading, refetch: refetchAds } = useQuery<AdsData>({
+    queryKey: ["/api/ads"],
+    queryFn: async () => {
+      const response = await fetch("/api/ads");
+      if (!response.ok) throw new Error("Failed to fetch ads");
+      return response.json();
+    },
+    enabled: !!user?.isAdmin,
+  });
+
+  // Fetch blog posts
+  const { data: blogPosts, isLoading: blogLoading, refetch: refetchBlogPosts } = useQuery<BlogPostsData>({
+    queryKey: ["/api/blog/posts"],
+    queryFn: async () => {
+      const response = await fetch("/api/blog/posts");
+      if (!response.ok) throw new Error("Failed to fetch blog posts");
+      return response.json();
+    },
+    enabled: !!user?.isAdmin,
+  });
+
+  // Fetch slideshows (assuming similar structure to ads)
+  const { data: slideshowsData, isLoading: slideshowsLoading, refetch: refetchSlideshows } = useQuery<Slideshow[]>({
+    queryKey: ["/api/slideshows"],
+    queryFn: async () => {
+      const response = await fetch("/api/slideshows");
+      if (!response.ok) throw new Error("Failed to fetch slideshows");
+      return response.json();
+    },
+    enabled: !!user?.isAdmin,
+  });
+
+  const [activeTab, setActiveTab] = useState<'ads' | 'slideshows' | 'blog' | 'support' | 'users'>('overview');
   const [showForm, setShowForm] = useState(false);
   const [showSlideshowForm, setShowSlideshowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
   const [editingSlideshow, setEditingSlideshow] = useState<Slideshow | null>(null);
-  const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState<Omit<Ad, 'id' | 'createdAt' | 'impressions' | 'clicks' | 'isActive'>>({
     title: "",
     content: "",
     imageUrl: "",
@@ -80,10 +113,12 @@ export default function AdminPage() {
     startDate: "",
     endDate: "",
     scheduledTimes: [],
-    isActive: true,
+    type: "banner",
+    duration: 30,
+    rotationEnabled: true,
   });
 
-  const [slideshowFormData, setSlideshowFormData] = useState({
+  const [slideshowFormData, setSlideshowFormData] = useState<Omit<Slideshow, 'id' | 'isActive'>>({
     title: "",
     images: [""],
     autoplay: true,
@@ -92,256 +127,11 @@ export default function AdminPage() {
     targetPages: ["all"],
     startDate: "",
     endDate: "",
-    isActive: true,
   });
 
-  const fetchAds = async () => {
-    try {
-      const response = await fetch("/api/ads");
-      if (response.ok) {
-        const data = await response.json();
-        setAds(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch ads:", error);
-    }
-  };
-
-  const fetchSlideshows = async () => {
-    try {
-      const response = await fetch("/api/slideshows");
-      if (response.ok) {
-        const data = await response.json();
-        setSlideshows(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch slideshows:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (user?.isAdmin) {
-      fetchAds();
-      fetchSlideshows();
-    }
-  }, [user]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const url = editingAd ? `/api/ads/${editingAd.id}` : "/api/ads";
-      const method = editingAd ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        toast({
-          title: editingAd ? "Ad updated" : "Ad created",
-          description: "The advertisement has been saved successfully.",
-        });
-        setShowForm(false);
-        setEditingAd(null);
-        setFormData({
-          title: "",
-          content: "",
-          imageUrl: "",
-          linkUrl: "",
-          position: "header",
-          targetPages: ["all"],
-          startDate: "",
-          endDate: "",
-          scheduledTimes: [],
-          isActive: true,
-        });
-        fetchAds();
-      } else {
-        throw new Error("Failed to save ad");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save the advertisement.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEdit = (ad: Ad) => {
-    setEditingAd(ad);
-    setFormData({
-      title: ad.title,
-      content: ad.content,
-      imageUrl: ad.imageUrl || "",
-      linkUrl: ad.linkUrl || "",
-      position: ad.position,
-      targetPages: ad.targetPages || ["all"],
-      startDate: ad.startDate || "",
-      endDate: ad.endDate || "",
-      scheduledTimes: ad.scheduledTimes || [],
-      isActive: ad.isActive,
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      const response = await fetch(`/api/ads/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Ad deleted",
-          description: "The advertisement has been removed.",
-        });
-        fetchAds();
-      } else {
-        throw new Error("Failed to delete ad");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete the advertisement.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSlideshowSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const url = editingSlideshow ? `/api/slideshows/${editingSlideshow.id}` : "/api/slideshows";
-      const method = editingSlideshow ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(slideshowFormData),
-      });
-
-      if (response.ok) {
-        toast({
-          title: editingSlideshow ? "Slideshow updated" : "Slideshow created",
-          description: "The slideshow has been saved successfully.",
-        });
-        setShowSlideshowForm(false);
-        setEditingSlideshow(null);
-        setSlideshowFormData({
-          title: "",
-          images: [""],
-          autoplay: true,
-          duration: 5,
-          position: "hero",
-          targetPages: ["all"],
-          startDate: "",
-          endDate: "",
-          isActive: true,
-        });
-        fetchSlideshows();
-      } else {
-        throw new Error("Failed to save slideshow");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save the slideshow.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSlideshowEdit = (slideshow: Slideshow) => {
-    setEditingSlideshow(slideshow);
-    setSlideshowFormData({
-      title: slideshow.title,
-      images: slideshow.images,
-      autoplay: slideshow.autoplay,
-      duration: slideshow.duration,
-      position: slideshow.position,
-      targetPages: slideshow.targetPages,
-      startDate: slideshow.startDate || "",
-      endDate: slideshow.endDate || "",
-      isActive: slideshow.isActive,
-    });
-    setShowSlideshowForm(true);
-  };
-
-  const handleSlideshowDelete = async (id: string) => {
-    try {
-      const response = await fetch(`/api/slideshows/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Slideshow deleted",
-          description: "The slideshow has been removed.",
-        });
-        fetchSlideshows();
-      } else {
-        throw new Error("Failed to delete slideshow");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete the slideshow.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const addImageToSlideshow = () => {
-    setSlideshowFormData({
-      ...slideshowFormData,
-      images: [...slideshowFormData.images, ""]
-    });
-  };
-
-  const removeImageFromSlideshow = (index: number) => {
-    const newImages = slideshowFormData.images.filter((_, i) => i !== index);
-    setSlideshowFormData({
-      ...slideshowFormData,
-      images: newImages.length > 0 ? newImages : [""]
-    });
-  };
-
-  const updateSlideshowImage = (index: number, value: string) => {
-    const newImages = [...slideshowFormData.images];
-    newImages[index] = value;
-    setSlideshowFormData({
-      ...slideshowFormData,
-      images: newImages
-    });
-  };
-
-  const [adTitle, setAdTitle] = useState("");
-  const [adContent, setAdContent] = useState("");
-  const [adPosition, setAdPosition] = useState("");
-  const [adUrl, setAdUrl] = useState("");
-  const [adImage, setAdImage] = useState("");
-  const [adType, setAdType] = useState("banner");
-  const [adDuration, setAdDuration] = useState("30");
-  const [adRotationEnabled, setAdRotationEnabled] = useState(true);
-  const [blogTitle, setBlogTitle] = useState("");
-  const [blogContent, setBlogContent] = useState("");
-  const [blogCategory, setBlogCategory] = useState("");
-  const [blogExcerpt, setBlogExcerpt] = useState("");
-  const [blogFeatured, setBlogFeatured] = useState(false);
-  const queryClient = useQueryClient();
-
-
+  // Handlers for Ad Form and Mutations
   const handleCreateAd = async () => {
-    if (!adTitle || !adContent || !adPosition) {
+    if (!formData.title || !formData.content || !formData.position) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields.",
@@ -358,15 +148,9 @@ export default function AdminPage() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: adTitle,
-          content: adContent,
-          position: adPosition,
-          url: adUrl,
-          imageUrl: adImage,
-          type: adType,
-          duration: parseInt(adDuration),
-          rotationEnabled: adRotationEnabled,
-          active: true,
+          ...formData,
+          isActive: editingAd ? editingAd.isActive : true, // Keep existing active status or default to true
+          duration: parseInt(formData.duration.toString()), // Ensure duration is a number
         }),
       });
 
@@ -375,33 +159,240 @@ export default function AdminPage() {
           title: "Success",
           description: `Advertisement ${editingAd ? "updated" : "created"} successfully.`,
         });
-        setAdTitle("");
-        setAdContent("");
-        setAdPosition("");
-        setAdUrl("");
-        setAdImage("");
-        setAdType("banner");
-        setAdDuration("30");
-        setAdRotationEnabled(true);
         setEditingAd(null);
-        queryClient.invalidateQueries({ queryKey: ["/api/ads"] });
+        setFormData({
+          title: "", content: "", imageUrl: "", linkUrl: "", position: "header", targetPages: ["all"],
+          startDate: "", endDate: "", scheduledTimes: [], type: "banner", duration: 30, rotationEnabled: true,
+        });
+        setShowForm(false);
+        refetchAds();
       } else {
         throw new Error("Failed to save advertisement");
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to save advertisement.",
+        description: error.message || "Failed to save advertisement.",
         variant: "destructive",
       });
     }
   };
 
+  const handleEditAd = (ad: Ad) => {
+    setEditingAd(ad);
+    setFormData({
+      title: ad.title,
+      content: ad.content,
+      imageUrl: ad.imageUrl || "",
+      linkUrl: ad.linkUrl || "",
+      position: ad.position,
+      targetPages: ad.targetPages || ["all"],
+      startDate: ad.startDate || "",
+      endDate: ad.endDate || "",
+      scheduledTimes: ad.scheduledTimes || [],
+      type: ad.type,
+      duration: ad.duration || 30,
+      rotationEnabled: ad.rotationEnabled,
+    });
+    setShowForm(true);
+  };
+
+  const handleToggleAd = async (id: string, active: boolean) => {
+    try {
+      const response = await fetch(`/api/ads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Advertisement ${active ? "activated" : "deactivated"} successfully.`,
+        });
+        refetchAds();
+      } else {
+        throw new Error("Failed to update ad status");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update ad status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAd = async (id: string) => {
+    try {
+      const response = await fetch(`/api/ads/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Advertisement deleted successfully.",
+        });
+        refetchAds();
+      } else {
+        throw new Error("Failed to delete ad");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete advertisement.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handlers for Slideshow Form and Mutations
+  const handleCreateSlideshow = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    if (!slideshowFormData.title || slideshowFormData.images.length === 0 || !slideshowFormData.images[0]) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields for the slideshow.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const url = editingSlideshow ? `/api/slideshows/${editingSlideshow.id}` : "/api/slideshows";
+      const method = editingSlideshow ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...slideshowFormData,
+          isActive: editingSlideshow ? editingSlideshow.isActive : true, // Keep existing active status or default to true
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Slideshow ${editingSlideshow ? "updated" : "created"} successfully.`,
+        });
+        setEditingSlideshow(null);
+        setSlideshowFormData({
+          title: "", images: [""], autoplay: true, duration: 5, position: "hero",
+          targetPages: ["all"], startDate: "", endDate: "",
+        });
+        setShowSlideshowForm(false);
+        refetchSlideshows();
+      } else {
+        throw new Error("Failed to save slideshow");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save the slideshow.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSlideshow = (slideshow: Slideshow) => {
+    setEditingSlideshow(slideshow);
+    setSlideshowFormData({
+      title: slideshow.title,
+      images: slideshow.images,
+      autoplay: slideshow.autoplay,
+      duration: slideshow.duration,
+      position: slideshow.position,
+      targetPages: slideshow.targetPages,
+      startDate: slideshow.startDate || "",
+      endDate: slideshow.endDate || "",
+    });
+    setShowSlideshowForm(true);
+  };
+
+  const handleToggleSlideshow = async (id: string, active: boolean) => {
+    try {
+      const response = await fetch(`/api/slideshows/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: active }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Slideshow ${active ? "activated" : "deactivated"} successfully.`,
+        });
+        refetchSlideshows();
+      } else {
+        throw new Error("Failed to update slideshow status");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update slideshow status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSlideshow = async (id: string) => {
+    try {
+      const response = await fetch(`/api/slideshows/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Slideshow deleted successfully.",
+        });
+        refetchSlideshows();
+      } else {
+        throw new Error("Failed to delete slideshow");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete the slideshow.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addImageToSlideshow = () => {
+    setSlideshowFormData(prev => ({ ...prev, images: [...prev.images, ""] }));
+  };
+
+  const removeImageFromSlideshow = (index: number) => {
+    setSlideshowFormData(prev => {
+      const newImages = prev.images.filter((_, i) => i !== index);
+      return { ...prev, images: newImages.length > 0 ? newImages : [""] };
+    });
+  };
+
+  const updateSlideshowImage = (index: number, value: string) => {
+    setSlideshowFormData(prev => {
+      const newImages = [...prev.images];
+      newImages[index] = value;
+      return { ...prev, images: newImages };
+    });
+  };
+
+  // Handlers for Blog Post Creation
+  const [blogTitle, setBlogTitle] = useState("");
+  const [blogContent, setBlogContent] = useState("");
+  const [blogCategory, setBlogCategory] = useState("");
+  const [blogExcerpt, setBlogExcerpt] = useState("");
+  const [blogFeatured, setBlogFeatured] = useState(false);
+
   const handleCreateBlogPost = async () => {
     if (!blogTitle || !blogContent || !blogCategory) {
       toast({
         title: "Missing fields",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields for the blog post.",
         variant: "destructive",
       });
       return;
@@ -430,76 +421,14 @@ export default function AdminPage() {
         setBlogExcerpt("");
         setBlogCategory("");
         setBlogFeatured(false);
-        queryClient.invalidateQueries({ queryKey: ["/api/blog/posts"] });
+        refetchBlogPosts();
       } else {
         throw new Error("Failed to create blog post");
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to create blog post.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEditAd = (ad: Ad) => {
-    setEditingAd(ad);
-    setAdTitle(ad.title);
-    setAdContent(ad.content);
-    setAdPosition(ad.position);
-    setAdUrl(ad.linkUrl || "");
-    setAdImage(ad.imageUrl || "");
-    setAdType(ad.type);
-    setAdDuration(ad.duration?.toString() || "30");
-    setAdRotationEnabled(ad.rotationEnabled);
-  };
-
-  const handleToggleAd = async (id: string, active: boolean) => {
-    try {
-      const response = await fetch(`/api/ads/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `Advertisement ${active ? "activated" : "deactivated"} successfully.`,
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/ads"] });
-      } else {
-        throw new Error("Failed to update ad status");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update ad status.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteAd = async (id: string) => {
-    try {
-      const response = await fetch(`/api/ads/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Advertisement deleted successfully.",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/ads"] });
-      } else {
-        throw new Error("Failed to delete ad");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete advertisement.",
+        description: error.message || "Failed to create blog post.",
         variant: "destructive",
       });
     }
@@ -509,6 +438,7 @@ export default function AdminPage() {
   if (!isAuthenticated || !user?.isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8">
+        <Navbar />
         <Card>
           <CardContent className="p-8 text-center">
             <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
@@ -547,7 +477,7 @@ export default function AdminPage() {
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{ads.length}</div>
+                    <div className="text-2xl font-bold">{adsData?.length || 0}</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -556,16 +486,16 @@ export default function AdminPage() {
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">N/A</div>
+                    <div className="text-2xl font-bold">{blogPosts?.length || 0}</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Support Tickets</CardTitle>
+                    <CardTitle className="text-sm font-medium">Total Slideshows</CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">N/A</div>
+                    <div className="text-2xl font-bold">{slideshowsData?.length || 0}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -576,9 +506,9 @@ export default function AdminPage() {
         <TabsContent value="ads" className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Advertisement Management</h3>
-            <Dialog>
+            <Dialog open={showForm} onOpenChange={(open) => { if (!open) { setEditingAd(null); setFormData({ title: "", content: "", imageUrl: "", linkUrl: "", position: "header", targetPages: ["all"], startDate: "", endDate: "", scheduledTimes: [], type: "banner", duration: 30, rotationEnabled: true }); } setShowForm(open); }}>
               <DialogTrigger asChild>
-                <Button onClick={() => setEditingAd(null)}>
+                <Button onClick={() => { setEditingAd(null); setFormData({ title: "", content: "", imageUrl: "", linkUrl: "", position: "header", targetPages: ["all"], startDate: "", endDate: "", scheduledTimes: [], type: "banner", duration: 30, rotationEnabled: true }); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Ad
                 </Button>
@@ -596,14 +526,14 @@ export default function AdminPage() {
                       <Label htmlFor="ad-title">Title</Label>
                       <Input
                         id="ad-title"
-                        value={adTitle}
-                        onChange={(e) => setAdTitle(e.target.value)}
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         placeholder="Advertisement title"
                       />
                     </div>
                     <div>
                       <Label htmlFor="ad-type">Advertisement Type</Label>
-                      <Select onValueChange={setAdType} value={adType}>
+                      <Select onValueChange={(value) => setFormData({ ...formData, type: value })} value={formData.type}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
@@ -621,8 +551,8 @@ export default function AdminPage() {
                     <Label htmlFor="ad-content">Content</Label>
                     <Textarea
                       id="ad-content"
-                      value={adContent}
-                      onChange={(e) => setAdContent(e.target.value)}
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                       placeholder="Advertisement content/description"
                       rows={3}
                     />
@@ -633,8 +563,8 @@ export default function AdminPage() {
                       <Label htmlFor="ad-url">Redirect URL</Label>
                       <Input
                         id="ad-url"
-                        value={adUrl}
-                        onChange={(e) => setAdUrl(e.target.value)}
+                        value={formData.linkUrl}
+                        onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
                         placeholder="https://example.com"
                       />
                     </div>
@@ -642,8 +572,8 @@ export default function AdminPage() {
                       <Label htmlFor="ad-image">Image URL</Label>
                       <Input
                         id="ad-image"
-                        value={adImage}
-                        onChange={(e) => setAdImage(e.target.value)}
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                         placeholder="https://example.com/image.jpg"
                       />
                     </div>
@@ -651,7 +581,7 @@ export default function AdminPage() {
 
                   <div>
                     <Label htmlFor="ad-position">Display Position</Label>
-                    <Select onValueChange={setAdPosition} value={adPosition}>
+                    <Select onValueChange={(value) => setFormData({ ...formData, position: value })} value={formData.position}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select position" />
                       </SelectTrigger>
@@ -672,8 +602,8 @@ export default function AdminPage() {
                       <Input
                         id="ad-duration"
                         type="number"
-                        value={adDuration}
-                        onChange={(e) => setAdDuration(e.target.value)}
+                        value={formData.duration}
+                        onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })}
                         placeholder="30"
                         min="5"
                         max="300"
@@ -685,8 +615,8 @@ export default function AdminPage() {
                     <div className="flex items-center space-x-2 pt-6">
                       <Switch
                         id="ad-rotation"
-                        checked={adRotationEnabled}
-                        onCheckedChange={setAdRotationEnabled}
+                        checked={formData.rotationEnabled}
+                        onCheckedChange={(checked) => setFormData({ ...formData, rotationEnabled: checked })}
                       />
                       <Label htmlFor="ad-rotation">Enable Auto-Rotation</Label>
                     </div>
@@ -698,15 +628,15 @@ export default function AdminPage() {
                       Preview
                     </h4>
                     <div className="border rounded p-3 bg-background">
-                      {adImage && (
-                        <img src={adImage} alt="Ad preview" className="w-full h-20 object-cover rounded mb-2" />
+                      {formData.imageUrl && (
+                        <img src={formData.imageUrl} alt="Ad preview" className="w-full h-20 object-cover rounded mb-2" />
                       )}
-                      <h5 className="font-medium">{adTitle || "Advertisement Title"}</h5>
-                      <p className="text-sm text-muted-foreground">{adContent || "Advertisement content will appear here"}</p>
-                      {adUrl && (
+                      <h5 className="font-medium">{formData.title || "Advertisement Title"}</h5>
+                      <p className="text-sm text-muted-foreground">{formData.content || "Advertisement content will appear here"}</p>
+                      {formData.linkUrl && (
                         <div className="flex items-center text-xs text-primary mt-1">
                           <ExternalLink className="w-3 h-3 mr-1" />
-                          {adUrl}
+                          {formData.linkUrl}
                         </div>
                       )}
                     </div>
@@ -739,7 +669,7 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ads?.map((ad: any) => (
+                  {adsData?.map((ad: Ad) => (
                     <TableRow key={ad.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-2">
@@ -756,7 +686,7 @@ export default function AdminPage() {
                       <TableCell>
                         <div className="flex items-center space-x-1">
                           <Timer className="w-3 h-3" />
-                          {ad.duration || 30}s
+                          {ad.duration}s
                         </div>
                       </TableCell>
                       <TableCell>
@@ -767,7 +697,7 @@ export default function AdminPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {ad.active ? (
+                        {ad.isActive ? (
                           <Badge variant="default">Active</Badge>
                         ) : (
                           <Badge variant="secondary">Inactive</Badge>
@@ -785,9 +715,9 @@ export default function AdminPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleToggleAd(ad.id, !ad.active)}
+                            onClick={() => handleToggleAd(ad.id, !ad.isActive)}
                           >
-                            {ad.active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {ad.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </Button>
                           <Button
                             variant="outline"
@@ -800,6 +730,16 @@ export default function AdminPage() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {adsLoading && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center">Loading advertisements...</TableCell>
+                    </TableRow>
+                  )}
+                  {!adsLoading && adsData?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">No advertisements found.</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -809,9 +749,9 @@ export default function AdminPage() {
         <TabsContent value="blog" className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Blog Management</h3>
-            <Dialog>
+            <Dialog open={showForm} onOpenChange={(open) => { /* Add logic to reset form if needed */ setShowForm(open); }}>
               <DialogTrigger asChild>
-                <Button>
+                <Button onClick={() => { /* Reset blog form state if necessary */ }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Post
                 </Button>
@@ -896,7 +836,41 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <p className="text-muted-foreground">Blog management functionality will be available here.</p>
+                {blogLoading && <p className="text-muted-foreground">Loading blog posts...</p>}
+                {!blogLoading && blogPosts?.length === 0 && <p className="text-muted-foreground">No blog posts found.</p>}
+                {!blogLoading && blogPosts && blogPosts.length > 0 && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {blogPosts.map((post: any) => (
+                        <TableRow key={post.id}>
+                          <TableCell className="font-medium">{post.title}</TableCell>
+                          <TableCell>{post.category}</TableCell>
+                          <TableCell>
+                            {post.featured ? <Badge variant="default">Featured</Badge> : <Badge variant="outline">Standard</Badge>}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => { /* Handle Edit Post */ }}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => { /* Handle Delete Post */ }}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </div>
             </CardContent>
           </Card>
