@@ -16,12 +16,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Server, User } from "@shared/schema";
-import { Coins, Users, TrendingUp, AlertCircle, CheckCircle, Wallet, Plus, Star } from "lucide-react";
+import { Coins, Users, TrendingUp, AlertCircle, CheckCircle, Wallet, Plus, Star, Bot, ExternalLink } from "lucide-react";
 
 export default function JoinMembers() {
   const [membersToGet, setMembersToGet] = useState("");
   const [selectedServer, setSelectedServer] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [botCheckDialogOpen, setBotCheckDialogOpen] = useState(false);
+  const [botCheckData, setBotCheckData] = useState<any>(null);
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
@@ -106,6 +108,43 @@ export default function JoinMembers() {
     }
   };
 
+  // Bot check mutation
+  const botCheckMutation = useMutation({
+    mutationFn: async (serverId: string) => {
+      const server = userServers?.find(s => s.id === serverId);
+      const guildId = server?.discordId ?? server?.id;
+      if (!guildId) {
+        throw new Error("Server ID not found");
+      }
+      const res = await apiRequest("GET", `/api/discord/bot-check/${guildId}`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setBotCheckData(data);
+      if (!data.botPresent) {
+        setBotCheckDialogOpen(true);
+      } else {
+        // Bot is present, proceed with purchase
+        proceedWithPurchase();
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Bot Check Failed",
+        description: error.message || "Failed to check bot presence",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const proceedWithPurchase = () => {
+    const members = parseInt(membersToGet);
+    purchaseMembersMutation.mutate({
+      serverId: selectedServer,
+      members,
+    });
+  };
+
   const handlePurchaseMembers = async () => {
     const members = parseInt(membersToGet);
     if (!members || members < 1) {
@@ -137,10 +176,8 @@ export default function JoinMembers() {
       return;
     }
 
-    purchaseMembersMutation.mutate({
-      serverId: selectedServer,
-      members,
-    });
+    // Check if bot is present in the selected server
+    botCheckMutation.mutate(selectedServer);
   };
 
   if (!isAuthenticated) {
@@ -466,10 +503,80 @@ export default function JoinMembers() {
                         </Button>
                         <Button
                           onClick={handlePurchaseMembers}
-                          disabled={!selectedServer || purchaseMembersMutation.isPending}
+                          disabled={!selectedServer || purchaseMembersMutation.isPending || botCheckMutation.isPending || !userServers}
                           data-testid="button-confirm-purchase"
                         >
-                          {purchaseMembersMutation.isPending ? "Processing..." : "Confirm Purchase"}
+                          {botCheckMutation.isPending ? "Checking Bot..." : purchaseMembersMutation.isPending ? "Processing..." : "Confirm Purchase"}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Bot Invitation Dialog */}
+                <Dialog open={botCheckDialogOpen} onOpenChange={setBotCheckDialogOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center space-x-2">
+                        <Bot className="w-5 h-5 text-blue-500" />
+                        <span>Bot Required</span>
+                      </DialogTitle>
+                      <DialogDescription>
+                        Smart Serve bot needs to be added to your server to enable member advertising.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <div className="flex items-start space-x-3">
+                          <Bot className="w-5 h-5 text-blue-500 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-blue-900 dark:text-blue-100">Why is the bot needed?</h4>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                              The Smart Serve bot tracks member joins, awards coins automatically, and manages the advertising system.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col space-y-2">
+                        <Button
+                          onClick={() => {
+                            if (botCheckData?.inviteUrl) {
+                              window.open(botCheckData.inviteUrl, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          data-testid="button-invite-bot"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Invite Smart Serve Bot
+                        </Button>
+                        
+                        <p className="text-xs text-muted-foreground text-center">
+                          After inviting the bot, you can come back and advertise your server.
+                        </p>
+                      </div>
+
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setBotCheckDialogOpen(false);
+                            setSelectedServer("");
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setBotCheckDialogOpen(false);
+                            // Re-check bot presence and proceed if present
+                            botCheckMutation.mutate(selectedServer);
+                          }}
+                          variant="default"
+                        >
+                          Check Again
                         </Button>
                       </div>
                     </div>
