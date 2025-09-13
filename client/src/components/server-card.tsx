@@ -87,7 +87,7 @@ export default function ServerCard({ server, onJoin, onView }: ServerCardProps) 
                 <span className="text-xs text-muted-foreground">online</span>
               </div>
             </div>
-            
+
             {/* Community Engagement */}
             <div className="flex items-center space-x-3 text-xs">
               <div className="flex items-center space-x-1 text-green-400">

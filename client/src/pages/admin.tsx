@@ -16,37 +16,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/navbar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface Ad extends Record<string, any> {
+// Interface definitions
+interface Ad {
   id: string;
   title: string;
-  content: string;
+  description: string;
   imageUrl?: string;
-  linkUrl?: string;
-  position: string;
-  targetPages: string[];
-  startDate?: string;
-  endDate?: string;
-  scheduledTimes?: string[];
+  targetUrl: string;
   isActive: boolean;
-  impressions?: number;
-  clicks?: number;
-  ctr?: number;
-  conversions?: number;
-  cost?: number;
-  createdAt?: string;
-  type: string;
-  duration: number;
-  rotationEnabled: boolean;
+  impressions: number;
+  clicks: number;
+  budget: number;
+  spent: number;
+  createdAt: string;
 }
 
 interface LiveChatMessage {
   id: string;
   userId: string;
-  userName: string;
+  username: string;
   message: string;
   timestamp: string;
-  status: 'pending' | 'answered' | 'closed';
+  status: 'read' | 'unread';
 }
 
 interface ServerAnalytics {
@@ -122,19 +116,12 @@ export default function AdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
 
-  const [formData, setFormData] = useState<Omit<Ad, 'id' | 'createdAt' | 'impressions' | 'clicks' | 'isActive'>>({
+  const [formData, setFormData] = useState<Omit<Ad, 'id' | 'createdAt' | 'impressions' | 'clicks' | 'isActive' | 'budget' | 'spent'>>({
     title: "",
-    content: "",
+    description: "",
     imageUrl: "",
-    linkUrl: "",
-    position: "header",
-    targetPages: ["all"],
-    startDate: "",
-    endDate: "",
-    scheduledTimes: [],
-    type: "google-ad",
-    duration: 30,
-    rotationEnabled: true,
+    targetUrl: "",
+    position: "header", // This field seems to be from the original code's form but not in the new Ad interface. It might need to be removed or mapped.
   });
 
   // Google Ad Preview Component
@@ -153,10 +140,10 @@ export default function AdminPage() {
             {ad.title || "Advertisement Title"}
           </h3>
           <p className="text-gray-800 text-sm mt-1">
-            {ad.content || "Advertisement description goes here..."}
+            {ad.description || "Advertisement description goes here..."}
           </p>
           <div className="text-green-700 text-xs mt-1">
-            {ad.linkUrl || "example.com"}
+            {ad.targetUrl || "example.com"}
           </div>
         </div>
       </div>
@@ -191,14 +178,14 @@ export default function AdminPage() {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium text-white">{chat.userName}</p>
+                      <p className="font-medium text-white">{chat.username}</p>
                       <p className="text-sm text-gray-300 truncate">{chat.message}</p>
                     </div>
                     <Badge
-                      variant={chat.status === 'pending' ? 'destructive' : chat.status === 'answered' ? 'default' : 'secondary'}
+                      variant={chat.status === 'read' ? 'default' : 'destructive'}
                       className="text-xs"
                     >
-                      {chat.status}
+                      {chat.status === 'read' ? 'Read' : 'Unread'}
                     </Badge>
                   </div>
                 </div>
@@ -274,16 +261,16 @@ export default function AdminPage() {
             <TableHeader>
               <TableRow className="border-gray-700">
                 <TableHead className="text-gray-300">
-                  <input
-                    type="checkbox"
-                    className="mr-2"
-                    onChange={(e) => {
-                      if (e.target.checked) {
+                  <Checkbox
+                    checked={selectedServers.length > 0 && serverAnalytics?.every(s => selectedServers.includes(s.serverId))}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
                         setSelectedServers(serverAnalytics?.map(s => s.serverId) || []);
                       } else {
                         setSelectedServers([]);
                       }
                     }}
+                    className="mr-2"
                   />
                   Server
                 </TableHead>
@@ -299,17 +286,16 @@ export default function AdminPage() {
                 <TableRow key={server.serverId} className="border-gray-700">
                   <TableCell className="text-white">
                     <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
+                      <Checkbox
                         checked={selectedServers.includes(server.serverId)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
+                        onCheckedChange={(checked) => {
+                          if (checked) {
                             setSelectedServers([...selectedServers, server.serverId]);
                           } else {
                             setSelectedServers(selectedServers.filter(id => id !== server.serverId));
                           }
                         }}
+                        className="mr-2"
                       />
                       {server.serverName}
                     </div>
@@ -637,22 +623,22 @@ export default function AdminPage() {
                             <Label htmlFor="ad-content" className="text-gray-300">Description</Label>
                             <Textarea
                               id="ad-content"
-                              value={formData.content}
-                              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                              value={formData.description}
+                              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                               placeholder="Describe your offer or service"
                               rows={3}
                               className="bg-gray-800 border-gray-600 text-white"
                               maxLength={90}
                             />
-                            <p className="text-xs text-gray-400 mt-1">{formData.content.length}/90 characters</p>
+                            <p className="text-xs text-gray-400 mt-1">{formData.description.length}/90 characters</p>
                           </div>
 
                           <div>
                             <Label htmlFor="ad-url" className="text-gray-300">Final URL</Label>
                             <Input
                               id="ad-url"
-                              value={formData.linkUrl}
-                              onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
+                              value={formData.targetUrl}
+                              onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
                               placeholder="https://your-website.com"
                               className="bg-gray-800 border-gray-600 text-white"
                             />

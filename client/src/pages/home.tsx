@@ -143,39 +143,143 @@ export default function Home() {
           )}
         </section>
 
-        {/* Content and Filters */}
+        {/* Advanced Filters Section */}
         <section>
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant={contentType === "servers" ? "default" : "ghost"}
-                onClick={() => setContentType("servers")}
-                className="flex items-center space-x-2"
-                data-testid="button-filter-servers"
-              >
-                <i className="fas fa-server"></i>
-                <span>Discord Servers</span>
-              </Button>
-              <Button
-                variant={contentType === "bots" ? "default" : "ghost"}
-                onClick={() => setContentType("bots")}
-                className="flex items-center space-x-2"
-                data-testid="button-filter-bots"
-              >
-                <i className="fas fa-robot"></i>
-                <span>Discord Bots</span>
-              </Button>
+          <div className="bg-card border border-border rounded-xl p-6 mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-white">Advanced Search & Filters</h3>
+            
+            {/* Primary Filters */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant={contentType === "servers" ? "default" : "ghost"}
+                  onClick={() => setContentType("servers")}
+                  className="flex items-center space-x-2"
+                  data-testid="button-filter-servers"
+                >
+                  <i className="fas fa-server"></i>
+                  <span>Discord Servers</span>
+                </Button>
+                <Button
+                  variant={contentType === "bots" ? "default" : "ghost"}
+                  onClick={() => setContentType("bots")}
+                  className="flex items-center space-x-2"
+                  data-testid="button-filter-bots"
+                >
+                  <i className="fas fa-robot"></i>
+                  <span>Discord Bots</span>
+                </Button>
+              </div>
+              
+              <div className="flex-1 flex gap-4">
+                <Select onValueChange={setSortBy} defaultValue="members">
+                  <SelectTrigger className="w-48" data-testid="select-sort">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="members">Sort by Members</SelectItem>
+                    <SelectItem value="newest">Sort by Newest</SelectItem>
+                    <SelectItem value="name">Sort by Name</SelectItem>
+                    <SelectItem value="active">Most Active</SelectItem>
+                    <SelectItem value="verified">Verified First</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select onValueChange={(value) => setSearchQuery(value)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="gaming">Gaming</SelectItem>
+                    <SelectItem value="community">Community</SelectItem>
+                    <SelectItem value="education">Education</SelectItem>
+                    <SelectItem value="technology">Technology</SelectItem>
+                    <SelectItem value="art">Art & Creative</SelectItem>
+                    <SelectItem value="music">Music</SelectItem>
+                    <SelectItem value="anime">Anime & Manga</SelectItem>
+                    <SelectItem value="sports">Sports</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Select onValueChange={setSortBy} defaultValue="members">
-              <SelectTrigger className="w-48" data-testid="select-sort">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="members">Sort by Members</SelectItem>
-                <SelectItem value="newest">Sort by Newest</SelectItem>
-                <SelectItem value="name">Sort by Name</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* Secondary Filters */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Member Count" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="small">1-100 members</SelectItem>
+                  <SelectItem value="medium">100-1K members</SelectItem>
+                  <SelectItem value="large">1K-10K members</SelectItem>
+                  <SelectItem value="massive">10K+ members</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="english">English</SelectItem>
+                  <SelectItem value="spanish">Spanish</SelectItem>
+                  <SelectItem value="french">French</SelectItem>
+                  <SelectItem value="german">German</SelectItem>
+                  <SelectItem value="japanese">Japanese</SelectItem>
+                  <SelectItem value="korean">Korean</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="na">North America</SelectItem>
+                  <SelectItem value="eu">Europe</SelectItem>
+                  <SelectItem value="asia">Asia</SelectItem>
+                  <SelectItem value="oceania">Oceania</SelectItem>
+                  <SelectItem value="global">Global</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Features" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="music-bot">Music Bot</SelectItem>
+                  <SelectItem value="moderation">Auto Moderation</SelectItem>
+                  <SelectItem value="economy">Economy System</SelectItem>
+                  <SelectItem value="levels">Leveling System</SelectItem>
+                  <SelectItem value="nsfw">NSFW Content</SelectItem>
+                  <SelectItem value="verified">Verified Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Bulk Operations */}
+            <div className="flex items-center justify-between pt-4 border-t border-border">
+              <div className="flex items-center space-x-4">
+                <Button variant="outline" size="sm">
+                  <i className="fas fa-download mr-2"></i>
+                  Export Results
+                </Button>
+                <Button variant="outline" size="sm">
+                  <i className="fas fa-bookmark mr-2"></i>
+                  Save Search
+                </Button>
+                <Button variant="outline" size="sm">
+                  <i className="fas fa-share mr-2"></i>
+                  Share Filters
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {allServers ? `${allServers.length} results found` : 'Loading...'}
+              </div>
+            </div>
           </div>
 
           <div>

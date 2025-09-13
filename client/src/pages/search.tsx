@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
@@ -8,16 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, ArrowLeft } from "lucide-react";
+import { Search, Filter, ArrowLeft, Server, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import type { Server } from "@shared/schema";
+import type { Server as ServerType } from "@shared/schema";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function SearchPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
-  
+
   // Get search params from URL
   const searchParams = new URLSearchParams(window.location.search);
   const initialQuery = searchParams.get("q") || "";
@@ -31,6 +31,11 @@ export default function SearchPage() {
       const url = new URL(window.location.href);
       url.searchParams.set("q", searchQuery);
       window.history.pushState({}, "", url.toString());
+    } else {
+      // If searchQuery is cleared, remove 'q' param
+      const url = new URL(window.location.href);
+      url.searchParams.delete("q");
+      window.history.pushState({}, "", url.toString());
     }
   }, [searchQuery]);
 
@@ -39,19 +44,37 @@ export default function SearchPage() {
     queryKey: ["/api/servers/search", searchQuery, sortBy, contentType],
     queryFn: async () => {
       if (!searchQuery.trim()) return [];
-      
+
       const params = new URLSearchParams();
       params.set("search", searchQuery);
       params.set("limit", "50");
       params.set("offset", "0");
       if (sortBy) params.set("sort", sortBy);
-      
+
       const endpoint = contentType === "servers" ? "/api/servers" : "/api/bots";
       const response = await fetch(`${endpoint}?${params}`);
-      if (!response.ok) throw new Error(`Failed to fetch ${contentType}`);
-      return response.json();
+      if (!response.ok) {
+        console.error(`Failed to fetch ${contentType}: ${response.statusText}`);
+        toast({
+          title: "Error",
+          description: `Could not fetch ${contentType}. Please try again later.`,
+          variant: "destructive",
+        });
+        return []; // Return empty array on error to prevent crashing
+      }
+      const data = await response.json();
+      // Ensure data is always an array, handle potential API inconsistencies
+      return Array.isArray(data) ? data : [];
     },
-    enabled: !!searchQuery,
+    enabled: !!searchQuery.trim(), // Only enable query if searchQuery is not empty
+    onError: (error) => {
+      console.error("Query Error:", error);
+      toast({
+        title: "Search Error",
+        description: "An error occurred while fetching search results.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -60,6 +83,9 @@ export default function SearchPage() {
       const url = new URL(window.location.href);
       url.searchParams.set("q", searchQuery.trim());
       window.history.pushState({}, "", url.toString());
+    } else {
+      // If search is cleared, reset results and remove 'q' param
+      navigate("/search"); // Navigate to clean search URL
     }
   };
 
@@ -73,145 +99,142 @@ export default function SearchPage() {
       return;
     }
 
-    const server = searchResults?.find((s: Server) => s.id === serverId);
+    // Ensure searchResults is treated as an array of ServerType
+    const server = (searchResults as ServerType[] | undefined)?.find((s: ServerType) => s.id === serverId);
     if (server?.inviteCode) {
       window.open(`https://discord.gg/${server.inviteCode}`, '_blank');
+    } else {
+      toast({
+        title: "Invite Not Found",
+        description: "This server does not have a public invite code available.",
+        variant: "warning",
+      });
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Navbar />
-      
-      {/* Search Header */}
-      <section className="bg-gradient-to-r from-purple-900/30 via-blue-900/30 to-purple-900/30 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center gap-4 mb-6">
+
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20"></div>
+        <div className="relative container mx-auto px-4 py-16">
+          <div className="max-w-4xl mx-auto">
             <Button
               variant="ghost"
-              onClick={() => window.history.back()}
-              className="text-muted-foreground hover:text-foreground"
-              data-testid="button-back"
+              onClick={() => navigate("/")}
+              className="mb-6 text-gray-300 hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              Back to Home
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">
+
+            <h1 className="text-4xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
               Search Results
-              {searchQuery && <span className="text-muted-foreground ml-2">for "{searchQuery}"</span>}
             </h1>
-          </div>
 
-          {/* Search Form */}
-          <form onSubmit={handleSearch} className="max-w-2xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Search servers, bots, or tags..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-3 bg-card border-border text-foreground placeholder-muted-foreground"
-                data-testid="input-search"
-              />
-            </div>
-          </form>
-        </div>
-      </section>
+            {initialQuery && (
+              <p className="text-xl text-gray-300 mb-8">
+                Showing results for: <span className="font-semibold text-white">"{initialQuery}"</span>
+              </p>
+            )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters and Controls */}
-        <section className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Content Type Filter */}
-            <div className="flex items-center space-x-2">
-              <Filter className="w-5 h-5 text-muted-foreground" />
-              <div className="bg-muted/50 p-1 rounded-lg border border-border/50">
-                <Button
-                  variant={contentType === "servers" ? "default" : "ghost"}
-                  onClick={() => setContentType("servers")}
-                  size="sm"
-                  className="rounded-md"
-                  data-testid="button-filter-servers"
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  placeholder="Search for Discord servers, bots, or communities..."
+                  className="pl-12 h-14 text-lg bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Button 
+                  type="submit" 
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 hover:bg-purple-700"
                 >
-                  <i className="fas fa-server mr-2"></i>
-                  Servers
-                </Button>
-                <Button
-                  variant={contentType === "bots" ? "default" : "ghost"}
-                  onClick={() => setContentType("bots")}
-                  size="sm"
-                  className="rounded-md"
-                  data-testid="button-filter-bots"
-                >
-                  <i className="fas fa-robot mr-2"></i>
-                  Bots
+                  Search
                 </Button>
               </div>
-            </div>
+            </form>
+          </div>
+        </div>
+      </div>
 
-            {/* Sort Options */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Filters and Content Type Toggle */}
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-8">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant={contentType === "servers" ? "default" : "outline"}
+              onClick={() => setContentType("servers")}
+              className="flex items-center space-x-2 border-purple-600 text-purple-400 hover:text-purple-300 data-[state=open]:bg-purple-600/20"
+            >
+              <Server className="w-4 h-4" />
+              <span>Servers</span>
+            </Button>
+            <Button
+              variant={contentType === "bots" ? "default" : "outline"}
+              onClick={() => setContentType("bots")}
+              className="flex items-center space-x-2 border-blue-600 text-blue-400 hover:text-blue-300 data-[state=open]:bg-blue-600/20"
+            >
+              <Bot className="w-4 h-4" />
+              <span>Bots</span>
+            </Button>
+          </div>
+
+          <div className="flex items-center space-x-4">
             <Select onValueChange={setSortBy} defaultValue="members">
-              <SelectTrigger className="w-48 border-border/50 bg-background/50" data-testid="select-sort">
-                <SelectValue />
+              <SelectTrigger className="w-48 bg-gray-800 border-gray-600 text-gray-300">
+                <SelectValue placeholder="Sort By" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-800 border-gray-600 text-gray-300">
                 <SelectItem value="members">Sort by Members</SelectItem>
                 <SelectItem value="newest">Sort by Newest</SelectItem>
                 <SelectItem value="name">Sort by Name</SelectItem>
-                <SelectItem value="relevance">Sort by Relevance</SelectItem>
+                <SelectItem value="active">Most Active</SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Results Count */}
-          {searchResults && (
-            <div className="mt-4 pt-4 border-t border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Found {searchResults.length} {contentType} 
-                {searchQuery && ` matching "${searchQuery}"`}
-              </p>
-            </div>
-          )}
-        </section>
+            <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Filter className="w-4 h-4 mr-2" />
+              More Filters
+            </Button>
+          </div>
+        </div>
 
         {/* Search Results */}
-        <section>
-          {!searchQuery ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                <Search className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Start Your Search</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Enter a server name, bot name, or tag to discover amazing Discord communities and tools.
-              </p>
-            </div>
-          ) : loadingResults ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-6">
-                  <div className="flex items-start space-x-4 mb-4">
-                    <Skeleton className="w-16 h-16 rounded-xl" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-1/2" />
+        <div className="space-y-6">
+          {loadingResults ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="border border-gray-700 bg-gray-900/50">
+                  <CardContent className="p-6">
+                    <div className="animate-pulse space-y-3">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-gray-700 rounded-xl"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-6 bg-gray-700 rounded w-3/4"></div>
+                          <div className="h-4 bg-gray-700 rounded w-full"></div>
+                          <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-16" />
-                      <Skeleton className="h-6 w-20" />
-                    </div>
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : searchResults && searchResults.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="mb-4">
+                <p className="text-gray-300">
+                  Found <span className="font-semibold text-white">{searchResults.length}</span> {contentType} 
+                  {searchQuery && ` matching "${searchQuery}"`}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {searchResults.map((item: any) => (
                   contentType === "servers" ? (
                     <ServerCard
@@ -220,107 +243,68 @@ export default function SearchPage() {
                       onJoin={handleJoinServer}
                     />
                   ) : (
-                    <div key={item.id} className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-300">
-                      <div className="flex items-start space-x-4 mb-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                          <i className="fas fa-robot text-2xl text-white"></i>
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg text-foreground mb-1">{item.name}</h3>
-                          <p className="text-muted-foreground text-sm mb-2 line-clamp-2">{item.description}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>🤖 Bot</span>
-                            {item.tags && (
-                              <span>• {item.tags.join(", ")}</span>
-                            )}
+                    // Bot Card Component (Assuming it exists or needs to be created)
+                    <Card key={item.id} className="border border-gray-700 bg-gray-900/50 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-0">
+                        <div className="flex items-start space-x-4 mb-4">
+                          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                            <i className="fas fa-robot text-2xl text-white"></i> {/* Assuming Font Awesome is available */}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg text-white mb-1">{item.name}</h3>
+                            <p className="text-gray-400 text-sm mb-2 line-clamp-2">{item.description}</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                              <span>🤖 Bot</span>
+                              {item.tags && item.tags.length > 0 && (
+                                <span>• {item.tags.join(", ")}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <Button className="w-full" onClick={() => window.open(item.inviteUrl, '_blank')}>
-                        Add Bot
-                      </Button>
-                    </div>
+                        <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => window.open(item.inviteUrl, '_blank')}>
+                          Add Bot
+                        </Button>
+                      </CardContent>
+                    </Card>
                   )
                 ))}
               </div>
-
-              {/* Load More Button */}
-              <div className="text-center mt-8">
-                <Button variant="secondary" className="px-8 py-3" data-testid="button-load-more">
-                  Load More Results
-                </Button>
-              </div>
             </>
+          ) : searchQuery ? (
+            <Card className="border border-gray-700 bg-gray-900/50">
+              <CardContent className="p-8 text-center">
+                <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">No results found</h3>
+                <p className="text-gray-400 mb-4">
+                  We couldn't find any {contentType} matching "{searchQuery}". Try:
+                </p>
+                <ul className="text-gray-400 text-sm space-y-1 mb-6">
+                  <li>• Checking your spelling</li>
+                  <li>• Using different keywords</li>
+                  <li>• Trying a broader search term</li>
+                  <li>• Switching between servers and bots</li>
+                </ul>
+                <Button 
+                  onClick={() => navigate("/")}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  Browse All {contentType.charAt(0).toUpperCase() + contentType.slice(1)}
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-600 to-gray-800 rounded-full flex items-center justify-center">
-                <Search className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-2">Nothing Found</h3>
-              <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                We couldn't find any {contentType} matching "{searchQuery}". 
-                Try adjusting your search terms or check out our popular communities.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button variant="outline" onClick={() => setSearchQuery("")}>
-                  Clear Search
-                </Button>
-                <Button onClick={() => navigate("/")}>
-                  Browse Popular
-                </Button>
-              </div>
-            </div>
+            <Card className="border border-gray-700 bg-gray-900/50">
+              <CardContent className="p-8 text-center">
+                <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Start your search</h3>
+                <p className="text-gray-400">
+                  Enter a search term above to find Discord servers and bots
+                </p>
+              </CardContent>
+            </Card>
           )}
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-card border-t border-border mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <i className="fab fa-discord text-2xl text-primary"></i>
-                <span className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Smart Serve</span>
-              </div>
-              <p className="text-muted-foreground">
-                Discover the best Discord servers and bots for your community.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Browse</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/" className="hover:text-primary transition-colors">Home</a></li>
-                <li><a href="/explore" className="hover:text-primary transition-colors">Explore</a></li>
-                <li><a href="/events" className="hover:text-primary transition-colors">Events</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Community</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Discord Server</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Smart Serve. All rights reserved.</p>
-          </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

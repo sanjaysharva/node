@@ -498,15 +498,252 @@ export default function HelpCenter() {
           </TabsContent>
 
           <TabsContent value="contact" className="space-y-6">
+            {/* Live Chat Support */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              <Card className="border border-gray-700 bg-gray-900/50">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <MessageCircle className="w-5 h-5 mr-2 text-green-400" />
+                    Live Chat Support
+                    <div className="ml-auto flex items-center">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
+                      <span className="text-sm text-green-400">Online</span>
+                    </div>
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Get instant help from our support team
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Chat Messages */}
+                    <div className="h-64 bg-gray-800 rounded-lg p-4 overflow-y-auto border border-gray-600">
+                      <div className="space-y-3">
+                        <div className="flex items-start space-x-2">
+                          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                            <i className="fas fa-robot text-white text-sm"></i>
+                          </div>
+                          <div className="bg-gray-700 rounded-lg p-3 max-w-xs">
+                            <p className="text-white text-sm">Hello! I'm here to help. What can I assist you with today?</p>
+                            <span className="text-xs text-gray-400">Just now</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Chat Input */}
+                    <div className="flex space-x-2">
+                      <Input 
+                        placeholder="Type your message..."
+                        className="bg-gray-800 border-gray-600 text-white"
+                      />
+                      <Button className="bg-blue-600 hover:bg-blue-700">
+                        <i className="fas fa-paper-plane"></i>
+                      </Button>
+                    </div>
+                    
+                    {/* Quick Actions */}
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
+                        Server Issues
+                      </Button>
+                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
+                        Bot Problems
+                      </Button>
+                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
+                        Account Help
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-gray-700 bg-gray-900/50">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <i className="fab fa-discord mr-2 text-purple-400"></i>
+                    Discord Bot Assistant
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Get help from our Discord bot with real-time monitoring
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Bot Status */}
+                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-white font-medium">Bot Status</h4>
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
+                          <span className="text-sm text-green-400">Operational</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-400">Uptime:</span>
+                          <span className="text-white ml-2">99.9%</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Response:</span>
+                          <span className="text-white ml-2">45ms</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Servers:</span>
+                          <span className="text-white ml-2">1,247</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Commands:</span>
+                          <span className="text-white ml-2">156/min</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Bot Commands */}
+                    <div className="space-y-2">
+                      <h4 className="text-white font-medium">Quick Commands</h4>
+                      <div className="space-y-2">
+                        <div className="bg-gray-800 rounded p-3 border border-gray-600">
+                          <code className="text-blue-400">/help server-setup</code>
+                          <p className="text-gray-400 text-sm mt-1">Get help with setting up your server</p>
+                        </div>
+                        <div className="bg-gray-800 rounded p-3 border border-gray-600">
+                          <code className="text-blue-400">/support ticket</code>
+                          <p className="text-gray-400 text-sm mt-1">Create a support ticket</p>
+                        </div>
+                        <div className="bg-gray-800 rounded p-3 border border-gray-600">
+                          <code className="text-blue-400">/status check</code>
+                          <p className="text-gray-400 text-sm mt-1">Check bot and server status</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                      <i className="fab fa-discord mr-2"></i>
+                      Invite Bot to Server
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Support Ticket Management */}
             <Card className="border border-gray-700 bg-gray-900/50">
               <CardHeader>
-                <CardTitle className="text-white">Contact Support</CardTitle>
+                <CardTitle className="text-white flex items-center">
+                  <i className="fas fa-ticket-alt mr-2 text-yellow-400"></i>
+                  Support Ticket Management
+                </CardTitle>
                 <CardDescription className="text-gray-400">
-                  Get direct support from our team
+                  Track and manage your support requests
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-400">Contact form will be displayed here...</p>
+                <div className="space-y-4">
+                  {/* Create Ticket */}
+                  <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-600">
+                    <div>
+                      <h4 className="text-white font-medium">Need Help?</h4>
+                      <p className="text-gray-400 text-sm">Create a support ticket for detailed assistance</p>
+                    </div>
+                    <Button className="bg-yellow-600 hover:bg-yellow-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Ticket
+                    </Button>
+                  </div>
+                  
+                  {/* Ticket List */}
+                  <div className="space-y-3">
+                    <h4 className="text-white font-medium">Your Tickets</h4>
+                    
+                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-medium">#12345 - Bot Configuration Issue</span>
+                        <Badge className="bg-yellow-600">In Progress</Badge>
+                      </div>
+                      <p className="text-gray-400 text-sm mb-2">Need help setting up moderation bot...</p>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Created 2 hours ago</span>
+                        <span>Last updated 30 min ago</span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-medium">#12344 - Server Verification</span>
+                        <Badge className="bg-green-600">Resolved</Badge>
+                      </div>
+                      <p className="text-gray-400 text-sm mb-2">Questions about server verification process...</p>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Created yesterday</span>
+                        <span>Resolved 4 hours ago</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Automated Response System */}
+            <Card className="border border-gray-700 bg-gray-900/50">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <i className="fas fa-magic mr-2 text-blue-400"></i>
+                  Automated Bot Response System
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Get instant answers to common questions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <h4 className="text-white font-medium">Common Issues</h4>
+                    <div className="space-y-2">
+                      <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        How to add bot to server?
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Bot not responding to commands
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Permission setup guide
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Server verification process
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="text-white font-medium">Response Statistics</h4>
+                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Average Response Time</span>
+                          <span className="text-white">< 1 second</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Success Rate</span>
+                          <span className="text-white">94.8%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Questions Answered Today</span>
+                          <span className="text-white">1,247</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">User Satisfaction</span>
+                          <span className="text-white">4.7/5.0</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
