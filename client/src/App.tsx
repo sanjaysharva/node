@@ -32,7 +32,6 @@ import AddTemplate from "@/pages/add-template";
 import Login from "@/pages/login";
 import Jobs from "@/pages/jobs";
 import Trade from "@/pages/trade";
-import Profile from "@/pages/profile";
 
 
 function Router() {
