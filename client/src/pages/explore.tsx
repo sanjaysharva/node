@@ -373,7 +373,7 @@ export default function Explore() {
         <div className="text-center mt-12">
           <Button
             variant="secondary"
-            className="px-8 py-3"
+            className="px-8 py-3 text-white"
             data-testid="button-load-more"
           >
             Load More {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}

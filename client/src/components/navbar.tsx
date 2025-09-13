@@ -29,7 +29,7 @@ export default function Navbar() {
                   <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
                 </div>
                 <span className="font-bold text-xl text-transparent bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
-                  Smart Serve
+                  Axiom
                 </span>
               </Link>
             </div>
@@ -67,7 +67,7 @@ export default function Navbar() {
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               </div>
               <span className="font-bold text-xl text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
-                Smart Serve
+                Axiom
               </span>
             </Link>
             <div className="hidden md:flex items-center space-x-8">

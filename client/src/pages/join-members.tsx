@@ -168,40 +168,39 @@ export default function JoinMembers() {
       {/* Wallet Section - Top Middle */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-center">
-          <Card className="w-full max-w-md border-2 border-primary/30 bg-gradient-to-br from-purple-50/50 to-primary/10 dark:from-primary/5 dark:to-primary/20">
+          <Card className="w-full max-w-md border-2 border-border bg-card">
             <CardHeader className="text-center pb-4">
               <div className="flex items-center justify-center mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
                   <Wallet className="w-6 h-6 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent text-white">
                 Your Wallet
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <div className="space-y-4">
                 <div>
-                  <div className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
-                    <Coins className="inline w-8 h-8 mr-2 text-primary" />
+                  <div className="text-4xl font-bold bg-gradient-to-r text-white bg-clip-text text-transparent mb-1">
+                    <Coins className="inline w-8 h-8 mr-2 text-white" />
                     {user?.coins || 0}
                   </div>
-                  <p className="text-sm text-muted-foreground">Available Coins</p>
+                  <p className="text-sm text-muted-foreground text-white">Available Coins</p>
                 </div>
 
                 <Separator />
 
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <p className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground space-y-1  ">
+                  <p className="flex items-center justify-between text-white ">
                     <span>Join Server Reward:</span>
-                    <Badge variant="secondary">+1 coin</Badge>
+                    <Badge variant="secondary text-white" className="bg-primary">+1 coin</Badge>
                   </p>
-                  <p className="flex items-center justify-between">
+                  <p className="flex items-center justify-between text-white">
                     <span>Member Price:</span>
-                    <Badge variant="outline">2 coins each</Badge>
+                    <Badge variant="outline text-white" className="bg-primary text-white">2 coins</Badge>
                   </p>
                   <div className="mt-3 p-2 bg-primary/10 border border-primary/30 rounded-md">
-                    <p className="text-xs text-primary font-medium">
+                    <p className="text-xs text-white font-medium">
                       ⚠️ Leave Penalty: If you leave a server within 3 days of joining, you'll lose 0.75 coins
                     </p>
                   </div>
