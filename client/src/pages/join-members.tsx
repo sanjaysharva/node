@@ -367,19 +367,6 @@ export default function JoinMembers() {
             {/* Servers to Join Section */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    🚀 Join Servers & Earn Coins
-                  </h2>
-                  <p className="text-muted-foreground text-lg">
-                    Join these servers and earn 1 coin for each one. Click to join and automatically earn your reward!
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground mb-1">Available Servers:</div>
-                  <div className="text-2xl font-bold text-blue-600">{advertisingServers?.length || 0}</div>
-                </div>
-              </div>
 
               {loadingServers ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
