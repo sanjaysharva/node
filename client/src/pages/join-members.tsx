@@ -483,6 +483,54 @@ export default function JoinMembers() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="flex-1 space-y-8">
+            {/* Fair Play Rules - Prominent Section */}
+            <Card className="border-2 border-orange-300 dark:border-orange-700 bg-gradient-to-r from-orange-100/80 to-red-100/80 dark:from-orange-950/40 dark:to-red-950/40 shadow-lg">
+              <CardHeader className="pb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold text-orange-700 dark:text-orange-300 flex items-center">
+                      ⚖️ Fair Play Rules - Important!
+                    </CardTitle>
+                    <CardDescription className="text-orange-600 dark:text-orange-400 text-base font-medium">
+                      Please read these rules carefully before joining servers or trading coins
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <h4 className="font-bold text-red-700 dark:text-red-400 mb-2 flex items-center">
+                      <AlertCircle className="w-5 h-5 mr-2" />
+                      Server Leaving Penalty
+                    </h4>
+                    <p className="text-sm text-red-600 dark:text-red-300">
+                      <strong className="text-red-700 dark:text-red-200">⚠️ 0.75 coin penalty</strong> for leaving servers within 3 days of joining. This ensures fairness for server owners.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                    <h4 className="font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Quality Members Only
+                    </h4>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-300">
+                      <strong className="text-emerald-700 dark:text-emerald-200">💎 Real users only</strong> - No bots, fake accounts, or automated joining. Genuine community engagement required.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 text-center">
+                    <strong>💡 Pro Tip:</strong> Stay in servers for at least 3 days to avoid penalties and build genuine connections in the communities you join!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Servers to Join Section */}
             <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -967,6 +1015,39 @@ export default function JoinMembers() {
                     <p>• Transfers are instant and permanent</p>
                     <p>• Make sure the recipient details are correct</p>
                     <p>• You can only transfer coins you own</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Fair Play Rules Quick Reference */}
+              <Card className="bg-orange-950/20 border-2 border-orange-200 dark:border-orange-800 shadow-lg">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-bold text-orange-700 dark:text-orange-300 flex items-center">
+                    <AlertCircle className="w-5 h-5 mr-2" />
+                    ⚖️ Fair Play Rules
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="bg-red-950/30 border border-red-700 rounded-md p-3">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                      <span className="text-sm font-semibold text-red-300">Leaving Penalty</span>
+                    </div>
+                    <p className="text-xs text-red-200">0.75 coin penalty for leaving within 3 days</p>
+                  </div>
+                  
+                  <div className="bg-emerald-950/30 border border-emerald-700 rounded-md p-3">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      <span className="text-sm font-semibold text-emerald-300">Quality Only</span>
+                    </div>
+                    <p className="text-xs text-emerald-200">Real users only - no bots or fake accounts</p>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">
+                      💡 <strong>Stay 3+ days</strong> to avoid penalties
+                    </p>
                   </div>
                 </CardContent>
               </Card>
