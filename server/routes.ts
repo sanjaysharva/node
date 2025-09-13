@@ -297,7 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let query = db.select().from(servers).limit(limit).offset(offset);
 
-      const conditions = [];
+      const conditions = [
+        // Only show normal servers for browsing (exclude advertising servers for member exchange)
+        eq(servers.isAdvertising, false)
+      ];
 
       if (search) {
         conditions.push(
@@ -336,8 +339,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit = "6" } = req.query;
       const servers = await storage.getPopularServers(parseInt(limit as string));
-      // Ensure we always return an array
-      res.json(Array.isArray(servers) ? servers : []);
+      // Filter out advertising servers - only show normal servers for browsing
+      const normalServers = servers.filter(server => !server.isAdvertising);
+      res.json(normalServers);
     } catch (error) {
       console.error("Failed to fetch popular servers:", error);
       res.status(500).json({ message: "Failed to fetch popular servers" });
@@ -583,6 +587,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serverData = insertServerSchema.parse({
         ...req.body,
         ownerId: req.user.id,
+        isAdvertising: false, // Explicitly set as normal server for browsing
+        advertisingMembersNeeded: 0,
       });
       const server = await storage.createServer(serverData);
       console.log("Server created successfully:", server);
