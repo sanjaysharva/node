@@ -1081,6 +1081,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Coin transfer endpoint
+  app.post("/api/users/transfer-coins", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { recipientId, amount } = req.body;
+      const senderId = req.user.id;
+
+      if (!recipientId || !amount) {
+        return res.status(400).json({ message: "Recipient ID and amount are required" });
+      }
+
+      if (typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ message: "Amount must be a positive number" });
+      }
+
+      const result = await storage.transferCoins(senderId, recipientId, amount);
+      
+      res.json({
+        message: "Coins transferred successfully",
+        amount,
+        senderBalance: result.fromBalance,
+        recipientBalance: result.toBalance
+      });
+    } catch (error) {
+      console.error("Coin transfer error:", error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Insufficient coins")) {
+          return res.status(400).json({ message: "You don't have enough coins for this transfer" });
+        }
+        if (error.message.includes("Cannot transfer coins to yourself")) {
+          return res.status(400).json({ message: "You cannot transfer coins to yourself" });
+        }
+        if (error.message.includes("Sender not found")) {
+          return res.status(404).json({ message: "Your account was not found" });
+        }
+        if (error.message.includes("Recipient not found")) {
+          return res.status(404).json({ message: "Recipient user not found" });
+        }
+      }
+      
+      res.status(500).json({ message: "Failed to transfer coins" });
+    }
+  });
+
+  // Get user by Discord username/ID for Trade feature
+  app.get("/api/users/lookup/:identifier", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const { identifier } = req.params;
+      
+      // Try to find user by Discord ID first, then by username
+      let user = await storage.getUserByDiscordId(identifier);
+      if (!user) {
+        user = await storage.getUserByDiscordUsername(identifier);
+      }
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return limited user info for privacy
+      res.json({
+        id: user.id,
+        username: user.username,
+        discordId: user.discordId,
+        avatar: user.avatar
+      });
+    } catch (error) {
+      console.error("User lookup error:", error);
+      res.status(500).json({ message: "Failed to lookup user" });
+    }
+  });
+
   // Handle server leave notifications
   app.post("/api/servers/:serverId/leave", async (req, res) => {
     if (!req.user) {

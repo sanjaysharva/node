@@ -42,6 +42,8 @@ export interface IStorage {
   getUserCoins(userId: string): Promise<number>;
   updateUserCoins(userId: string, coins: number): Promise<User | undefined>;
   atomicServerJoin(params: { userId: string; serverId: string; coinsToAward: number; currentCoins: number; advertisingMembersNeeded: number }): Promise<{ newBalance: number; advertisingComplete: boolean }>;
+  transferCoins(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; fromBalance: number; toBalance: number }>;
+  getUserByDiscordUsername(username: string): Promise<User | undefined>;
 
   // Slideshow operations
   getSlideshows(page?: string): Promise<Slideshow[]>;
@@ -333,6 +335,52 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updatedUser || undefined;
+  }
+
+  async transferCoins(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; fromBalance: number; toBalance: number }> {
+    if (amount <= 0) {
+      throw new Error("Transfer amount must be positive");
+    }
+
+    if (fromUserId === toUserId) {
+      throw new Error("Cannot transfer coins to yourself");
+    }
+
+    return await this.db.transaction(async (tx: any) => {
+      // Get current balances
+      const [fromUser] = await tx.select().from(users).where(eq(users.id, fromUserId)).for('update');
+      const [toUser] = await tx.select().from(users).where(eq(users.id, toUserId)).for('update');
+
+      if (!fromUser) {
+        throw new Error("Sender not found");
+      }
+      if (!toUser) {
+        throw new Error("Recipient not found");
+      }
+
+      const fromBalance = fromUser.coins || 0;
+      if (fromBalance < amount) {
+        throw new Error("Insufficient coins");
+      }
+
+      const newFromBalance = fromBalance - amount;
+      const newToBalance = (toUser.coins || 0) + amount;
+
+      // Update both balances
+      await tx.update(users).set({ coins: newFromBalance }).where(eq(users.id, fromUserId));
+      await tx.update(users).set({ coins: newToBalance }).where(eq(users.id, toUserId));
+
+      return {
+        success: true,
+        fromBalance: newFromBalance,
+        toBalance: newToBalance
+      };
+    });
+  }
+
+  async getUserByDiscordUsername(username: string): Promise<User | undefined> {
+    const [user] = await this.db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async addUserCoins(userId: string, amount: number): Promise<void> {

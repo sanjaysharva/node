@@ -24,6 +24,10 @@ export default function JoinMembers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [botCheckDialogOpen, setBotCheckDialogOpen] = useState(false);
   const [botCheckData, setBotCheckData] = useState<any>(null);
+  // Trade functionality
+  const [tradeCoins, setTradeCoins] = useState("");
+  const [tradeUserId, setTradeUserId] = useState("");
+  const [lookedUpUser, setLookedUpUser] = useState<any>(null);
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
@@ -143,6 +147,92 @@ export default function JoinMembers() {
       serverId: selectedServer,
       members,
     });
+  };
+
+  // User lookup mutation for Trade feature
+  const userLookupMutation = useMutation({
+    mutationFn: async (identifier: string) => {
+      const res = await apiRequest("GET", `/api/users/lookup/${encodeURIComponent(identifier)}`);
+      return res.json();
+    },
+    onSuccess: (userData) => {
+      setLookedUpUser(userData);
+    },
+    onError: (error: any) => {
+      setLookedUpUser(null);
+      toast({
+        title: "User Not Found",
+        description: error.message || "Could not find user with that Discord ID or username",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Coin transfer mutation
+  const transferCoinsMutation = useMutation({
+    mutationFn: async ({ recipientId, amount }: { recipientId: string; amount: number }) => {
+      const res = await apiRequest("POST", `/api/users/transfer-coins`, { recipientId, amount });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setTradeCoins("");
+      setTradeUserId("");
+      setLookedUpUser(null);
+      toast({
+        title: "Success!",
+        description: `Successfully transferred ${data.amount} coins to ${lookedUpUser?.username}!`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Transfer Failed",
+        description: error.message || "Failed to transfer coins",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUserIdChange = (identifier: string) => {
+    setTradeUserId(identifier);
+    if (identifier.trim()) {
+      userLookupMutation.mutate(identifier.trim());
+    } else {
+      setLookedUpUser(null);
+    }
+  };
+
+  const handleTradeCoins = () => {
+    const amount = parseInt(tradeCoins);
+    if (!amount || amount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid number of coins to transfer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!lookedUpUser) {
+      toast({
+        title: "User Required",
+        description: "Please enter a valid Discord ID or username.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const userCoins = user?.coins || 0;
+    if (userCoins < amount) {
+      toast({
+        title: "Insufficient Coins",
+        description: `You need ${amount} coins but only have ${userCoins}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    transferCoinsMutation.mutate({ recipientId: lookedUpUser.id, amount });
   };
 
   const handlePurchaseMembers = async () => {
