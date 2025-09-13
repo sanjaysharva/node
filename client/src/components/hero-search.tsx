@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import backgroundImage from "@assets/generated_images/Purple_space_nebula_pixel_48325d29.png";
+import backgroundImage from "@assets/generated_images/Purple_crystal_formation_background_904bf0eb.png";
 
 interface HeroSearchProps {
   onSearch: (query: string) => void;
