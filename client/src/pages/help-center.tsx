@@ -729,7 +729,7 @@ export default function HelpCenter() {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-gray-400">Average Response Time</span>
-                          <span className="text-white">< 1 second</span>
+                          <span className="text-white">&lt; 1 second</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-400">Success Rate</span>
