@@ -381,6 +381,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get Discord guilds where user has admin permissions
+  // NOTE: This route fetches live data from Discord API, NOT from database
+  // Database is only used for: add-server, add-bot, add-event, add-partnership, 
+  // add-template, add-job forms, and for server listings in main explore page
+  // Your Servers page and target server dropdowns use live Discord API data
   app.get("/api/servers/user/:userId", async (req, res) => {
     // SECURITY: Require authentication
     if (!req.user) {

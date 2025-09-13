@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +61,8 @@ export default function JoinMembers() {
   });
 
   // Fetch user's Discord admin servers with bot presence check
+  // Database usage for this section: Primarily for storing server metadata fetched from Discord API. 
+  // This data is used to populate the dropdown and is not the sole source of truth for server details.
   const { data: userServers, isLoading: loadingUserServers } = useQuery<Server[]>({
     queryKey: ["/api/servers/user", user?.id],
     queryFn: async () => {
@@ -69,24 +70,32 @@ export default function JoinMembers() {
       const response = await fetch(`/api/servers/user/${user.id}`);
       if (!response.ok) throw new Error("Failed to fetch user servers");
       const servers = await response.json();
-      
+
       // Filter servers to only include those with bot present
       const serversWithBot = [];
       for (const server of servers) {
         try {
+          // Constructing the Discord server icon URL. If imageUrl is missing, Discord's default CDN will be used.
+          // Ensure server.discordId or server.id is correctly mapped to the Discord guild ID.
           const guildId = server.discordId || server.id;
           const botCheckResponse = await fetch(`/api/discord/bot-check/${guildId}`);
           if (botCheckResponse.ok) {
             const botData = await botCheckResponse.json();
             if (botData.botPresent) {
-              serversWithBot.push(server);
+              // If bot is present, prepare the server data with potentially updated imageUrl
+              const serverWithImageUrl = {
+                ...server,
+                // Fallback to default Discord server icon if imageUrl is not provided
+                imageUrl: server.imageUrl || `https://cdn.discordapp.com/icons/${guildId}/${botData.iconId}.png?size=256`
+              };
+              serversWithBot.push(serverWithImageUrl);
             }
           }
         } catch (error) {
           console.error(`Bot check failed for server ${server.name}:`, error);
         }
       }
-      
+
       return serversWithBot;
     },
     enabled: isAuthenticated && !!user?.id,

@@ -220,7 +220,7 @@ export default function YourServers() {
         ) : userServers && userServers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userServers.map((server: Server) => (
-              <div className="relative">
+              <div key={server.id} className="relative">
                 <Card 
                   key={server.id} 
                   className="group border border-border bg-card/50 backdrop-blur-sm hover:border-purple-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10"
@@ -229,16 +229,25 @@ export default function YourServers() {
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg overflow-hidden">
                           {server.icon ? (
                             <img 
-                              src={`https://cdn.discordapp.com/icons/${server.discordId || server.id}/${server.icon}.png`} 
+                              src={`https://cdn.discordapp.com/icons/${server.discordId || server.id}/${server.icon}.png?size=64`} 
                               alt={server.name}
                               className="w-full h-full rounded-xl object-cover"
+                              onError={(e) => {
+                                console.log(`Failed to load icon for ${server.name}`);
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
                             />
-                          ) : (
-                            server.name.charAt(0).toUpperCase()
-                          )}
+                          ) : null}
+                          <div 
+                            className={`fallback-icon w-full h-full rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg ${server.icon ? 'hidden' : 'flex'}`}
+                          >
+                            {server.name.charAt(0).toUpperCase()}
+                          </div>
                         </div>
                         {server.verified && (
                           <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -451,16 +460,24 @@ export default function YourServers() {
           {selectedServer && (
             <div className="space-y-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg overflow-hidden">
                   {selectedServer.icon ? (
                     <img 
-                      src={`https://cdn.discordapp.com/icons/${selectedServer.discordId || selectedServer.id}/${selectedServer.icon}.png`} 
+                      src={`https://cdn.discordapp.com/icons/${selectedServer.discordId || selectedServer.id}/${selectedServer.icon}.png?size=64`} 
                       alt={selectedServer.name}
                       className="w-full h-full rounded-xl object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
                     />
-                  ) : (
-                    selectedServer.name.charAt(0).toUpperCase()
-                  )}
+                  ) : null}
+                  <div 
+                    className={`fallback-icon w-full h-full rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg ${selectedServer.icon ? 'hidden' : 'flex'}`}
+                  >
+                    {selectedServer.name.charAt(0).toUpperCase()}
+                  </div>
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">{selectedServer.name}</h3>
