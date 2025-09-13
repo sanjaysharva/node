@@ -478,9 +478,13 @@ export default function JoinMembers() {
         </div>
       </div>
 
-      {/* Servers to Join - Top Priority */}
+      {/* Main Content with Sidebar */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Content */}
+          <div className="flex-1 space-y-8">
+            {/* Servers to Join Section */}
+            <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
@@ -867,6 +871,107 @@ export default function JoinMembers() {
           </CardContent>
         </Card>
       </section>
+            </div>
+            
+            {/* Sidebar with Trade Functionality */}
+            <div className="lg:w-80 space-y-6">
+              <Card className="bg-card border-2 border-green-200 dark:border-green-800 shadow-lg">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                      <Coins className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                        💰 Trade Coins
+                      </CardTitle>
+                      <CardDescription>
+                        Transfer coins to other Discord users
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="trade-user-id" className="text-sm font-medium">Discord User ID or Username</Label>
+                    <Input
+                      id="trade-user-id"
+                      type="text"
+                      placeholder="Enter Discord ID or username"
+                      value={tradeUserId}
+                      onChange={(e) => handleUserIdChange(e.target.value)}
+                      className="mt-2"
+                      data-testid="input-trade-user-id"
+                    />
+                    {userLookupMutation.isPending && (
+                      <p className="text-xs text-muted-foreground mt-1">Looking up user...</p>
+                    )}
+                    {lookedUpUser && (
+                      <div className="mt-2 p-2 bg-green-950/20 border border-green-800 rounded-md">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-medium text-green-400">{lookedUpUser.username}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="trade-amount" className="text-sm font-medium">Coins to Transfer</Label>
+                    <Input
+                      id="trade-amount"
+                      type="number"
+                      min="1"
+                      placeholder="Enter amount"
+                      value={tradeCoins}
+                      onChange={(e) => setTradeCoins(e.target.value)}
+                      className="mt-2"
+                      data-testid="input-trade-amount"
+                    />
+                  </div>
+
+                  <div className="bg-primary/10 border border-primary/30 rounded-md p-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Your Balance:</span>
+                      <span className="font-bold text-primary">{user?.coins || 0} coins</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">Transferring:</span>
+                      <span className="font-bold text-green-600">{tradeCoins || 0} coins</span>
+                    </div>
+                    {tradeCoins && parseInt(tradeCoins) > 0 && (
+                      <div className="flex items-center justify-between text-sm mt-1">
+                        <span className="text-muted-foreground">Remaining:</span>
+                        <span className="font-bold text-blue-600">{(user?.coins || 0) - parseInt(tradeCoins || '0')} coins</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={handleTradeCoins}
+                    className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+                    disabled={!tradeCoins || !lookedUpUser || transferCoinsMutation.isPending}
+                    data-testid="button-transfer-coins"
+                  >
+                    {transferCoinsMutation.isPending ? (
+                      "Transferring..."
+                    ) : (
+                      <>
+                        <Wallet className="w-4 h-4 mr-2" />
+                        Transfer {tradeCoins || 0} Coins
+                      </>
+                    )}
+                  </Button>
+
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>• Transfers are instant and permanent</p>
+                    <p>• Make sure the recipient details are correct</p>
+                    <p>• You can only transfer coins you own</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
       </main>
 
