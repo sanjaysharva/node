@@ -436,6 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: guild.description || `${guild.name} Discord Server`,
         inviteCode: '', // We don't have invite codes from guilds API
         inviteUrl: '', // No direct invite URL
+        icon: guild.icon, // Discord icon hash for CDN URL generation
         imageUrl: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png` : null,
         memberCount: guild.approximate_member_count || 0,
         onlineCount: guild.approximate_presence_count || 0,
