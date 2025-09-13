@@ -293,6 +293,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
       const offset = parseInt(req.query.offset as string) || 0;
       const search = req.query.search as string;
+      const owner = req.query.owner as string;
+
+      // If owner filter is specified, fetch servers by owner
+      if (owner) {
+        const userServers = await storage.getServersByOwner(owner);
+        return res.json(userServers);
+      }
 
       // Use the storage method with includeNormalAdvertising to show normal ads + regular servers
       // But exclude member-exchange advertising servers

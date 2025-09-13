@@ -61,9 +61,15 @@ export default function JoinMembers() {
     enabled: isAuthenticated,
   });
 
-  // Fetch user's admin servers for advertising
+  // Fetch user's servers from database (not Discord API)
   const { data: userServers, isLoading: loadingUserServers } = useQuery<Server[]>({
-    queryKey: ["/api/servers/user", user?.id],
+    queryKey: ["/api/servers/user-database", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/servers?owner=${user.id}`);
+      if (!response.ok) throw new Error("Failed to fetch user servers");
+      return response.json();
+    },
     enabled: isAuthenticated && !!user?.id,
   });
 
