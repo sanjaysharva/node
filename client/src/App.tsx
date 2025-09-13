@@ -32,6 +32,8 @@ import AddTemplate from "@/pages/add-template";
 import Login from "@/pages/login";
 import Jobs from "@/pages/jobs";
 import Trade from "@/pages/trade";
+import Payment from "@/pages/payment";
+import PaymentSuccess from "@/pages/payment-success";
 
 
 function Router() {
@@ -65,6 +67,8 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/blog" component={Blog} />
       <Route path="/trade" component={Trade} />
+      <Route path="/payment/:type" component={Payment} />
+      <Route path="/payment/success" component={PaymentSuccess} />
       <Route component={NotFound} />
     </Switch>
   );

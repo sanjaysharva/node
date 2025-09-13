@@ -3,189 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Coins, Zap, Crown, ShoppingCart, Server } from "lucide-react";
+import { Coins, Zap, Crown, ShoppingCart, ArrowRight } from "lucide-react";
 import Navbar from "@/components/navbar";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-import { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Link } from "wouter";
 
-// Stripe is optional for now - payment integration will be added later
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-if (!stripePublicKey) {
-  console.warn("Stripe public key not configured. Store functionality will be limited.");
-}
-const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
-
-interface PaymentFormProps {
-  amount: number;
-  description: string;
-  onSuccess: () => void;
-}
-
-const PaymentForm = ({ amount, description, onSuccess, paymentMetadata }: PaymentFormProps & { paymentMetadata?: any }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) return;
-
-    setIsProcessing(true);
-
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/store?success=true`,
-      },
-      redirect: "if_required"
-    });
-
-    if (error) {
-      toast({
-        title: "Payment Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      // Call payment success endpoint to give user what they paid for
-      try {
-        const response = await apiRequest("POST", "/api/payment-success", {
-          paymentIntentId: paymentIntent.id
-        });
-        
-        const data = await response.json();
-        
-        toast({
-          title: "Payment Successful",
-          description: data.message,
-        });
-        
-        onSuccess();
-        
-        // Refresh the page to update coin balance
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } catch (successError) {
-        console.error("Payment success handling error:", successError);
-        toast({
-          title: "Payment Completed",
-          description: "Your payment was successful! Please refresh the page to see your rewards.",
-        });
-        onSuccess();
-      }
-    }
-
-    setIsProcessing(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="mb-4">
-        <h3 className="font-semibold text-lg mb-2">{description}</h3>
-        <p className="text-2xl font-bold text-primary">${amount}</p>
-      </div>
-      <PaymentElement />
-      <Button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className="w-full"
-        data-testid="button-pay"
-      >
-        {isProcessing ? "Processing..." : `Pay $${amount}`}
-      </Button>
-    </form>
-  );
-};
-
-const CheckoutDialog = ({
-  amount,
-  description,
-  children,
-  paymentType = "coins",
-  coins = 0,
-  serverId = "",
-  boostType = ""
-}: {
-  amount: number;
-  description: string;
-  children: React.ReactNode;
-  paymentType?: string;
-  coins?: number;
-  serverId?: string;
-  boostType?: string;
-}) => {
-  const [clientSecret, setClientSecret] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && !clientSecret && stripePromise) {
-      apiRequest("POST", "/api/create-payment-intent", { 
-        amount,
-        type: paymentType,
-        coins,
-        serverId,
-        boostType
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setClientSecret(data.clientSecret);
-        })
-        .catch(() => {
-          console.error("Failed to create payment intent");
-        });
-    }
-  }, [isOpen, amount, clientSecret, paymentType, coins, serverId, boostType]);
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Complete Purchase</DialogTitle>
-          <DialogDescription>
-            Secure payment powered by Stripe
-          </DialogDescription>
-        </DialogHeader>
-        {clientSecret ? (
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <PaymentForm
-              amount={amount}
-              description={description}
-              onSuccess={() => setIsOpen(false)}
-            />
-          </Elements>
-        ) : (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 export default function Store() {
   const { user, isAuthenticated } = useAuth();
@@ -290,15 +112,13 @@ export default function Store() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {stripePromise ? (
-                    <CheckoutDialog
-                      amount={pkg.price}
-                      description={`${pkg.coins} Coins Package`}
-                    >
+                  {stripePublicKey ? (
+                    <Link href={`/payment/coins?coins=${pkg.coins}&price=${pkg.price}`}>
                       <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid={`button-buy-${pkg.coins}-coins`}>
                         Buy Now - ${pkg.price}
+                        <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
-                    </CheckoutDialog>
+                    </Link>
                   ) : (
                     <Button
                       disabled
@@ -326,6 +146,11 @@ export default function Store() {
               Advertise Boost
             </h2>
             <p className="text-muted-foreground">Boost your server visibility and attract more members</p>
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                💡 <strong>Note:</strong> You'll be able to select which server to boost on the payment page. Only servers with advertising enabled will be available for selection.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
@@ -356,15 +181,13 @@ export default function Store() {
                       Priority placement in server listings
                     </p>
                   </div>
-                  {stripePromise ? (
-                    <CheckoutDialog
-                      amount={boost.price}
-                      description={`${boost.duration} Advertise Boost`}
-                    >
+                  {stripePublicKey ? (
+                    <Link href={`/payment/${boost.duration === '24 hours' ? '24hour-boost' : '1month-boost'}?duration=${encodeURIComponent(boost.duration)}&price=${boost.price}`}>
                       <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid={`button-buy-boost-${boost.duration.replace(' ', '-')}`}>
                         Purchase - ${boost.price}
+                        <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
-                    </CheckoutDialog>
+                    </Link>
                   ) : (
                     <Button
                       disabled
@@ -419,24 +242,13 @@ export default function Store() {
                     <div>🚀 Priority support</div>
                   </div>
                 </div>
-                {stripePromise ? (
-                  <CheckoutDialog
-                    amount={8}
-                    description="Premium Bot Tools"
-                  >
-                    <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid="button-buy-premium-tools">
-                      Get Premium - $8
-                    </Button>
-                  </CheckoutDialog>
-                ) : (
-                  <Button
-                    disabled
-                    className="w-full bg-gray-500 cursor-not-allowed"
-                    data-testid="button-buy-premium-tools"
-                  >
-                    Payment Not Available
-                  </Button>
-                )}
+                <Button
+                  disabled
+                  className="w-full bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+                  data-testid="button-buy-premium-tools"
+                >
+                  Coming Soon
+                </Button>
               </CardContent>
             </Card>
           </div>

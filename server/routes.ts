@@ -486,6 +486,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Specific endpoint for advertised servers (servers that can be boosted)
+  app.get("/api/servers/advertised", async (req, res) => {
+    try {
+      const advertisingServers = await storage.getAdvertisingServers();
+      res.json(advertisingServers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch advertised servers" });
+    }
+  });
+
   app.get("/api/servers/:id", async (req, res) => {
     try {
       const server = await storage.getServer(req.params.id);
