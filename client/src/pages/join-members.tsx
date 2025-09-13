@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,6 @@ import {
   ExternalLink, 
   TrendingUp, 
   Users, 
-  ArrowRight,
   Crown,
   Shield,
   Zap
@@ -170,13 +170,13 @@ export default function JoinMembers() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gray-950">
         <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md bg-gray-900 border-gray-700">
             <CardHeader className="text-center">
-              <CardTitle>Login Required</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-white">Login Required</CardTitle>
+              <CardDescription className="text-gray-400">
                 You need to be logged in to access the member exchange.
               </CardDescription>
             </CardHeader>
@@ -187,17 +187,17 @@ export default function JoinMembers() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-950">
       <Navbar />
 
       {/* Header with Title and Wallet */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Join Members Exchange
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl">
+            <p className="text-xl text-gray-300 max-w-2xl">
               Join amazing Discord servers to earn coins, then use those coins to get members for your own server!
             </p>
             <div className="mt-6 flex items-center space-x-8 text-sm text-gray-400">
@@ -305,13 +305,13 @@ export default function JoinMembers() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Input Section */}
                   <div className="lg:col-span-2 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="members-input" className="text-base font-medium">Members to Get</Label>
+                        <Label htmlFor="members-input" className="text-base font-medium text-white">Members to Get</Label>
                         <Input
                           id="members-input"
                           type="number"
@@ -319,12 +319,12 @@ export default function JoinMembers() {
                           placeholder="Enter number of members"
                           value={membersToGet}
                           onChange={(e) => setMembersToGet(e.target.value)}
-                          className="mt-2 text-lg"
+                          className="mt-2 text-lg bg-gray-800 border-gray-600 text-white"
                           data-testid="input-members"
                         />
                       </div>
                       <div>
-                        <Label className="text-base font-medium">Cost Calculator</Label>
+                        <Label className="text-base font-medium text-white">Cost Calculator</Label>
                         <div className="mt-2 p-3 bg-gray-800 border border-gray-600 rounded-md">
                           <div className="text-2xl font-bold text-blue-400">
                             {membersToGet ? parseInt(membersToGet) * 2 : 0} coins
@@ -337,17 +337,17 @@ export default function JoinMembers() {
                     </div>
 
                     <div>
-                      <Label className="text-base font-medium">Select Your Server</Label>
+                      <Label className="text-base font-medium text-white">Select Your Server</Label>
                       <Select value={selectedServer} onValueChange={setSelectedServer}>
-                        <SelectTrigger className="mt-2 text-lg">
+                        <SelectTrigger className="mt-2 text-lg bg-gray-800 border-gray-600 text-white">
                           <SelectValue placeholder="Choose server to advertise" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-gray-800 border-gray-600">
                           {userServers?.map((server) => (
-                            <SelectItem key={server.id} value={server.id}>
+                            <SelectItem key={server.id} value={server.id} className="text-white hover:bg-gray-700">
                               <div className="flex items-center space-x-2">
                                 <span>{server.name}</span>
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-xs border-gray-500 text-gray-300">
                                   {server.memberCount} members
                                 </Badge>
                               </div>
@@ -372,7 +372,7 @@ export default function JoinMembers() {
                   <div className="space-y-4">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Join Reward:</span>
+                        <span className="text-gray-400">Join Reward:</span>
                         <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-700">+1 coin</Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -399,12 +399,12 @@ export default function JoinMembers() {
               {loadingServers ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[...Array(6)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
+                    <Card key={i} className="animate-pulse bg-gray-900 border-gray-700">
                       <CardContent className="pt-6">
                         <div className="space-y-3">
-                          <div className="w-full h-32 bg-muted rounded-md"></div>
-                          <div className="h-4 bg-muted rounded w-3/4"></div>
-                          <div className="h-3 bg-muted rounded w-1/2"></div>
+                          <div className="w-full h-32 bg-gray-700 rounded-md"></div>
+                          <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                          <div className="h-3 bg-gray-700 rounded w-1/2"></div>
                         </div>
                       </CardContent>
                     </Card>
@@ -460,9 +460,9 @@ export default function JoinMembers() {
                   ))}
                 </div>
               ) : (
-                <Card>
+                <Card className="bg-gray-900 border-gray-700">
                   <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground">No servers available to join at the moment.</p>
+                    <p className="text-gray-400">No servers available to join at the moment.</p>
                   </CardContent>
                 </Card>
               )}
@@ -473,10 +473,10 @@ export default function JoinMembers() {
 
       {/* Purchase Confirmation Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
           <DialogHeader>
-            <DialogTitle>Confirm Member Purchase</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Confirm Member Purchase</DialogTitle>
+            <DialogDescription className="text-gray-400">
               You're about to purchase {membersToGet} members for {membersToGet ? parseInt(membersToGet) * 2 : 0} coins.
             </DialogDescription>
           </DialogHeader>
@@ -504,13 +504,14 @@ export default function JoinMembers() {
               </div>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-gray-600 text-white hover:bg-gray-800">
                 Cancel
               </Button>
               <Button
                 onClick={handlePurchaseMembers}
                 disabled={!selectedServer || purchaseMembersMutation.isPending || botCheckMutation.isPending || !userServers}
                 data-testid="button-confirm-purchase"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
               >
                 {botCheckMutation.isPending ? "Checking Bot..." : purchaseMembersMutation.isPending ? "Processing..." : "Confirm Purchase"}
               </Button>
@@ -521,10 +522,10 @@ export default function JoinMembers() {
 
       {/* Bot Check Dialog */}
       <Dialog open={botCheckDialogOpen} onOpenChange={setBotCheckDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
           <DialogHeader>
-            <DialogTitle>Bot Required</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Bot Required</DialogTitle>
+            <DialogDescription className="text-gray-400">
               Our bot needs to be in your server to deliver members. Please add our bot first.
             </DialogDescription>
           </DialogHeader>
@@ -540,10 +541,10 @@ export default function JoinMembers() {
               </ul>
             </div>
             <div className="flex justify-between space-x-2">
-              <Button variant="outline" onClick={() => setBotCheckDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setBotCheckDialogOpen(false)} className="border-gray-600 text-white hover:bg-gray-800">
                 Cancel
               </Button>
-              <Button asChild>
+              <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
                 <a 
                   href={botCheckData?.inviteUrl || "#"} 
                   target="_blank" 
