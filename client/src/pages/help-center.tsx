@@ -1,177 +1,196 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
 import { 
-  MessageCircle, 
-  Bot, 
-  Search, 
   HelpCircle, 
+  MessageCircle, 
   Users, 
-  Settings, 
-  Zap,
-  ExternalLink,
-  Send
+  BookOpen, 
+  Search, 
+  Plus, 
+  ThumbsUp, 
+  ThumbsDown, 
+  Clock, 
+  CheckCircle, 
+  Image as ImageIcon,
+  X,
+  Upload
 } from "lucide-react";
 
+interface CommunityPost {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  author: {
+    id: string;
+    username: string;
+    avatar?: string;
+  };
+  images?: string[];
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  upvotes: number;
+  downvotes: number;
+  status: 'open' | 'solved' | 'closed';
+  replies: CommunityReply[];
+}
+
+interface CommunityReply {
+  id: string;
+  content: string;
+  author: {
+    id: string;
+    username: string;
+    avatar?: string;
+  };
+  images?: string[];
+  createdAt: string;
+  upvotes: number;
+  downvotes: number;
+  isSolution: boolean;
+}
+
 export default function HelpCenter() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [supportMessage, setSupportMessage] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
-  const categories = [
-    { id: "all", name: "All Topics", icon: HelpCircle },
-    { id: "servers", name: "Discord Servers", icon: Users },
-    { id: "bots", name: "Discord Bots", icon: Bot },
-    { id: "account", name: "Account & Settings", icon: Settings },
-    { id: "features", name: "Features & Tools", icon: Zap },
-  ];
-
-  const faqs = [
-    {
-      id: 1,
-      category: "servers",
-      question: "How do I add my Discord server to Smart Serve?",
-      answer: "To add your Discord server, go to 'Add Server' from your dashboard. You'll need admin permissions in your Discord server and our bot must be invited to your server for verification."
-    },
-    {
-      id: 2,
-      category: "servers",
-      question: "Why can't I add my server?",
-      answer: "Make sure you have admin permissions in your Discord server and that our Smart Serve bot is invited to your server. The bot is required for server verification and features like bump notifications."
-    },
-    {
-      id: 3,
-      category: "bots",
-      question: "How do I list my Discord bot?",
-      answer: "Navigate to 'Add Bot' and provide your bot's information including commands, features, and invite link. Your bot will be reviewed before appearing in our directory."
-    },
-    {
-      id: 4,
-      category: "account",
-      question: "How do I earn coins?",
-      answer: "You can earn coins by joining Discord servers, inviting friends, completing daily quests, and participating in community activities. Premium users get bonus coin rewards."
-    },
-    {
-      id: 5,
-      category: "features",
-      question: "What is server bumping?",
-      answer: "Server bumping promotes your Discord server across our network. Use the /bump command in your server to share it with other communities. There's a 2-hour cooldown between bumps."
-    },
-    {
-      id: 6,
-      category: "account",
-      question: "How do I connect my Discord account?",
-      answer: "Click 'Login with Discord' in the top navigation. This will link your Discord account and allow you to manage your servers and earn rewards."
-    },
-    {
-      id: 7,
-      category: "features",
-      question: "What are Smart Serve quests?",
-      answer: "Quests are challenges that reward you with coins for completing specific activities like joining servers, inviting friends, or daily logins. Check your quest progress in your profile."
-    },
-    {
-      id: 8,
-      category: "servers",
-      question: "How does server advertising work?",
-      answer: "You can spend coins to advertise your server and gain more members. Advertised servers appear in special sections and get priority placement in search results."
-    }
-  ];
-
-  const filteredFaqs = faqs.filter(faq => {
-    const matchesCategory = selectedCategory === "all" || faq.category === selectedCategory;
-    const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+  // Form states
+  const [postData, setPostData] = useState({
+    title: "",
+    content: "",
+    category: "",
+    tags: ""
   });
 
-  const handleContactSupport = async () => {
-    if (!isAuthenticated) {
+  // Fetch community posts
+  const { data: communityPosts, isLoading: postsLoading } = useQuery<CommunityPost[]>({
+    queryKey: ["/api/community/posts", searchQuery, selectedCategory],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedCategory !== 'all') params.append('category', selectedCategory);
+      
+      const response = await fetch(`/api/community/posts?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch posts");
+      return response.json();
+    },
+  });
+
+  // Create post mutation
+  const createPostMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      const response = await fetch("/api/community/posts", {
+        method: "POST",
+        body: data,
+      });
+      if (!response.ok) throw new Error("Failed to create post");
+      return response.json();
+    },
+    onSuccess: () => {
       toast({
-        title: "Authentication Required",
-        description: "Please login with Discord to contact support.",
-        variant: "destructive",
+        title: "Success",
+        description: "Your post has been created successfully!",
       });
-      return;
-    }
-
-    if (!supportMessage.trim()) {
-      toast({
-        title: "Message Required",
-        description: "Please enter your support message.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/support/ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: supportMessage }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Support Ticket Created",
-          description: "Your support request has been submitted. Our team will respond via Discord DM soon.",
-        });
-        setSupportMessage("");
-      } else {
-        throw new Error('Failed to submit support ticket');
-      }
-    } catch (error) {
+      setPostData({ title: "", content: "", category: "", tags: "" });
+      setSelectedImages([]);
+      setShowCreatePost(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/community/posts"] });
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to submit support ticket. Please try again.",
+        description: "Failed to create post. Please try again.",
         variant: "destructive",
       });
     }
+  });
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedImages(prev => [...prev, ...files].slice(0, 5)); // Max 5 images
+    }
   };
 
-  const openDiscordSupport = () => {
-    // Open Discord server invite for support
-    window.open('https://discord.gg/smartserve-support', '_blank');
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
+
+  const handleCreatePost = async () => {
+    if (!postData.title || !postData.content || !postData.category) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', postData.title);
+    formData.append('content', postData.content);
+    formData.append('category', postData.category);
+    formData.append('tags', postData.tags);
+    
+    selectedImages.forEach(image => {
+      formData.append('images', image);
+    });
+
+    createPostMutation.mutate(formData);
+  };
+
+  const categories = [
+    { value: "general", label: "General Help", icon: HelpCircle, color: "blue" },
+    { value: "technical", label: "Technical Issues", icon: BookOpen, color: "red" },
+    { value: "discord", label: "Discord Related", icon: MessageCircle, color: "purple" },
+    { value: "server-setup", label: "Server Setup", icon: Users, color: "green" },
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Navbar />
       
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center space-y-6">
-            <div className="inline-block p-3 rounded-xl bg-white/20">
-              <HelpCircle className="w-8 h-8" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold">
-              Help Center
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20"></div>
+        <div className="relative container mx-auto px-4 py-16">
+          <div className="text-center">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              Help & Community Center
             </h1>
-            <p className="text-xl max-w-2xl mx-auto opacity-90">
-              Get help with Smart Serve features, Discord integration, and community management
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+              Get help from our community, share solutions, and solve problems together
             </p>
             
             {/* Search Bar */}
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto mb-8">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
-                  placeholder="Search for help articles..."
+                  placeholder="Search for help topics, solutions, or ask a question..."
+                  className="pl-12 h-14 text-lg bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 py-3 text-lg bg-white/10 border-white/20 text-white placeholder:text-white/60"
                 />
               </div>
             </div>
@@ -179,167 +198,320 @@ export default function HelpCenter() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={openDiscordSupport}>
-            <CardHeader className="text-center">
-              <div className="inline-block p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30 mx-auto">
-                <MessageCircle className="w-8 h-8 text-blue-600" />
-              </div>
-              <CardTitle>Join Discord Support</CardTitle>
-              <CardDescription>
-                Get instant help from our community support team
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="outline">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Join Support Server
-              </Button>
-            </CardContent>
-          </Card>
+      <div className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="community" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-800/50 border border-gray-700">
+            <TabsTrigger value="community" className="data-[state=active]:bg-purple-600">Community Help</TabsTrigger>
+            <TabsTrigger value="faq" className="data-[state=active]:bg-purple-600">FAQ</TabsTrigger>
+            <TabsTrigger value="guides" className="data-[state=active]:bg-purple-600">Guides</TabsTrigger>
+            <TabsTrigger value="contact" className="data-[state=active]:bg-purple-600">Contact Support</TabsTrigger>
+          </TabsList>
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-                <CardHeader className="text-center">
-                  <div className="inline-block p-3 rounded-xl bg-green-100 dark:bg-green-900/30 mx-auto">
-                    <Bot className="w-8 h-8 text-green-600" />
-                  </div>
-                  <CardTitle>Contact Support</CardTitle>
-                  <CardDescription>
-                    Send a direct message to our support team
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full" variant="outline">
-                    <Send className="w-4 h-4 mr-2" />
-                    Contact Support
-                  </Button>
-                </CardContent>
-              </Card>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Contact Support</DialogTitle>
-                <DialogDescription>
-                  Send us a message and we'll respond via Discord DM within 24 hours.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="Describe your issue or question..."
-                  value={supportMessage}
-                  onChange={(e) => setSupportMessage(e.target.value)}
-                  rows={5}
-                />
-                <Button onClick={handleContactSupport} className="w-full">
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Support Request
+          <TabsContent value="community" className="space-y-6">
+            {/* Category Filter and Create Post */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedCategory === "all" ? "default" : "outline"}
+                  onClick={() => setSelectedCategory("all")}
+                  className={selectedCategory === "all" ? "bg-purple-600" : "border-gray-600 text-gray-300"}
+                >
+                  All Categories
                 </Button>
+                {categories.map((cat) => (
+                  <Button
+                    key={cat.value}
+                    variant={selectedCategory === cat.value ? "default" : "outline"}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    className={selectedCategory === cat.value ? "bg-purple-600" : "border-gray-600 text-gray-300"}
+                  >
+                    <cat.icon className="w-4 h-4 mr-2" />
+                    {cat.label}
+                  </Button>
+                ))}
               </div>
-            </DialogContent>
-          </Dialog>
+              
+              {isAuthenticated && (
+                <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ask for Help
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl bg-gray-900 border-gray-700">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Ask the Community</DialogTitle>
+                      <DialogDescription className="text-gray-400">
+                        Describe your problem and get help from other community members
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      <div>
+                        <Label htmlFor="post-title" className="text-gray-300">Title</Label>
+                        <Input
+                          id="post-title"
+                          placeholder="Briefly describe your problem..."
+                          value={postData.title}
+                          onChange={(e) => setPostData({...postData, title: e.target.value})}
+                          className="bg-gray-800 border-gray-600 text-white"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="post-category" className="text-gray-300">Category</Label>
+                          <Select onValueChange={(value) => setPostData({...postData, category: value})}>
+                            <SelectTrigger className="bg-gray-800 border-gray-600">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-600">
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  {cat.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="post-tags" className="text-gray-300">Tags (optional)</Label>
+                          <Input
+                            id="post-tags"
+                            placeholder="discord, bot, setup..."
+                            value={postData.tags}
+                            onChange={(e) => setPostData({...postData, tags: e.target.value})}
+                            className="bg-gray-800 border-gray-600 text-white"
+                          />
+                        </div>
+                      </div>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-            <CardHeader className="text-center">
-              <div className="inline-block p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30 mx-auto">
-                <Bot className="w-8 h-8 text-purple-600" />
-              </div>
-              <CardTitle>Bot Commands</CardTitle>
-              <CardDescription>
-                Learn about Smart Serve bot commands and features
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="outline">
-                View Commands
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+                      <div>
+                        <Label htmlFor="post-content" className="text-gray-300">Description</Label>
+                        <Textarea
+                          id="post-content"
+                          placeholder="Provide detailed information about your problem..."
+                          rows={6}
+                          value={postData.content}
+                          onChange={(e) => setPostData({...postData, content: e.target.value})}
+                          className="bg-gray-800 border-gray-600 text-white"
+                        />
+                      </div>
 
-        {/* Categories */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">Browse by Category</h2>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.id ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category.id)}
-                className="flex items-center space-x-2"
-              >
-                <category.icon className="w-4 h-4" />
-                <span>{category.name}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
+                      {/* Image Upload */}
+                      <div>
+                        <Label className="text-gray-300">Images (optional)</Label>
+                        <div className="mt-2">
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            className="hidden"
+                            id="image-upload"
+                          />
+                          <label
+                            htmlFor="image-upload"
+                            className="inline-flex items-center px-4 py-2 bg-gray-800 border border-gray-600 rounded-md cursor-pointer hover:bg-gray-700 text-gray-300"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Add Images
+                          </label>
+                        </div>
+                        
+                        {selectedImages.length > 0 && (
+                          <div className="grid grid-cols-3 gap-2 mt-3">
+                            {selectedImages.map((image, index) => (
+                              <div key={index} className="relative">
+                                <img
+                                  src={URL.createObjectURL(image)}
+                                  alt={`Upload ${index + 1}`}
+                                  className="w-full h-20 object-cover rounded border border-gray-600"
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="absolute -top-2 -right-2 w-6 h-6 p-0"
+                                  onClick={() => removeImage(index)}
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-        {/* FAQ Section */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
-          <Accordion type="single" collapsible className="space-y-4">
-            {filteredFaqs.map((faq) => (
-              <AccordionItem key={faq.id} value={`faq-${faq.id}`} className="border rounded-lg px-4">
-                <AccordionTrigger className="text-left">
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="secondary">
-                      {categories.find(c => c.id === faq.category)?.name}
-                    </Badge>
-                    <span>{faq.question}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pt-4">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-
-        {/* Bot Commands Section */}
-        <div className="bg-card border rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <Bot className="w-6 h-6 mr-3 text-primary" />
-            Smart Serve Bot Commands
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold mb-3">Server Management</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <code className="bg-muted px-2 py-1 rounded">/bump</code>
-                  <span className="text-muted-foreground">Promote your server</span>
-                </div>
-                <div className="flex justify-between">
-                  <code className="bg-muted px-2 py-1 rounded">/bumpchannel set</code>
-                  <span className="text-muted-foreground">Set bump channel</span>
-                </div>
-                <div className="flex justify-between">
-                  <code className="bg-muted px-2 py-1 rounded">/setbump</code>
-                  <span className="text-muted-foreground">Get management link</span>
-                </div>
-              </div>
+                      <Button 
+                        onClick={handleCreatePost} 
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                        disabled={createPostMutation.isPending}
+                      >
+                        {createPostMutation.isPending ? "Creating..." : "Ask for Help"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
-            <div>
-              <h3 className="font-semibold mb-3">Information</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <code className="bg-muted px-2 py-1 rounded">/bumptools</code>
-                  <span className="text-muted-foreground">View bump tools info</span>
+
+            {/* Community Posts */}
+            <div className="space-y-4">
+              {postsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Card key={i} className="border border-gray-700 bg-gray-900/50">
+                      <CardContent className="p-6">
+                        <div className="animate-pulse space-y-3">
+                          <div className="h-6 bg-gray-700 rounded w-3/4"></div>
+                          <div className="h-4 bg-gray-700 rounded w-full"></div>
+                          <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                  <code className="bg-muted px-2 py-1 rounded">/bumpchannel info</code>
-                  <span className="text-muted-foreground">Check current settings</span>
-                </div>
-              </div>
+              ) : communityPosts && communityPosts.length > 0 ? (
+                communityPosts.map((post) => (
+                  <Card key={post.id} className="border border-gray-700 bg-gray-900/50 hover:bg-gray-900/70 transition-colors">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={post.author.avatar} />
+                              <AvatarFallback>{post.author.username[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-gray-300 font-medium">{post.author.username}</span>
+                            <Badge variant="outline" className={`border-${categories.find(c => c.value === post.category)?.color}-500 text-${categories.find(c => c.value === post.category)?.color}-400`}>
+                              {categories.find(c => c.value === post.category)?.label}
+                            </Badge>
+                            <div className="flex items-center text-gray-500 text-sm">
+                              <Clock className="w-4 h-4 mr-1" />
+                              {new Date(post.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          
+                          <h3 className="text-xl font-semibold text-white mb-2">{post.title}</h3>
+                          <p className="text-gray-300 mb-3 line-clamp-2">{post.content}</p>
+                          
+                          {post.images && post.images.length > 0 && (
+                            <div className="flex space-x-2 mb-3">
+                              {post.images.slice(0, 3).map((image, index) => (
+                                <img
+                                  key={index}
+                                  src={image}
+                                  alt={`Post image ${index + 1}`}
+                                  className="w-16 h-16 object-cover rounded border border-gray-600"
+                                />
+                              ))}
+                              {post.images.length > 3 && (
+                                <div className="w-16 h-16 bg-gray-800 rounded border border-gray-600 flex items-center justify-center text-gray-400 text-sm">
+                                  +{post.images.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center space-x-4 text-sm">
+                            <div className="flex items-center space-x-2">
+                              <Button size="sm" variant="ghost" className="text-gray-400 hover:text-green-400">
+                                <ThumbsUp className="w-4 h-4 mr-1" />
+                                {post.upvotes}
+                              </Button>
+                              <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-400">
+                                <ThumbsDown className="w-4 h-4 mr-1" />
+                                {post.downvotes}
+                              </Button>
+                            </div>
+                            <div className="flex items-center text-gray-400">
+                              <MessageCircle className="w-4 h-4 mr-1" />
+                              {post.replies.length} replies
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end space-y-2">
+                          <Badge 
+                            variant={post.status === 'solved' ? 'default' : 'secondary'}
+                            className={post.status === 'solved' ? 'bg-green-600' : ''}
+                          >
+                            {post.status === 'solved' && <CheckCircle className="w-3 h-3 mr-1" />}
+                            {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border border-gray-700 bg-gray-900/50">
+                  <CardContent className="p-8 text-center">
+                    <HelpCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">No posts found</h3>
+                    <p className="text-gray-400 mb-4">
+                      {searchQuery || selectedCategory !== 'all' 
+                        ? "Try adjusting your search or category filter"
+                        : "Be the first to ask for help!"
+                      }
+                    </p>
+                    {isAuthenticated && (
+                      <Button 
+                        onClick={() => setShowCreatePost(true)}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        Ask for Help
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          </div>
-        </div>
-      </main>
+          </TabsContent>
+
+          <TabsContent value="faq" className="space-y-6">
+            <Card className="border border-gray-700 bg-gray-900/50">
+              <CardHeader>
+                <CardTitle className="text-white">Frequently Asked Questions</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Common questions and answers
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400">FAQ content will be displayed here...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="guides" className="space-y-6">
+            <Card className="border border-gray-700 bg-gray-900/50">
+              <CardHeader>
+                <CardTitle className="text-white">Help Guides</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Step-by-step guides and tutorials
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400">Guide content will be displayed here...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="contact" className="space-y-6">
+            <Card className="border border-gray-700 bg-gray-900/50">
+              <CardHeader>
+                <CardTitle className="text-white">Contact Support</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Get direct support from our team
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400">Contact form will be displayed here...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
