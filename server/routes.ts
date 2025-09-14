@@ -24,7 +24,17 @@ import {
   insertJobSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm";
+import {
+  eq,
+  desc,
+  asc,
+  and,
+  or,
+  like,
+  count,
+  sql as drizzleSql,
+  sql
+} from "drizzle-orm";
 import {
   strictLimiter,
   reviewLimiter,
@@ -299,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { amount, type, coins, serverId, boostType } = req.body;
-      
+
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Valid amount required" });
       }
@@ -331,21 +341,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { paymentIntentId } = req.body;
-      
+
       if (!paymentIntentId) {
         return res.status(400).json({ message: "Payment intent ID required" });
       }
 
       // Retrieve payment intent from Stripe to verify completion
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      
+
       if (paymentIntent.status !== 'succeeded') {
         return res.status(400).json({ message: "Payment not completed" });
       }
 
       const metadata = paymentIntent.metadata;
       const userId = metadata.userId;
-      
+
       // Verify user matches session
       if (userId !== req.user.id) {
         return res.status(403).json({ message: "Payment user mismatch" });
@@ -357,8 +367,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (coins > 0) {
           await storage.addCoins(userId, coins);
         }
-        
-        res.json({ 
+
+        res.json({
           message: `Successfully added ${coins} coins to your account!`,
           type: "coins",
           coins
@@ -366,10 +376,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (metadata.type === "24hour_boost" || metadata.type === "1month_boost") {
         const serverId = metadata.serverId;
         const boostType = metadata.type === "24hour_boost" ? "24hours" : "1month";
-        
+
         if (serverId) {
           await storage.boostServer(serverId, userId, boostType);
-          
+
           res.json({
             message: `Successfully boosted your server for ${boostType === "24hours" ? "24 hours" : "1 month"}!`,
             type: "boost",
@@ -458,8 +468,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { limit = "6" } = req.query;
       const servers = await storage.getPopularServers(parseInt(limit as string));
       // Filter to include normal advertising and non-advertising servers, exclude member-exchange
-      const popularServers = servers.filter(server => 
-        !server.isAdvertising || 
+      const popularServers = servers.filter(server =>
+        !server.isAdvertising ||
         (server.isAdvertising && server.advertisingType !== "member_exchange")
       );
       res.json(popularServers);
@@ -510,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get Discord guilds where user has admin permissions
   // NOTE: This route fetches live data from Discord API, NOT from database
-  // Database is only used for: add-server, add-bot, add-event, add-partnership, 
+  // Database is only used for: add-server, add-bot, add-event, add-partnership,
   // add-template, add-job forms, and for server listings in main explore page
   // Your Servers page and target server dropdowns use live Discord API data
   app.get("/api/servers/user/:userId", async (req, res) => {
@@ -2720,7 +2730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await db.update(users)
           .set({
             coins: newCoins,
-            metadata: JSON.stringify(newMetadata)
+            metadata: JSON.JSON.stringify(newMetadata)
           })
           .where(eq(users.id, req.user!.id));
 
@@ -3424,7 +3434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/page-info/:pageName", async (req, res) => {
     try {
       const { pageName } = req.params;
-      
+
       const pageInfoMap: Record<string, any> = {
         'home': {
           title: 'Smart Serve - Discord Community Hub',
@@ -3432,7 +3442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           url: '/',
           features: [
             '🏆 Browse top Discord servers',
-            '🤖 Discover useful bots',  
+            '🤖 Discover useful bots',
             '💰 Complete quests for rewards',
             '🎯 Interactive community features'
           ],
@@ -3505,9 +3515,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const pageInfo = pageInfoMap[pageName.toLowerCase()];
-      
+
       if (!pageInfo) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           error: 'Page not found',
           availablePages: Object.keys(pageInfoMap)
         });
@@ -3517,6 +3527,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching page info:', error);
       res.status(500).json({ message: "Failed to fetch page information" });
+    }
+  });
+
+  // Test route
+  app.get("/api/test", (_req, res) => {
+    res.json({ message: "API is working!" });
+  });
+
+  // Database health check
+  app.get("/api/health/db", async (_req, res) => {
+    try {
+      // Simple query to test database connection
+      const result = await db.execute(sql`SELECT 1 as test`);
+      res.json({
+        status: "connected",
+        message: "Database connection successful",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Database health check failed:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Database connection failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
