@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { loginWithDiscord } from "@/lib/auth";
+import Nav from "@/components/nav";
 
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
@@ -18,8 +19,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1d1d36] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[#1d1d36]">
+      <Nav />
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
+        <div className="w-full max-w-md">
         <div className="bg-[#2a2a4a] rounded-lg p-8 shadow-2xl">
           {/* Logo and Company Name */}
           <div className="text-center mb-8">
@@ -76,6 +79,7 @@ export default function Login() {
               call discord
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>
