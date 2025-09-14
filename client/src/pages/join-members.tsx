@@ -60,7 +60,7 @@ export default function JoinMembers() {
     enabled: isAuthenticated,
   });
 
-  // Fetch user's Discord admin servers with bot presence check
+  // Fetch user's Discord admin servers (all admin servers, not filtered by bot presence)
   // Database usage for this section: Primarily for storing server metadata fetched from Discord API. 
   // This data is used to populate the dropdown and is not the sole source of truth for server details.
   const { data: userServers, isLoading: loadingUserServers } = useQuery<Server[]>({
@@ -71,32 +71,12 @@ export default function JoinMembers() {
       if (!response.ok) throw new Error("Failed to fetch user servers");
       const servers = await response.json();
 
-      // Filter servers to only include those with bot present
-      const serversWithBot = [];
-      for (const server of servers) {
-        try {
-          // Constructing the Discord server icon URL. If imageUrl is missing, Discord's default CDN will be used.
-          // Ensure server.discordId or server.id is correctly mapped to the Discord guild ID.
-          const guildId = server.discordId || server.id;
-          const botCheckResponse = await fetch(`/api/discord/bot-check/${guildId}`);
-          if (botCheckResponse.ok) {
-            const botData = await botCheckResponse.json();
-            if (botData.botPresent) {
-              // If bot is present, prepare the server data with potentially updated imageUrl
-              const serverWithImageUrl = {
-                ...server,
-                // Fallback to default Discord server icon if imageUrl is not provided
-                imageUrl: server.imageUrl || `https://cdn.discordapp.com/icons/${guildId}/${botData.iconId}.png?size=256`
-              };
-              serversWithBot.push(serverWithImageUrl);
-            }
-          }
-        } catch (error) {
-          console.error(`Bot check failed for server ${server.name}:`, error);
-        }
-      }
-
-      return serversWithBot;
+      // Return all admin servers with proper image URLs
+      return servers.map((server: any) => ({
+        ...server,
+        // Ensure proper image URL construction
+        imageUrl: server.imageUrl || (server.icon ? `https://cdn.discordapp.com/icons/${server.id}/${server.icon}.png?size=256` : null)
+      }));
     },
     enabled: isAuthenticated && !!user?.id,
   });
@@ -556,19 +536,25 @@ export default function JoinMembers() {
       <Dialog open={botCheckDialogOpen} onOpenChange={setBotCheckDialogOpen}>
         <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
           <DialogHeader>
-            <DialogTitle className="text-white">Bot Integration Required</DialogTitle>
+            <DialogTitle className="text-white">Smart Serve Bot Required</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Add our bot to enable member delivery
+              Our bot must be in your server to deliver members
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-              <h4 className="text-sm font-medium text-yellow-400 mb-2">Required Permissions:</h4>
+              <h4 className="text-sm font-medium text-yellow-400 mb-2">Bot Permissions Needed:</h4>
               <ul className="text-sm text-gray-300 space-y-1">
-                <li>• Send member invitations</li>
-                <li>• Track membership status</li>
-                <li>• Deliver purchased members</li>
+                <li>• View server information</li>
+                <li>• Send invite links</li>
+                <li>• Track member joins</li>
+                <li>• Manage member delivery</li>
               </ul>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+              <p className="text-sm text-blue-400">
+                💡 After adding the bot, you can immediately proceed with your member purchase.
+              </p>
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => setBotCheckDialogOpen(false)} className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800">
@@ -576,7 +562,8 @@ export default function JoinMembers() {
               </Button>
               <Button asChild className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
                 <a href={botCheckData?.inviteUrl || "#"} target="_blank" rel="noopener noreferrer">
-                  Add Bot
+                  <Zap className="w-4 h-4 mr-2" />
+                  Invite Bot
                 </a>
               </Button>
             </div>
