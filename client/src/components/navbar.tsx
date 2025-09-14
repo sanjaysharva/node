@@ -69,7 +69,14 @@ export default function Navbar() {
                       nextElement.style.display = 'flex';
                       nextElement.classList.remove('hidden');
                     }
-                  }}</old_str>
+                  }}
+                />
+                <div 
+                  className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl hidden items-center justify-center text-white font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
+                  style={{ display: 'none' }}
+                >
+                  A
+                </div></old_str>
                 />
                 <div 
                   className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl hidden items-center justify-center text-white font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
