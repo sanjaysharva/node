@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { loginWithDiscord } from "@/lib/auth";
 import { Shield, Users, Zap } from "lucide-react";
-import Navbar from "@/components/navbar";
+import Nav from "@/components/nav";
 
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
@@ -16,7 +16,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Nav/>
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-4">
