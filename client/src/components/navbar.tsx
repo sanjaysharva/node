@@ -23,12 +23,14 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2 group" data-testid="link-home">
+              <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
                 <div className="relative">
-                  <i className="fab fa-discord text-3xl text-primary transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"></i>
-                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]">
+                    A
+                  </div>
+                  <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
                 </div>
-                <span className="font-bold text-xl text-transparent bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
+                <span className="font-bold text-xl text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
                   Axiom
                 </span>
               </Link>
@@ -53,7 +55,10 @@ export default function Navbar() {
                   className="w-10 h-10 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                    const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (nextElement) {
+                      nextElement.style.display = 'flex';
+                    }
                   }}
                 />
                 <div 
