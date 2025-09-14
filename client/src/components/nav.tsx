@@ -23,13 +23,13 @@ export default function Nav() {
       <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center group" data-testid="link-home">
                 <div className="relative">
                   <img 
                   src="/assets/axiom-logo.png" 
                   alt="Axiom Logo" 
-                  className="w-10 h-10 object-contain rounded-xg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
+                  className="w-16 h-16 object-contain rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                   onError={(e) => {
                     console.error('Logo failed to load:', e);
                     e.currentTarget.style.display = 'block';
@@ -37,7 +37,7 @@ export default function Nav() {
                 />
                 <div className="absolute inset-0 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               </div>
-              <span className="font-bold text-xl text-white bg-300% transition-all duration-300 group-hover:scale-105">
+              <span className="font-bold text-2xl text-white bg-300% transition-all duration-300 group-hover:scale-105 ml-2">
                 Axiom
               </span>
             </Link>
@@ -53,13 +53,13 @@ export default function Nav() {
     <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center group" data-testid="link-home">
               <div className="relative">
                 <img 
                   src="/assets/axiom-logo.png" 
                   alt="Axiom Logo" 
-                  className="w-10 h-10 object-contain rounded-xg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
+                  className="w-16 h-16 object-contain rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                   onError={(e) => {
                     console.error('Logo failed to load:', e);
                     e.currentTarget.style.display = 'block';
@@ -67,7 +67,7 @@ export default function Nav() {
                 />
                 <div className="absolute inset-0 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               </div>
-              <span className="font-bold text-xl text-white bg-300% transition-all duration-300 group-hover:scale-105">
+              <span className="font-bold text-2xl text-white bg-300% transition-all duration-300 group-hover:scale-105 ml-2">
                 Axiom
               </span>
             </Link>
