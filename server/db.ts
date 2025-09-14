@@ -16,14 +16,31 @@ if (!dbHost || !dbUser || !dbPassword || !dbName) {
   );
 }
 
-// Create MySQL connection
-export const connection = mysql.createConnection({
+console.log('Connecting to MySQL database:', { host: dbHost, port: dbPort, user: dbUser, database: dbName });
+
+// Create MySQL connection pool for better reliability
+export const connection = mysql.createPool({
   host: dbHost,
   port: dbPort,
   user: dbUser,
   password: dbPassword,
   database: dbName,
-  multipleStatements: true,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  acquireTimeout: 60000,
+  timeout: 60000,
+  reconnect: true,
 });
 
 export const db = drizzle(connection, { schema, mode: 'default' });
+
+// Test the connection
+connection.getConnection()
+  .then(conn => {
+    console.log('✅ MySQL database connected successfully');
+    conn.release();
+  })
+  .catch(err => {
+    console.error('❌ Failed to connect to database:', err);
+  });
