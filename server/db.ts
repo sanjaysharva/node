@@ -29,7 +29,6 @@ export const connection = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   idleTimeout: 60000,
-  acquireTimeout: 60000,
 });
 
 export const db = drizzle(connection, { schema, mode: 'default' });
