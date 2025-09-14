@@ -23,13 +23,13 @@ export default function Login() {
         <div className="bg-[#2a2a4a] rounded-lg p-8 shadow-2xl">
           {/* Logo and Company Name */}
           <div className="text-center mb-8">
-            <div className="mb-4">
+            <div className="flex items-center justify-center space-x-3">
               {/* Logo placeholder - replace with your actual logo */}
-              <div className="w-16 h-16 bg-purple-600 rounded-full mx-auto flex items-center justify-center">
-                <span className="text-white font-bold text-xl">S</span>
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">S</span>
               </div>
+              <h1 className="text-white text-2xl font-bold">Silly Development</h1>
             </div>
-            <h1 className="text-white text-2xl font-bold">Silly Development</h1>
           </div>
 
           {/* Login Title */}
