@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { apiRequest } from "@/lib/queryClient";
 import { insertServerSchema } from "@shared/schema";
 import { Plus, Server, Users, Hash, Link2, Image, Globe, CheckCircle, Megaphone } from "lucide-react";
@@ -56,6 +57,8 @@ export default function AdvertiseServer() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  usePageTitle("Add Your Discord Server");
 
   // Create server mutation
   const createServerMutation = useMutation({

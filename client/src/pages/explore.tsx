@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { usePageTitle } from "@/hooks/use-page-title";
 import type { Server, Bot, Event, Slideshow } from "@shared/schema";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,8 @@ export default function Explore() {
   const [sortBy, setSortBy] = useState("members");
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  
+  usePageTitle("Explore Discord Universe");
 
   // Fetch slideshows for explore page
   const { data: slideshows, isLoading: loadingSlideshows } = useQuery<Slideshow[]>({

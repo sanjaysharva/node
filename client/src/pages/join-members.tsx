@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { Link } from "wouter";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface Server {
   id: string;
@@ -48,6 +49,8 @@ export default function JoinMembers() {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+
+  usePageTitle("Join Members");
 
   // Fetch member-exchange advertising servers (servers that give coins when joined)
   const { data: advertisingServers, isLoading: loadingServers } = useQuery<Server[]>({

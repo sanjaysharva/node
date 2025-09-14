@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { usePageTitle } from "@/hooks/use-page-title";
 import type { Server } from "@shared/schema";
 import { AdBanner } from "@/components/ad-banner";
 
@@ -17,6 +18,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("members");
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  
+  usePageTitle("Home");
 
   // Fetch popular servers
   const { data: popularServers, isLoading: loadingPopular } = useQuery({
