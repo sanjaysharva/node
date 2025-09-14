@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { loginWithDiscord } from "@/lib/auth";
+import Nav from "@/components/nav"
 
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
