@@ -1,13 +1,13 @@
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, PermissionsBitField } from 'discord.js';
 import mysql from 'mysql2/promise';
 
-// Database connection configuration  
+// Database connection configuration - using same config as main app
 const dbConfig = {
-  host: process.env.DB2_HOST,
-  user: process.env.DB2_USERNAME,
-  password: process.env.DB2_PASSWORD,
-  database: 's77087_Axiom', // Correct database name from connection string
-  port: 3306,
+  host: process.env.DB_HOST || 'db2.sillydevelopment.co.uk',
+  user: process.env.DB_USER || 'u77272_CezJ7ZJDoG',
+  password: process.env.DB_PASSWORD || '4R.u8LGwD10VjCh84af=k4Vh',
+  database: process.env.DB_NAME || 's77272_axiom',
+  port: parseInt(process.env.DB_PORT || '3306'),
 };
 
 // Create Discord client for second bot
