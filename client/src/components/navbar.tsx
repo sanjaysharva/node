@@ -26,7 +26,7 @@ export default function Navbar() {
               <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
                 <div className="relative">
                 <img 
-                  src="/axiom-logo.png" 
+                  src="/assets/axiom-logo.png" 
                   alt="Axiom Logo" 
                   className="w-10 h-10 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                 />
@@ -52,7 +52,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
               <div className="relative">
                 <img 
-                  src="/axiom-logo.png" 
+                  src="/assets/axiom-logo.png" 
                   alt="Axiom Logo" 
                   className="w-10 h-10 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                 />
