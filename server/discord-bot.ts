@@ -171,7 +171,7 @@ const commands = [
     ),
 ];
 
-client.once(Events.ClientReady, async () => {
+client.once('clientReady', async () => {
   console.log(`✅ Discord bot logged in as ${client.user?.tag}!`);
 
   // Register slash commands
