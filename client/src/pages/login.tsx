@@ -50,7 +50,7 @@ export default function Login() {
 
           {/* Login Title */}
           <div className="text-center mb-6">
-            <h2 className="text-white text-xl font-semibold absolute top-[90px] left-[45px]">Login to Continue</h2>
+            <h2 className="text-white text-xl font-semibold absolute top-[90px] left-[33px]">Login to Continue</h2>
           </div>
           {/* Remember Me Option */}
           <div className="flex items-center space-x-2 mb-6 absolute top-[360px]">
