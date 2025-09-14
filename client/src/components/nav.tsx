@@ -29,7 +29,7 @@ export default function Navbar() {
                   src="/assets/axiom-logo.png" 
                   alt="Axiom Logo" 
                   className="w-10 h-10 object-contain rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
-                  onError={(e: any) => {
+                  onError={(e) => {
                     console.error('Logo failed to load:', e);
                     e.currentTarget.style.display = 'block';
                   }}

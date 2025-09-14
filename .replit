@@ -42,7 +42,7 @@ externalPort = 3001
 PORT = "5000"
 
 [workflows]
-runButton = "Start Server"
+runButton = "Start Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -78,6 +78,15 @@ args = "pkill -f \"node.*5000\" || true"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "sleep 2"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Start Dev Server"
+author = 43046155
+mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
