@@ -45,7 +45,7 @@ export interface IStorage {
   atomicServerJoin(params: { userId: string; serverId: string; coinsToAward: number; currentCoins: number; advertisingMembersNeeded: number }): Promise<{ newBalance: number; advertisingComplete: boolean }>;
   transferCoins(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; fromBalance: number; toBalance: number }>;
   getUserByDiscordUsername(username: string): Promise<User | undefined>;
-  
+
   // Count operations
   getServerCount(): Promise<number>;
   getBotCount(): Promise<number>;
@@ -172,56 +172,71 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Server operations
-  async getServers(options?: { tags?: string[]; search?: string; limit?: number; offset?: number; includeNormalAdvertising?: boolean }): Promise<Server[]> {
-    const conditions = [];
+  async getServers(options: { tags?: string[]; search?: string; limit?: number; offset?: number; includeNormalAdvertising?: boolean } = {}): Promise<Server[]> {
+    const { tags = [], search = '', limit = 20, offset = 0, includeNormalAdvertising = false } = options;
 
-    // Exclude member-exchange advertising servers from normal browsing
-    // Include normal advertising and non-advertising servers
-    if (options?.includeNormalAdvertising) {
-      // Include non-advertising and normal advertising servers, but ALWAYS exclude member-exchange
-      conditions.push(
-        and(
+    try {
+      let query = this.db.select().from(servers);
+
+      // Build WHERE conditions
+      const conditions = [];
+
+      if (!includeNormalAdvertising) {
+        conditions.push(
           or(
-            eq(servers.advertisingType, "none"),
-            eq(servers.advertisingType, "normal"),
-            // Fallback for servers without advertisingType set (only if not advertising)
-            and(
-              sql`${servers.advertisingType} IS NULL`,
-              eq(servers.isAdvertising, false)
-            )
-          ),
-          // Explicitly exclude member-exchange servers regardless of advertising status
-          sql`${servers.advertisingType} != 'member_exchange' OR ${servers.advertisingType} IS NULL`
-        )
-      );
-    } else {
-      // Default behavior: exclude all advertising servers (backward compatibility)
-      conditions.push(eq(servers.isAdvertising, false));
+            eq(servers.advertisingType, 'none'),
+            isNull(servers.advertisingType)
+          )
+        );
+      }
+
+      if (tags.length > 0) {
+        conditions.push(
+          or(...tags.map(tag => sql`JSON_CONTAINS(${servers.tags}, ${JSON.stringify(tag)})`))
+        );
+      }
+
+      if (search) {
+        conditions.push(
+          or(
+            ilike(servers.name, `%${search}%`),
+            ilike(servers.description, `%${search}%`)
+          )
+        );
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query
+        .orderBy(desc(servers.memberCount))
+        .limit(limit)
+        .offset(offset);
+
+      return result;
+    } catch (error) {
+      console.error('Error fetching servers:', error);
+      throw error;
     }
-
-    if (options?.search) {
-      conditions.push(
-        or(
-          ilike(servers.name, `%${options.search}%`),
-          ilike(servers.description, `%${options.search}%`)
-        )
-      );
-    }
-
-    // Build complete query with all conditions
-    const baseQuery = this.db.select().from(servers);
-    const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
-    const withOrder = withWhere.orderBy(desc(servers.memberCount));
-    const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
-    const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
-
-    return await finalQuery;
   }
 
-  async getPopularServers(limit = 6): Promise<Server[]> {
-    return await this.db.select().from(servers)
-      .orderBy(desc(servers.memberCount))
-      .limit(limit);
+  async getPopularServers(limit: number = 10): Promise<Server[]> {
+    try {
+      return await this.db.select()
+        .from(servers)
+        .where(
+          or(
+            eq(servers.advertisingType, 'none'),
+            isNull(servers.advertisingType)
+          )
+        )
+        .orderBy(desc(servers.memberCount))
+        .limit(limit);
+    } catch (error) {
+      console.error('Failed to fetch popular servers:', error);
+      throw error;
+    }
   }
 
   async getServer(id: string): Promise<Server | undefined> {
@@ -1303,7 +1318,7 @@ export class DatabaseStorage implements IStorage {
     const boostDuration = boostType === '24hours' ? 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // 24 hours or 30 days in milliseconds
     const boostExpiresAt = new Date(Date.now() + boostDuration);
     const boostPriority = boostType === '24hours' ? 1 : 2; // 1month gets higher priority
-    
+
     const [updatedServer] = await this.db.update(servers).set({
       isBoosted: true,
       boostExpiresAt,
@@ -1313,7 +1328,7 @@ export class DatabaseStorage implements IStorage {
       boostPriority,
       updatedAt: new Date()
     }).where(eq(servers.id, serverId)).returning();
-    
+
     return updatedServer || undefined;
   }
 
@@ -1350,7 +1365,7 @@ export class DatabaseStorage implements IStorage {
   async addCoins(userId: string, amount: number): Promise<User | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
-    
+
     const newBalance = (user.coins || 0) + amount;
     return await this.updateUserCoins(userId, newBalance);
   }
