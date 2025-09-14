@@ -112,22 +112,13 @@ export default function Store() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {stripePublicKey ? (
-                    <Link href={`/payment/coins?coins=${pkg.coins}&price=${pkg.price}`}>
-                      <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105" data-testid={`button-buy-${pkg.coins}-coins`}>
-                        Buy Now - ${pkg.price}
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button
-                      disabled
-                      className="w-full bg-gray-500 cursor-not-allowed"
-                      data-testid={`button-buy-${pkg.coins}-coins`}
-                    >
-                      Payment Not Available
-                    </Button>
-                  )}
+                  <Button
+                    disabled
+                    className="w-full bg-gray-400 cursor-not-allowed"
+                    data-testid={`button-buy-coins-${pkg.coins}`}
+                  >
+                    Later - ${pkg.price}
+                  </Button>
                 </CardContent>
               </Card>
             ))}

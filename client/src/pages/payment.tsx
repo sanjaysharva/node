@@ -137,8 +137,6 @@ export default function Payment() {
   const [match, params] = useRoute("/payment/:type");
   const { toast } = useToast();
   
-  const [clientSecret, setClientSecret] = useState("");
-  const [selectedServerId, setSelectedServerId] = useState("");
   const [paymentConfig, setPaymentConfig] = useState<{
     amount: number;
     description: string;
@@ -191,49 +189,7 @@ export default function Payment() {
     }
   }, [params, setLocation, toast]);
 
-  // Fetch advertised servers for boost purchases
-  const { data: advertisedServers } = useQuery({
-    queryKey: ['/api/servers/advertised'],
-    enabled: paymentConfig?.boostType !== undefined && isAuthenticated,
-  });
-
-  // Create payment intent when config is ready and server is selected (for boosts)
-  useEffect(() => {
-    if (paymentConfig && stripePromise && !clientSecret) {
-      // For coin purchases, create payment intent immediately
-      if (paymentConfig.boostType === undefined) {
-        createPaymentIntent();
-      }
-      // For boost purchases, only create payment intent when server is selected
-      else if (selectedServerId) {
-        createPaymentIntent();
-      }
-    }
-  }, [paymentConfig, selectedServerId, clientSecret]);
-
-  const createPaymentIntent = async () => {
-    if (!paymentConfig) return;
-
-    try {
-      const response = await apiRequest("POST", "/api/create-payment-intent", {
-        amount: paymentConfig.amount,
-        type: paymentConfig.boostType ? paymentConfig.boostType : "coins",
-        coins: paymentConfig.coins || 0,
-        serverId: selectedServerId,
-        boostType: paymentConfig.boostType
-      });
-      
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
-    } catch (error) {
-      console.error("Failed to create payment intent:", error);
-      toast({
-        title: "Payment Error",
-        description: "Failed to initialize payment. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Payment processing temporarily disabled
 
   if (!isAuthenticated) {
     return (
@@ -282,70 +238,51 @@ export default function Payment() {
           <p className="text-muted-foreground">Secure payment powered by Stripe</p>
         </div>
 
-        {/* Server Selection for Boosts */}
-        {paymentConfig.boostType && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="w-5 h-5" />
-                Select Server to Advertise
-              </CardTitle>
-              <CardDescription>
-                Choose which server you want to boost. Only servers with advertising enabled are shown.
-                The selected server will appear first in listings for the selected duration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Select value={selectedServerId} onValueChange={setSelectedServerId}>
-                <SelectTrigger data-testid="select-server-for-boost">
-                  <SelectValue placeholder="Select a server to boost..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {advertisedServers?.map((server: any) => (
-                    <SelectItem key={server.id} value={server.id}>
-                      {server.name} ({server.memberCount || 0} members)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!selectedServerId && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  You must select a server before proceeding with the boost purchase.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Payment Form */}
+        {/* Payment Temporarily Disabled */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment Details</CardTitle>
-            <CardDescription>Complete your secure payment below</CardDescription>
+            <CardTitle>Payment Coming Soon</CardTitle>
+            <CardDescription>Payment processing is temporarily disabled</CardDescription>
           </CardHeader>
-          <CardContent>
-            {clientSecret && stripePromise ? (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <PaymentForm
-                  amount={paymentConfig.amount}
-                  description={paymentConfig.description}
-                  paymentType={paymentConfig.boostType || "coins"}
-                  coins={paymentConfig.coins}
-                  serverId={selectedServerId}
-                  boostType={paymentConfig.boostType}
-                  onSuccess={() => {}}
-                />
-              </Elements>
-            ) : paymentConfig.boostType && !selectedServerId ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Please select a server to continue</p>
+          <CardContent className="text-center space-y-6">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h3 className="font-semibold text-xl mb-2 text-foreground">{paymentConfig.description}</h3>
+              <p className="text-3xl font-bold text-primary">${paymentConfig.amount}</p>
+            </div>
+            
+            <div className="bg-yellow-50 dark:bg-yellow-950 rounded-lg p-6">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Zap className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                <span className="text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+                  Payment System Under Development
+                </span>
               </div>
-            ) : (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-                <span className="ml-3 text-muted-foreground">Initializing payment...</span>
+              <p className="text-yellow-700 dark:text-yellow-300 mb-4">
+                We're working hard to integrate secure payment processing. This feature will be available soon!
+              </p>
+              <div className="text-sm text-yellow-600 dark:text-yellow-400 space-y-1">
+                <p>🔧 Setting up payment infrastructure</p>
+                <p>🔒 Implementing security measures</p>
+                <p>✨ Almost ready to launch</p>
               </div>
-            )}
+            </div>
+
+            <div className="flex gap-4">
+              <Link href="/store" className="flex-1">
+                <Button type="button" variant="outline" className="w-full" data-testid="button-back-to-store">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Store
+                </Button>
+              </Link>
+              <Button
+                type="button"
+                disabled
+                className="flex-1 bg-gray-400 cursor-not-allowed"
+                data-testid="button-complete-payment"
+              >
+                Later
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
