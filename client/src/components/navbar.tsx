@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth, loginWithDiscord, logout } from "@/lib/auth";
+import "client/src/assets/axiom-logo.png"
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -25,7 +26,21 @@ export default function Navbar() {
             <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
                 <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]">
+                  <img 
+                    src="client/src/assets/axiom-logo.png" 
+                    alt="Axiom Logo" 
+                    className="w-10 h-10 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (nextElement) {
+                        nextElement.style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div 
+                    className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl hidden items-center justify-center text-white font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
+                  >
                     A
                   </div>
                   <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
