@@ -18,19 +18,19 @@ export default function Login() {
     <div className="min-h-screen bg-background">
       <Nav/>
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-screen lg:p-6 p-5 max-w-[500px] bg-[#1d1d39] rounded-box">
           <CardHeader className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
               <Shield className="w-8 h-8 text-primary" />
             </div>
             <div>
+              
               <CardTitle className="text-2xl font-bold">Welcome Back!</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Sign in to your Smart Serve account to access exclusive features
               </CardDescription>
             </div>
           </CardHeader>
-
           <CardContent className="space-y-6">
             {/* Benefits Section */}
             <div className="space-y-3">
