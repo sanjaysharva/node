@@ -11,10 +11,7 @@ import {
   errorHandler 
 } from "./middleware/security";
 
-// Fix SSL certificate issues in development
-if (process.env.NODE_ENV === 'development') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
+// SSL certificates are handled properly by the system
 
 // Extend Express Request type for cookie-session
 declare global {

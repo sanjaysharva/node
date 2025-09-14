@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth, loginWithDiscord, logout } from "@/lib/auth";
-import "client/src/assets/axiom-logo.png"
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -27,7 +26,7 @@ export default function Navbar() {
               <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
                 <div className="relative">
                   <img 
-                    src="client/src/assets/axiom-logo.png" 
+                    src="/axiom-logo.png" 
                     alt="Axiom Logo" 
                     className="w-10 h-10 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                     onError={(e) => {
