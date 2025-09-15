@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Navbar from "@/components/navbar";
+import Nav from "@/components/nav";
 import ServerCard from "@/components/server-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,7 +113,7 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Nav />
 
       {/* Admin Slideshow Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
