@@ -21,7 +21,6 @@ import SearchPage from "@/pages/search";
 import ServerDetail from "@/pages/server-detail";
 import NotFound from "@/pages/not-found";
 import CookieConsent from "@/components/cookie-consent";
-import HelpCenter from "./pages/help-center";
 import Help from "./pages/help";
 import SupportTicket from "./pages/support-ticket";
 import ContactUs from "./pages/contact-us";
@@ -65,7 +64,6 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/server/:id" component={ServerDetail} />
-      <Route path="/help-center" component={HelpCenter} />
       <Route path="/help" component={Help} />
       <Route path="/support-ticket" component={SupportTicket} />
       <Route path="/contact-us" component={ContactUs} />

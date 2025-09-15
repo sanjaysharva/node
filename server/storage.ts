@@ -1,6 +1,6 @@
-import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes, jobs, type Job, type InsertJob } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, faqs, supportTickets, contactSubmissions, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes, jobs, type Job, type InsertJob, type Faq, type InsertFaq, type SupportTicket, type InsertSupportTicket, type ContactSubmission, type InsertContactSubmission } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, ilike, sql, isNull, count } from 'drizzle-orm';
+import { eq, desc, and, or, ilike, like, sql, isNull, count } from 'drizzle-orm';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
 import crypto from "crypto";
 
@@ -106,17 +106,20 @@ export interface IStorage {
   getReviewById(reviewId: string): Promise<any | undefined>;
   updateServerAverageRating(serverId: string): Promise<void>;
 
-  // Support tickets
-  createSupportTicket(ticketData: {
-    userId?: string;
-    discordUserId: string;
-    username: string;
-    message: string;
-    guildName?: string;
-    status: string;
-  }): Promise<any>;
+  // FAQ operations
+  getFaqs(options?: { search?: string; category?: string; isActive?: boolean; limit?: number; offset?: number }): Promise<Faq[]>;
+  createFaq(faq: InsertFaq): Promise<Faq>;
+  updateFaq(id: string, faq: Partial<InsertFaq>): Promise<Faq | undefined>;
+  toggleFaqActive(id: string, isActive: boolean): Promise<Faq | undefined>;
 
-  getSupportTickets(): Promise<any[]>;
+  // Support ticket operations
+  createSupportTicket(ticketData: InsertSupportTicket & { userId: string }): Promise<SupportTicket>;
+  getSupportTickets(options?: { userId?: string; status?: string; limit?: number; offset?: number }): Promise<SupportTicket[]>;
+  getSupportTicket(id: string): Promise<SupportTicket | undefined>;
+  updateSupportTicket(id: string, ticketData: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined>;
+
+  // Contact submission operations
+  createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission>;
 
   // Blog operations
   getBlogPosts(options?: { limit?: number; offset?: number; featured?: boolean }): Promise<any[]>;
@@ -1234,26 +1237,110 @@ export class DatabaseStorage implements IStorage {
     }).where(eq(servers.id, serverId));
   }
 
-  // Support ticket implementation
-  async createSupportTicket(ticketData: {
-    userId?: string;
-    discordUserId: string;
-    username: string;
-    message: string;
-    guildName?: string;
-    status: string;
-  }): Promise<any> {
-    // Mock implementation - no support ticket table exists yet
-    return {
-      id: `ticket_${Date.now()}`,
-      ...ticketData,
-      createdAt: new Date()
-    };
+  // FAQ operations implementation
+  async getFaqs(options?: { search?: string; category?: string; isActive?: boolean; limit?: number; offset?: number }): Promise<Faq[]> {
+    const conditions = [];
+    
+    if (options?.search) {
+      conditions.push(
+        or(
+          like(faqs.question, `%${options.search}%`),
+          like(faqs.answer, `%${options.search}%`)
+        )
+      );
+    }
+    
+    if (options?.category) {
+      conditions.push(eq(faqs.category, options.category));
+    }
+    
+    if (options?.isActive !== undefined) {
+      conditions.push(eq(faqs.isActive, options.isActive));
+    }
+    
+    const baseQuery = this.db.select().from(faqs);
+    const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+    const withOrder = withWhere.orderBy(faqs.order, desc(faqs.createdAt));
+    const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
+    const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
+    
+    return await finalQuery;
   }
 
-  async getSupportTickets(): Promise<any[]> {
-    // Mock implementation - no support ticket table exists yet
-    return [];
+  async createFaq(faq: InsertFaq): Promise<Faq> {
+    const [newFaq] = await this.db.insert(faqs).values({
+      ...faq,
+      updatedAt: new Date()
+    }).returning();
+    return newFaq;
+  }
+
+  async updateFaq(id: string, faq: Partial<InsertFaq>): Promise<Faq | undefined> {
+    const [updatedFaq] = await this.db.update(faqs).set({
+      ...faq,
+      updatedAt: new Date()
+    }).where(eq(faqs.id, id)).returning();
+    return updatedFaq || undefined;
+  }
+
+  async toggleFaqActive(id: string, isActive: boolean): Promise<Faq | undefined> {
+    const [updatedFaq] = await this.db.update(faqs).set({
+      isActive,
+      updatedAt: new Date()
+    }).where(eq(faqs.id, id)).returning();
+    return updatedFaq || undefined;
+  }
+
+  // Support ticket operations implementation
+  async createSupportTicket(ticketData: InsertSupportTicket & { userId: string }): Promise<SupportTicket> {
+    // Generate unique ticket ID
+    const ticketId = `TKT-${Date.now().toString().slice(-8)}`;
+    
+    const [newTicket] = await this.db.insert(supportTickets).values({
+      ...ticketData,
+      ticketId,
+      updatedAt: new Date()
+    }).returning();
+    return newTicket;
+  }
+
+  async getSupportTickets(options?: { userId?: string; status?: string; limit?: number; offset?: number }): Promise<SupportTicket[]> {
+    const conditions = [];
+    
+    if (options?.userId) {
+      conditions.push(eq(supportTickets.userId, options.userId));
+    }
+    
+    if (options?.status) {
+      conditions.push(eq(supportTickets.status, options.status));
+    }
+    
+    const baseQuery = this.db.select().from(supportTickets);
+    const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+    const withOrder = withWhere.orderBy(desc(supportTickets.createdAt));
+    const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
+    const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
+    
+    return await finalQuery;
+  }
+
+  async getSupportTicket(id: string): Promise<SupportTicket | undefined> {
+    const [ticket] = await this.db.select().from(supportTickets).where(eq(supportTickets.id, id));
+    return ticket || undefined;
+  }
+
+  async updateSupportTicket(id: string, ticketData: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> {
+    const [updatedTicket] = await this.db.update(supportTickets).set({
+      ...ticketData,
+      updatedAt: new Date()
+    }).where(eq(supportTickets.id, id)).returning();
+    return updatedTicket || undefined;
+  }
+
+  // Contact submission operations implementation
+  async createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission> {
+    const [newSubmission] = await this.db.insert(contactSubmissions).values(submission).returning();
+    return newSubmission;
   }
 
   // Blog operations implementation

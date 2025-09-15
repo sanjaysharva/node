@@ -21,7 +21,10 @@ import {
   insertSlideshowSchema,
   insertPartnershipSchema,
   insertServerTemplateSchema,
-  insertJobSchema
+  insertJobSchema,
+  insertFaqSchema,
+  insertSupportTicketSchema,
+  insertContactSubmissionSchema
 } from "@shared/schema";
 import { z } from "zod";
 import {
@@ -2565,6 +2568,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "MySQL database connection failed",
         error: error.message
       });
+    }
+  });
+
+  // FAQ API routes
+  app.get("/api/faqs", async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const offset = parseInt(req.query.offset as string) || 0;
+      const search = req.query.search as string;
+      const category = req.query.category as string;
+      const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : true;
+
+      const faqs = await storage.getFaqs({
+        search,
+        category,
+        isActive,
+        limit,
+        offset
+      });
+
+      res.json(faqs);
+    } catch (error) {
+      console.error("Error fetching FAQs:", error);
+      res.status(500).json({ message: "Failed to fetch FAQs" });
+    }
+  });
+
+  // Support ticket API routes
+  app.post("/api/support/tickets", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const ticketData = insertSupportTicketSchema.parse(req.body);
+      const ticket = await storage.createSupportTicket({
+        ...ticketData,
+        userId: req.user.id
+      });
+
+      res.status(201).json(ticket);
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create support ticket" });
+    }
+  });
+
+  app.get("/api/support/tickets", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const offset = parseInt(req.query.offset as string) || 0;
+      const status = req.query.status as string;
+
+      // Regular users can only see their own tickets, admins can see all
+      const options = req.user.isAdmin ? { status, limit, offset } : { userId: req.user.id, status, limit, offset };
+      
+      const tickets = await storage.getSupportTickets(options);
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+
+  // Contact submission API route
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const submissionData = insertContactSubmissionSchema.parse(req.body);
+      const submission = await storage.createContactSubmission(submissionData);
+
+      res.status(201).json({
+        id: submission.id,
+        message: "Your message has been submitted successfully. We will get back to you soon!"
+      });
+    } catch (error) {
+      console.error("Error creating contact submission:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to submit contact form" });
     }
   });
 

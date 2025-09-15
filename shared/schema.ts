@@ -340,3 +340,69 @@ export const insertPartnershipSchema = createInsertSchema(partnerships);
 export const insertServerTemplateSchema = createInsertSchema(serverTemplates);
 export const insertTemplateProcessSchema = createInsertSchema(templateProcesses);
 export const insertJobSchema = createInsertSchema(jobs);
+
+// FAQs table for help center
+export const faqs = mysqlTable("faqs", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  tags: json("tags").default([]),
+  isActive: boolean("is_active").default(true),
+  order: int("order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertFaqSchema = createInsertSchema(faqs).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFaq = z.infer<typeof insertFaqSchema>;
+export type Faq = typeof faqs.$inferSelect;
+
+// Support tickets table
+export const supportTickets = mysqlTable("support_tickets", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  ticketId: varchar("ticket_id", { length: 20 }).notNull().unique(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  subject: text("subject").notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  priority: varchar("priority", { length: 50 }).notNull().default("medium"),
+  description: text("description").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("open"),
+  assignedTo: varchar("assigned_to", { length: 36 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ 
+  id: true, 
+  ticketId: true, 
+  userId: true, 
+  status: true, 
+  assignedTo: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+export type SupportTicket = typeof supportTickets.$inferSelect;
+
+// Contact form submissions table
+export const contactSubmissions = mysqlTable("contact_submissions", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  country: varchar("country", { length: 100 }),
+  reason: varchar("reason", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("new"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({ 
+  id: true, 
+  status: true, 
+  createdAt: true 
+});
+export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
