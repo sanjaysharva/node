@@ -21,39 +21,33 @@ export default function Login() {
 
   return (
     <div 
-      className="min-h-screen bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
       style={{ backgroundImage: `url(${backgroundImage})` }}
     >
+      {/* Dark overlay to make background much darker */}
+      <div className="absolute inset-0 bg-black/80"></div>
       <Nav />
-      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 rounded-box">
-        <div className="w-full w-[500px] h-[500px] rounded-box">
-        <div className="bg-[#1d1d36] rounded-xl p-8 shadow-2xl h-[530px] w-[450px] absolute left-[545px]">
+      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
+        <div className="w-full max-w-md">
+        <div className="bg-[#2a2a4a] rounded-lg p-8 shadow-2xl">
           {/* Logo and Company Name */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3">
               {/* Logo placeholder - replace with your actual logo */}
-              
-                <img 
-                  src="/assets/axiom-logo.png" 
-                  width="42"
-                  height="42"
-                  alt="Axiom Logo" 
-                  className=" object-contain rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)] absolute top-[22px] left-[30px]"
-                  onError={(e) => {
-                    console.error('Logo failed to load:', e);
-                    e.currentTarget.style.display = 'block';
-                  }}
-                />
-              <h2 className="text-white text-size-[20px] font-semibold absolute top-[33px] left-[68px] text-xl">Silly Development</h2>
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">S</span>
+              </div>
+              <h1 className="text-white text-2xl font-bold">Silly Development</h1>
             </div>
           </div>
 
           {/* Login Title */}
           <div className="text-center mb-6">
-            <h2 className="text-white text-xl font-semibold absolute top-[90px] left-[33px]">Login to Continue</h2>
+            <h2 className="text-white text-xl font-semibold">Login to Continue</h2>
           </div>
+
           {/* Remember Me Option */}
-          <div className="flex items-center space-x-2 mb-6 absolute top-[360px]">
+          <div className="flex items-center space-x-2 mb-6">
             <Checkbox
               id="remember-me"
               checked={rememberMe}
