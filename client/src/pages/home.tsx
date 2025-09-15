@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Nav from "@/components/nav";
+import Navbar from "@/components/navbar";
 import HeroSearch from "@/components/hero-search";
 import ServerCard from "@/components/server-card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Nav />
+      <Navbar />
 
       
 
