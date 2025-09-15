@@ -271,6 +271,12 @@ export default function JoinMembers() {
                 <CardTitle className="text-lg text-white">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                <Link href="/quest">
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                    <Zap className="w-4 h-4 mr-3" />
+                    Quest
+                  </Button>
+                </Link>
                 <Link href="/trade">
                   <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
                     <Coins className="w-4 h-4 mr-3" />

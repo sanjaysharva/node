@@ -22,6 +22,9 @@ import ServerDetail from "@/pages/server-detail";
 import NotFound from "@/pages/not-found";
 import CookieConsent from "@/components/cookie-consent";
 import HelpCenter from "./pages/help-center";
+import Help from "./pages/help";
+import SupportTicket from "./pages/support-ticket";
+import ContactUs from "./pages/contact-us";
 import TermsOfService from "./pages/terms-of-service";
 import PrivacyPolicy from "./pages/privacy-policy";
 import Blog from "./pages/blog";
@@ -63,6 +66,9 @@ function Router() {
       <Route path="/search" component={SearchPage} />
       <Route path="/server/:id" component={ServerDetail} />
       <Route path="/help-center" component={HelpCenter} />
+      <Route path="/help" component={Help} />
+      <Route path="/support-ticket" component={SupportTicket} />
+      <Route path="/contact-us" component={ContactUs} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/blog" component={Blog} />
