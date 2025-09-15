@@ -23,14 +23,14 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
   };
 
   return (
-    <section className="relative py-20 w-full overflow-hidden">
-      <div className="absolute z-0 inset-0 w-[1250px] h-[] overflow-hidden">
+    <section className="relative py-20 w-full overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f172a]">
+      <div className="absolute z-0 inset-0 w-full h-full overflow-hidden">
         <img
           src={backgroundImage}
           alt="Background"
-          className="absolute z-0 inset-0 w-full h-full object-cover object-bottom rounded-xl"
+          className="absolute z-0 inset-0 w-full h-full object-cover object-bottom rounded-xl opacity-30"
         />
-        <div className="absolute z-1 inset-0 bg-radial-gradient rounded-xl"></div>
+        <div className="absolute z-1 inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-purple-900/20 rounded-xl"></div>
       </div>
       <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">

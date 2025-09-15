@@ -350,51 +350,61 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border mt-16">
+      <footer className="bg-[#1a1a2e] border-t border-[#16213e] mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <i className="fab fa-discord text-2xl text-primary"></i>
-                <span className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Smart Serve</span>
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="/assets/axiom-logo.png" 
+                  width="32"
+                  height="32"
+                  alt="Axiom Logo" 
+                  className="object-contain rounded-lg"
+                  onError={(e) => {
+                    console.error('Logo failed to load:', e);
+                    e.currentTarget.style.display = 'block';
+                  }}
+                />
+                <span className="font-bold text-xl text-white">Axiom</span>
               </div>
-              <p className="text-muted-foreground">
+              <p className="text-gray-400">
                 Smart communities, smarter connections. Discover the best Discord servers and bots for your community.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">Browse</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Discord Servers</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Discord Bots</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Popular</a></li>
+              <h3 className="font-semibold mb-4 text-white">Browse</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="/explore" className="hover:text-purple-400 transition-colors">Discord Servers</a></li>
+                <li><a href="/add-bot" className="hover:text-purple-400 transition-colors">Discord Bots</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">Popular</a></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/help-center" className="hover:text-primary transition-colors">Help Center</a></li>
-                <li><a href="/help-center" className="hover:text-primary transition-colors">Contact Us</a></li>
-                <li><a href="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</a></li>
-                <li><a href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+              <h3 className="font-semibold mb-4 text-white">Support</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="/help" className="hover:text-purple-400 transition-colors">Help Center</a></li>
+                <li><a href="/contact-us" className="hover:text-purple-400 transition-colors">Contact Us</a></li>
+                <li><a href="/terms-of-service" className="hover:text-purple-400 transition-colors">Terms of Service</a></li>
+                <li><a href="/privacy-policy" className="hover:text-purple-400 transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">Community</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/blog" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="https://discord.gg/smartserve" className="hover:text-primary transition-colors">Discord Server</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">GitHub</a></li>
+              <h3 className="font-semibold mb-4 text-white">Community</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="/blog" className="hover:text-purple-400 transition-colors">Blog</a></li>
+                <li><a href="https://discord.gg/axiom" className="hover:text-purple-400 transition-colors">Discord Server</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">GitHub</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Smart Serve. All rights reserved.</p>
+          <div className="border-t border-[#16213e] mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 Axiom. All rights reserved.</p>
           </div>
         </div>
       </footer>
