@@ -25,7 +25,7 @@ export default function Login() {
       style={{ backgroundImage: `url(${backgroundImage})` }}
     >
       {/* Dark overlay to make background much darker */}
-      <div className="absolute inset-0 bg-slate-900/95"></div>
+      <div className="absolute inset-0  bg-[#1d1d36]/80"></div>
       <Nav />
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 rounded-box">
         <div className="w-full w-[500px] h-[500px] rounded-box">

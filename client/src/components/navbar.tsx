@@ -24,7 +24,7 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
-                <div className="relative">
+                <div className="absolute left-[70px]">
                 <img 
                   src="/assets/axiom-logo.png" 
                   alt="Axiom Logo" 
@@ -36,7 +36,7 @@ export default function Navbar() {
                 />
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               </div>
-              <span className="font-bold text-xl text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
+              <span className="font-bold text-xl text-transparent text-white bg-300% transition-all duration-300 group-hover:scale-105 absolute left-[85px]">
                 Axiom
               </span>
             </Link>
@@ -54,7 +54,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
-              <div className="relative">
+              <div className="absolute left-[70px]">
                 <img 
                   src="/assets/axiom-logo.png" 
                   alt="Axiom Logo" 
@@ -66,14 +66,14 @@ export default function Navbar() {
                 />
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               </div>
-              <span className="font-bold text-xl text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text animate-gradient-x bg-300% transition-all duration-300 group-hover:scale-105">
+              <span className="font-bold  text-white text-xl text-transparent bg-300% transition-all duration-300 group-hover:scale-105 absolute left-[100px]">
                 Axiom
               </span>
             </Link>
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex  space-x-8">
               <Link
                 href="/explore"
-                className={`transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
+                className={` transition-all duration-300 hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.8)] ${
                   location === "/explore" ? "text-primary" : "text-muted-foreground"
                 }`}
                 data-testid="link-explore"
@@ -246,7 +246,7 @@ export default function Navbar() {
                   <DropdownMenuItem onClick={() => navigate('/add-template')}>
                     <Plus className="mr-2 h-4 w-4" />
                     <span>Create Template</span>
-                  </DropdownMenuItem>
+                 </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/jobs')}>
                     <Users className="mr-2 h-4 w-4" />
                     <span>Job Board</span>
