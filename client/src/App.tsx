@@ -37,6 +37,7 @@ import Jobs from "@/pages/jobs";
 import Trade from "@/pages/trade";
 import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
+import Footer from "@/components/footer";
 
 
 function Router() {
@@ -87,6 +88,7 @@ function App() {
         <Toaster />
         <CookieConsent />
         <Router />
+        <Footer />
       </TooltipProvider>
     </QueryClientProvider>
   );
