@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Search, ChevronDown, ChevronRight, HelpCircle, MessageSquare, Lightbulb } from "lucide-react";
-import Nav from "@/components/nav";
+import Navbar from "@/components/navbar";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 interface FAQ {
@@ -58,7 +58,7 @@ export default function Help() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      <Nav />
+      <Navbar />
       
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Header */}

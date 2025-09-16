@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Send, MessageSquare, MapPin, Phone, CheckCircle } from "lucide-react";
-import Nav from "@/components/nav";
+import Navbar from "@/components/navbar";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 interface ContactFormData {
@@ -109,7 +109,7 @@ export default function ContactUs() {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gray-950">
-        <Nav />
+        <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-12">
           <Card className="bg-gradient-to-br from-green-900/20 to-blue-900/20 border-green-800/30">
             <CardContent className="p-8 text-center">
@@ -145,7 +145,7 @@ export default function ContactUs() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      <Nav />
+      <Navbar />
       
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { Bot, Send, MessageSquare, AlertCircle, CheckCircle, Clock } from "lucide-react";
-import Nav from "@/components/nav";
+import Navbar from "@/components/navbar";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 interface TicketData {
@@ -96,7 +96,7 @@ export default function SupportTicket() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-950">
-        <Nav />
+        <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
           <Card className="w-full max-w-md bg-gray-900 border-gray-800">
             <CardHeader className="text-center">
@@ -114,7 +114,7 @@ export default function SupportTicket() {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gray-950">
-        <Nav />
+        <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-12">
           <Card className="bg-gradient-to-br from-green-900/20 to-blue-900/20 border-green-800/30">
             <CardContent className="p-8 text-center">
@@ -159,7 +159,7 @@ export default function SupportTicket() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      <Nav />
+      <Navbar />
       
       <div className="max-w-2xl mx-auto px-6 py-8">
         {/* Header */}

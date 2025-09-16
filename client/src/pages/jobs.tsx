@@ -75,7 +75,7 @@ export default function Jobs() {
             </p>
             
             {isAuthenticated && (
-              <Button
+              <Button 
                 onClick={() => navigate('/add-job')}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
               >
@@ -83,6 +83,7 @@ export default function Jobs() {
                 Post Job
               </Button>
             )}
+          </div>
 
           {/* Search and Filters */}
           <div className="mb-8">

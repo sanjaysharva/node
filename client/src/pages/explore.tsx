@@ -170,13 +170,20 @@ export default function Explore() {
 
         {/* Search Bar */}
         <div className="max-w-md mx-auto mb-8">
-          <Input
-            placeholder="Search servers, bots, events..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-12 text-lg"
-            data-testid="input-search"
-          />
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+            }
+          }}>
+            <Input
+              placeholder="Search servers, bots, events..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-12 text-lg"
+              data-testid="input-search"
+            />
+          </form>
         </div>
 
         {/* Stats */}
