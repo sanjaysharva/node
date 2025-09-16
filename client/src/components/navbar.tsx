@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { User, Server, Trophy, ShoppingCart, LogOut, Bot, Calendar, Plus, Users, Hash, Settings, Coins, ChevronDown, HelpCircle, Mail, Ticket, Twitter, Instagram, Youtube, Facebook, Discord } from "lucide-react";
+import { User, Server, Trophy, ShoppingCart, LogOut, Bot, Calendar, Plus, Users, Hash, Settings, Coins, ChevronDown, HelpCircle, Mail, Ticket, Twitter, Instagram, Youtube, Facebook, Search } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -113,37 +113,37 @@ export default function Navbar() {
                 {serviceDropdownOpen && (
                   <div className="absolute top-full mt-2 w-[600px] bg-gray-800 rounded-xl shadow-2xl border border-[#16213e] p-6 z-50">
                     <div className="grid grid-cols-2 gap-4">
-                      <Link href="/advertise-server" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-server">
+                      <Link href="/your-servers" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-server">
                         <div className="flex items-start space-x-3">
                           <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
                             <Server className="w-5 h-5 text-purple-400" />
                           </div>
                           <div>
-                            <h3 className="text-white font-semibold text-sm mb-1">Discord Servers</h3>
-                            <p className="text-gray-400 text-xs leading-relaxed">Host your own Discord server for you and your friends</p>
+                            <h3 className="text-white font-semibold text-sm mb-1">Advertise Servers</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Advertise own Discord server for you and your friends</p>
                           </div>
                         </div>
                       </Link>
                       
-                      <Link href="/add-bot" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-bot">
+                      <Link href="/add-bot" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-your-servers">
                         <div className="flex items-start space-x-3">
                           <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
                             <Bot className="w-5 h-5 text-purple-400" />
                           </div>
                           <div>
-                            <h3 className="text-white font-semibold text-sm mb-1">Discord Bots</h3>
-                            <p className="text-gray-400 text-xs leading-relaxed">Host your discord bot with our coding projects</p>
+                            <h3 className="text-white font-semibold text-sm mb-1">Advertise Bots</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Advertise discord bot with our coding projects</p>
                           </div>
                         </div>
                       </Link>
                       
-                      <Link href="/add-event" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-event">
+                      <Link href="/events" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-event">
                         <div className="flex items-start space-x-3">
                           <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
                             <Calendar className="w-5 h-5 text-purple-400" />
                           </div>
                           <div>
-                            <h3 className="text-white font-semibold text-sm mb-1">Event Hosting</h3>
+                            <h3 className="text-white font-semibold text-sm mb-1">Advertise Event</h3>
                             <p className="text-gray-400 text-xs leading-relaxed">Host your own event server for you and your friends</p>
                           </div>
                         </div>
@@ -175,17 +175,13 @@ export default function Navbar() {
                       
                       <div className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors cursor-pointer">
                         <div className="flex items-start space-x-3">
-                          <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
-                            <Search className="w-5 h-5 text-purple-400" />
+                          
                           </div>
-                          <div>
-                            <h3 className="text-white font-semibold text-sm mb-1">View All Services</h3>
-                            <p className="text-gray-400 text-xs leading-relaxed">Browse our full range of services</p>
-                          </div>
+      
                         </div>
                       </div>
                     </div>
-                  </div>
+                  
                 )}
               </div>
 
