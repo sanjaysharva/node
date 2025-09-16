@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
 import ServerCard from "@/components/server-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { usePageTitle } from "@/hooks/use-page-title";
 import type { Server, Bot, Event, Slideshow } from "@shared/schema";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function Explore() {
   // Get search query from URL parameters
@@ -23,7 +24,7 @@ export default function Explore() {
   const [sortBy, setSortBy] = useState("members");
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
-  
+
   usePageTitle("Explore Discord Universe");
 
   // Fetch slideshows for explore page
@@ -45,7 +46,7 @@ export default function Explore() {
       if (sortBy) params.set("sort", sortBy);
       params.set("limit", "50");
       params.set("offset", "0");
-      
+
       const response = await fetch(`/api/servers?${params}`);
       if (!response.ok) throw new Error("Failed to fetch servers");
       return response.json();
@@ -61,7 +62,7 @@ export default function Explore() {
       if (sortBy) params.set("sort", sortBy);
       params.set("limit", "50");
       params.set("offset", "0");
-      
+
       const response = await fetch(`/api/bots?${params}`);
       if (!response.ok) throw new Error("Failed to fetch bots");
       return response.json();
@@ -76,7 +77,7 @@ export default function Explore() {
       if (searchQuery) params.set("search", searchQuery);
       params.set("limit", "30");
       params.set("offset", "0");
-      
+
       const response = await fetch(`/api/events?${params}`);
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json();
@@ -395,13 +396,7 @@ export default function Explore() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center text-muted-foreground">
-            <p>&copy; 2024 Smart Serve. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
