@@ -165,12 +165,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await this.db.insert(users).values(insertUser).returning();
+    const result = await this.db.insert(users).values(insertUser);
+    // Get the created user by Discord ID since MySQL doesn't support returning
+    const [user] = await this.db.select().from(users).where(eq(users.discordId, insertUser.discordId));
     return user;
   }
 
   async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
-    const [updatedUser] = await this.db.update(users).set(user).where(eq(users.id, id)).returning();
+    await this.db.update(users).set(user).where(eq(users.id, id));
+    // Get the updated user since MySQL doesn't support returning
+    const [updatedUser] = await this.db.select().from(users).where(eq(users.id, id));
     return updatedUser || undefined;
   }
 
@@ -383,10 +387,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserCoins(userId: string, coins: number): Promise<User | undefined> {
-    const [updatedUser] = await this.db.update(users)
+    await this.db.update(users)
       .set({ coins })
-      .where(eq(users.id, userId))
-      .returning();
+      .where(eq(users.id, userId));
+    // Get the updated user since MySQL doesn't support returning
+    const [updatedUser] = await this.db.select().from(users).where(eq(users.id, userId));
     return updatedUser || undefined;
   }
 
@@ -455,22 +460,24 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return undefined;
 
-    const [updatedUser] = await this.db.update(users)
+    await this.db.update(users)
       .set({ inviteCount: (user.inviteCount || 0) + 1 })
-      .where(eq(users.id, userId))
-      .returning();
-    return updatedUser;
+      .where(eq(users.id, userId));
+    
+    // Get the updated user since MySQL doesn't support returning
+    return await this.getUser(userId);
   }
 
   async incrementUserReferralCount(userId: string) {
     const user = await this.getUser(userId);
     if (!user) return undefined;
 
-    const [updatedUser] = await this.db.update(users)
+    await this.db.update(users)
       .set({ referralCount: (user.referralCount || 0) + 1 })
-      .where(eq(users.id, userId))
-      .returning();
-    return updatedUser;
+      .where(eq(users.id, userId));
+    
+    // Get the updated user since MySQL doesn't support returning
+    return await this.getUser(userId);
   }
 
   async updateDailyLoginStreak(userId: string) {
@@ -493,14 +500,15 @@ export class DatabaseStorage implements IStorage {
       // If daysDiff > 1, streak resets to 1
     }
 
-    const [updatedUser] = await this.db.update(users)
+    await this.db.update(users)
       .set({
         dailyLoginStreak: newStreak,
         lastLoginDate: today
       })
-      .where(eq(users.id, userId))
-      .returning();
-    return updatedUser;
+      .where(eq(users.id, userId));
+    
+    // Get the updated user since MySQL doesn't support returning
+    return await this.getUser(userId);
   }
 
   // Handle server leave and coin deduction
@@ -676,11 +684,13 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Atomically increment user coins using SQL operation (prevents lost updates)
-      const [updatedUser] = await tx.update(users)
+      await tx.update(users)
         .set({ coins: sql`${users.coins} + ${coinsToAward}` })
-        .where(eq(users.id, userId))
-        .returning({ coins: users.coins });
+        .where(eq(users.id, userId));
 
+      // Get updated user coins since MySQL doesn't support returning
+      const [updatedUser] = await tx.select({ coins: users.coins }).from(users).where(eq(users.id, userId));
+      
       if (!updatedUser) {
         throw new Error("Failed to update user coins");
       }
@@ -689,7 +699,7 @@ export class DatabaseStorage implements IStorage {
       const newMembersNeeded = Math.max(0, (currentServer.advertisingMembersNeeded || 0) - 1);
       const advertisingComplete = newMembersNeeded <= 0;
 
-      const serverUpdateResult = await tx.update(servers)
+      const updateResult = await tx.update(servers)
         .set({
           advertisingMembersNeeded: newMembersNeeded,
           isAdvertising: !advertisingComplete,
@@ -698,10 +708,10 @@ export class DatabaseStorage implements IStorage {
           eq(servers.id, serverId),
           eq(servers.isAdvertising, true),
           sql`${servers.advertisingMembersNeeded} > 0`
-        ))
-        .returning({ id: servers.id });
+        ));
 
-      if (serverUpdateResult.length === 0) {
+      // Check if any rows were affected (MySQL doesn't support returning)
+      if (updateResult.affectedRows === 0) {
         throw new Error("Server advertising quota was exhausted during transaction");
       }
 
