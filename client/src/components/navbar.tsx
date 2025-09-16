@@ -82,10 +82,10 @@ export default function Navbar() {
 
           {/* Centered Navigation Links */}
           <div className="flex-1 flex justify-center">
-            <div className=" text-gray-100 flex items-center space-x-8">
+            <div className="text-gray-100 flex items-center space-x-8">
               <Link
                 href="/explore"
-                className={`text-[#f5f5f5] hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/explore" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-explore"
@@ -100,7 +100,7 @@ export default function Navbar() {
                 onMouseLeave={() => setServiceDropdownOpen(false)}
               >
                 <button 
-                  className="flex items-center text-white hover:text-purple-400 transition-colors duration-200" 
+                  className="flex items-center text-gray-100 hover:text-purple-400 transition-colors duration-200" 
                   data-testid="dropdown-service"
                 >
                   <Server className="w-4 h-4 mr-1" />
@@ -136,7 +136,7 @@ export default function Navbar() {
 
               <Link
                 href="/join-members"
-                className={`text-white hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/join-members" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-join-members"
@@ -146,7 +146,7 @@ export default function Navbar() {
 
               <Link
                 href="/store"
-                className={`text-white hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/store" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-store"
@@ -156,7 +156,7 @@ export default function Navbar() {
 
               <Link
                 href="/jobs"
-                className={`text-white hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/jobs" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-jobs"
@@ -171,7 +171,7 @@ export default function Navbar() {
                 onMouseLeave={() => setSupportDropdownOpen(false)}
               >
                 <button 
-                  className="flex items-center text-white hover:text-purple-400 transition-colors duration-200" 
+                  className="flex items-center text-gray-100 hover:text-purple-400 transition-colors duration-200" 
                   data-testid="dropdown-support"
                 >
                   <HelpCircle className="w-4 h-4 mr-1" />
