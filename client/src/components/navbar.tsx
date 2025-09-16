@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth, loginWithDiscord, logout } from "@/lib/auth";
@@ -26,15 +25,15 @@ export default function Navbar() {
 
   if (isLoading) {
     return (
-      <nav className="bg-card border-b border-[#16213e] sticky top-0 z-50 backdrop-blur-sm">
+      <nav className="bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 border-b border-[#16213e] sticky top-0 z-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
                 <div className="relative">
-                  <img 
-                    src="/assets/axiom-logo.png" 
-                    alt="Axiom Logo" 
+                  <img
+                    src="/assets/axiom-logo.png"
+                    alt="Axiom Logo"
                     className="w-10 h-10 object-contain rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                     onError={(e) => {
                       console.error('Logo failed to load:', e);
@@ -56,16 +55,16 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-card border-b border-[#16213e] sticky top-0 z-50 backdrop-blur-sm">
+    <nav className="bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 border-b border-[#16213e] sticky top-0 z-50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-3 group" data-testid="link-home">
               <div className="relative">
-                <img 
-                  src="/assets/axiom-logo.png" 
-                  alt="Axiom Logo" 
+                <img
+                  src="/assets/axiom-logo.png"
+                  alt="Axiom Logo"
                   className="w-10 h-10 object-contain rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(124,58,237,0.9)]"
                   onError={(e) => {
                     console.error('Logo failed to load:', e);
@@ -97,20 +96,20 @@ export default function Navbar() {
               </Link>
 
               {/* Service Dropdown */}
-              <div 
+              <div
                 className="relative"
                 onMouseEnter={() => setServiceDropdownOpen(true)}
                 onMouseLeave={() => setServiceDropdownOpen(false)}
               >
-                <button 
-                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200" 
+                <button
+                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200"
                   data-testid="dropdown-service"
                 >
                   <Server className="w-4 h-4 mr-1" />
                   Service
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </button>
-                
+
                 {serviceDropdownOpen && (
                   <div className=" text-sm absolute top-full mt-2 w-56 bg-[#1a1a2e] rounded-xl shadow-2xl border border-[#16213e] py-2 z-50">
                     <Link href="/advertise-server" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] text-sm transition-colors" data-testid="link-advertise-server">
@@ -166,26 +165,26 @@ export default function Navbar() {
                 data-testid="link-jobs"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="w-4 h-4 mr-1" viewBox="0 0 16 16">
-                  <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1.5A.5.5 0 0 0 1 4.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H11.5zM16 4.5v9a1.5 1.5 0 0 1-1.5 1.5H1.5A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 16 4.5z"/>
+                  <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1.5A.5.5 0 0 0 1 4.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 16 4.5z"/>
                 </svg>
                 Job
               </Link>
 
               {/* Support Dropdown */}
-              <div 
+              <div
                 className="relative text-sm"
                 onMouseEnter={() => setSupportDropdownOpen(true)}
                 onMouseLeave={() => setSupportDropdownOpen(false)}
               >
-                <button 
-                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200 text-sm" 
+                <button
+                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200 text-sm"
                   data-testid="dropdown-support"
                 >
                   <HelpCircle className="w-4 h-4 mr-1" />
                   Support
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </button>
-                
+
                 {supportDropdownOpen && (
                   <div className=" text-sm absolute top-full mt-2 w-56 bg-[#1a1a2e] rounded-xl shadow-2xl border border-[#16213e] py-2 z-50 right-0">
                     <Link href="/help" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] transition-colors" data-testid="link-help">

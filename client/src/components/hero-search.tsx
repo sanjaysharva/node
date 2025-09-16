@@ -17,7 +17,7 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
     }
     onSearch(searchQuery);
   };

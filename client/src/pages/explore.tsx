@@ -15,7 +15,10 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Explore() {
-  const [searchQuery, setSearchQuery] = useState("");
+  // Get search query from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialQuery = urlParams.get("q") || "";
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [activeTab, setActiveTab] = useState("servers");
   const [sortBy, setSortBy] = useState("members");
   const { toast } = useToast();
