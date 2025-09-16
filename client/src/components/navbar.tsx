@@ -85,11 +85,14 @@ export default function Navbar() {
             <div className="text-gray-100 flex items-center space-x-8">
               <Link
                 href="/explore"
-                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-400 flex items-center hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/explore" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-explore"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
+                  <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+                </svg>
                 Explore
               </Link>
 
@@ -100,7 +103,7 @@ export default function Navbar() {
                 onMouseLeave={() => setServiceDropdownOpen(false)}
               >
                 <button 
-                  className="flex items-center text-gray-100 hover:text-purple-400 transition-colors duration-200" 
+                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200" 
                   data-testid="dropdown-service"
                 >
                   <Server className="w-4 h-4 mr-1" />
@@ -136,7 +139,7 @@ export default function Navbar() {
 
               <Link
                 href="/join-members"
-                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/join-members" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-join-members"
@@ -146,7 +149,7 @@ export default function Navbar() {
 
               <Link
                 href="/store"
-                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/store" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-store"
@@ -156,7 +159,7 @@ export default function Navbar() {
 
               <Link
                 href="/jobs"
-                className={`text-gray-100 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/jobs" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-jobs"
@@ -171,7 +174,7 @@ export default function Navbar() {
                 onMouseLeave={() => setSupportDropdownOpen(false)}
               >
                 <button 
-                  className="flex items-center text-gray-100 hover:text-purple-400 transition-colors duration-200" 
+                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200" 
                   data-testid="dropdown-support"
                 >
                   <HelpCircle className="w-4 h-4 mr-1" />
@@ -200,13 +203,12 @@ export default function Navbar() {
           </div>
 
           {/* Login/Profile Section */}
-          <div className="flex items-center">
-            {isAuthenticated ? (
+          <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center space-x-2 bg-[#16213e] hover:bg-[#0f172a] transition-all duration-300 hover:scale-105 text-white"
+                    className="flex items-center space-x-2 bg-secondary/20 hover:bg-secondary/30 transition-all duration-300 hover:scale-105"
                     data-testid="button-user-menu"
                   >
                     <Avatar className="w-8 h-8">
@@ -217,53 +219,101 @@ export default function Navbar() {
                       <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                     <span data-testid="text-displayname">{user?.username}</span>
-                    <ChevronDown className="w-4 h-4" />
+                    <i className="fas fa-chevron-down text-sm transition-all duration-300 group-hover:text-primary"></i>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" forceMount className="w-56 bg-[#1a1a2e] border-[#16213e]">
+                <DropdownMenuContent align="end" forceMount className="w-56">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none text-white">{user?.username}</p>
-                      <p className="text-xs leading-none text-gray-400">
+                      <p className="text-sm font-medium leading-none">{user?.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
                         {user?.email}
                       </p>
-                      <div className="flex items-center gap-1 text-xs text-yellow-400">
+                      <div className="flex items-center gap-1 text-xs text-yellow-500">
                         <Coins className="w-3 h-3" />
                         <span>{user?.coins || 0} coins</span>
                       </div>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-[#16213e]" />
-                  <DropdownMenuItem asChild className="text-white hover:bg-[#16213e]">
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
                     <Link href="/profile" data-testid="button-profile">
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="text-white hover:bg-[#16213e]">
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-event" data-testid="button-add-event">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Add Event
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/your-servers" data-testid="button-your-servers">
                       <Server className="mr-2 h-4 w-4" />
                       Your Servers
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="text-white hover:bg-[#16213e]">
-                    <Link href="/quest" data-testid="button-quest">
-                      <Trophy className="mr-2 h-4 w-4" />
-                      Quest
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-bot" data-testid="button-add-bot">
+                      <Bot className="mr-2 h-4 w-4" />
+                      Add Bot
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/add-job" data-testid="button-add-job">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Job
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/partnership')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Partnership Hub</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/server-templates')}>
+                    <Hash className="mr-2 h-4 w-4" />
+                    <span>Server Templates</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/store')}>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    <span>Store</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/quest')}>
+                    <Trophy className="mr-2 h-4 w-4" />
+                    <span>Quest</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/join-members')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Join Members</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/add-partnership')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>Create Partnership</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/add-template')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>Create Template</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/jobs')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Job Board</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem data-testid="button-settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
                   {user?.isAdmin && (
-                    <DropdownMenuItem asChild className="text-white hover:bg-[#16213e]">
+                    <DropdownMenuItem asChild>
                       <Link href="/admin" data-testid="button-admin-panel">
                         <Settings className="mr-2 h-4 w-4" />
                         Admin Panel
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator className="bg-[#16213e]" />
                   <DropdownMenuItem
                     onClick={logout}
-                    className="text-red-400 focus:text-red-400 hover:bg-[#16213e]"
+                    className="text-red-400 focus:text-red-400"
                     data-testid="button-logout"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -271,19 +321,21 @@ export default function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <Button
-                onClick={handleLogin}
-                className="bg-[#5865F2] hover:bg-[#4752C4] text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                data-testid="button-login"
-              >
+            </div>
+          ) : (
+            <Button
+              asChild
+              className="bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
+              data-testid="button-login"
+            >
+              <Link href="/login">
                 <svg className="mr-2 w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
                 </svg>
                 Login
-              </Button>
-            )}
-          </div>
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </nav>
