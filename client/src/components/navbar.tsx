@@ -85,7 +85,7 @@ export default function Navbar() {
             <div className="text-gray-100 flex items-center space-x-8">
               <Link
                 href="/explore"
-                className={`text-gray-400 flex items-center hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/explore" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-explore"
@@ -139,7 +139,7 @@ export default function Navbar() {
 
               <Link
                 href="/join-members"
-                className={`text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/join-members" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-join-members"
@@ -150,17 +150,17 @@ export default function Navbar() {
 
               <Link
                 href="/store"
-                className={`text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/store" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-store"
               >
+                <ShoppingCart className="w-4 h-4 mr-1" />
                 Store
-                <ShoppingCart className="w-4 h-4 " />
               </Link>
               <Link
                 href="/jobs"
-                className={`text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/jobs" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-jobs"
