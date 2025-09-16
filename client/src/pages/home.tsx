@@ -76,21 +76,6 @@ export default function Home() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <HeroSearch onSearch={handleSearch} />
-        
-        <div className="mt-8 flex items-center justify-center space-x-8 text-sm text-gray-400">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span>10K+ Active Servers</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-300"></div>
-            <span>5K+ Trusted Bots</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-700"></div>
-            <span>1M+ Members</span>
-          </div>
-        </div>
 
         {/* Header Ad */}
         <AdBanner position="header" className="mt-8" />
@@ -98,55 +83,6 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Popular Servers Showcase */}
-        <section className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-sm animate-pulse"></div>
-              </div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-                Popular Servers
-              </h2>
-            </div>
-            <Button variant="ghost" className="text-primary hover:text-secondary transition-all duration-300 hover:scale-105">
-              View All
-            </Button>
-          </div>
-
-          {loadingPopular ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-6">
-                  <div className="flex items-start space-x-4 mb-4">
-                    <Skeleton className="w-16 h-16 rounded-xl" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-16" />
-                      <Skeleton className="h-6 w-20" />
-                    </div>
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(Array.isArray(popularServers) ? popularServers : []).map((server: Server) => (
-                <ServerCard
-                  key={server.id}
-                  server={server}
-                  onJoin={handleJoinServer}
-                />
-              ))}
-            </div>
-          )}
-        </section>
 
         {/* Top Active Discord Servers Section */}
         <section>
