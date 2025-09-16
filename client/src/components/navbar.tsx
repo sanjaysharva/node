@@ -112,8 +112,8 @@ export default function Navbar() {
                 </button>
                 
                 {serviceDropdownOpen && (
-                  <div className="absolute top-full mt-2 w-56 bg-[#1a1a2e] rounded-xl shadow-2xl border border-[#16213e] py-2 z-50">
-                    <Link href="/advertise-server" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] transition-colors" data-testid="link-advertise-server">
+                  <div className=" text-sm absolute top-full mt-2 w-56 bg-[#1a1a2e] rounded-xl shadow-2xl border border-[#16213e] py-2 z-50">
+                    <Link href="/advertise-server" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] text-sm transition-colors" data-testid="link-advertise-server">
                       <Server className="w-4 h-4 mr-3 text-purple-400" />
                       Advertise Server
                     </Link>
@@ -144,6 +144,7 @@ export default function Navbar() {
                 }`}
                 data-testid="link-join-members"
               >
+                <Users className="w-4 h-4 mr-1" />
                 Join Member
               </Link>
 
@@ -155,8 +156,8 @@ export default function Navbar() {
                 data-testid="link-store"
               >
                 Store
+                <ShoppingCart className="w-4 h-4 " />
               </Link>
-
               <Link
                 href="/jobs"
                 className={`text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
@@ -164,17 +165,20 @@ export default function Navbar() {
                 }`}
                 data-testid="link-jobs"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="w-4 h-4 mr-1" viewBox="0 0 16 16">
+                  <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1.5A.5.5 0 0 0 1 4.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H11.5zM16 4.5v9a1.5 1.5 0 0 1-1.5 1.5H1.5A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 16 4.5z"/>
+                </svg>
                 Job
               </Link>
 
               {/* Support Dropdown */}
               <div 
-                className="relative"
+                className="relative text-sm"
                 onMouseEnter={() => setSupportDropdownOpen(true)}
                 onMouseLeave={() => setSupportDropdownOpen(false)}
               >
                 <button 
-                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200" 
+                  className="flex items-center text-gray-400 hover:text-purple-400 transition-colors duration-200 text-sm" 
                   data-testid="dropdown-support"
                 >
                   <HelpCircle className="w-4 h-4 mr-1" />
@@ -183,7 +187,7 @@ export default function Navbar() {
                 </button>
                 
                 {supportDropdownOpen && (
-                  <div className="absolute top-full mt-2 w-56 bg-[#1a1a2e] rounded-xl shadow-2xl border border-[#16213e] py-2 z-50 right-0">
+                  <div className=" text-sm absolute top-full mt-2 w-56 bg-[#1a1a2e] rounded-xl shadow-2xl border border-[#16213e] py-2 z-50 right-0">
                     <Link href="/help" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] transition-colors" data-testid="link-help">
                       <HelpCircle className="w-4 h-4 mr-3 text-purple-400" />
                       Help
