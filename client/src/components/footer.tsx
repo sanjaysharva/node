@@ -2,8 +2,24 @@ import { Link } from "wouter";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-white py-12">
-      <div className="max-w-6xl mx-auto px-6">
+    <div>
+      {/* Purple division line between home page and footer */}
+      <div className="h-1 bg-gradient-to-r from-transparent via-purple-600 to-transparent opacity-80 animate-pulse"></div>
+      
+      <footer className="bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white py-12 relative overflow-hidden" style={{
+        background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #1a1a2e 75%, #0c0c0c 100%)',
+      }}>
+      {/* Space-like background pattern */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-10 left-10 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+        <div className="absolute top-20 right-20 w-0.5 h-0.5 bg-purple-300 rounded-full animate-pulse delay-300"></div>
+        <div className="absolute bottom-20 left-20 w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse delay-700"></div>
+        <div className="absolute bottom-32 right-32 w-0.5 h-0.5 bg-purple-400 rounded-full animate-pulse delay-500"></div>
+        <div className="absolute top-40 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute top-60 right-1/4 w-0.5 h-0.5 bg-purple-500 rounded-full animate-pulse delay-200"></div>
+      </div>
+      
+      <div className="max-w-6xl mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Logo and Company Info */}
           <div className="md:col-span-1">
@@ -19,8 +35,12 @@ export default function Footer() {
           </div>
 
           {/* Services */}
-          <div>
-            <h3 className="text-white font-semibold text-lg mb-4">Services</h3>
+          <div className="relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <h3 className="text-white font-semibold text-lg mb-4 relative">
+              Services
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+            </h3>
             <ul className="space-y-3">
               <li>
                 <a href="/services/minecraft" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm flex items-center">
@@ -44,8 +64,12 @@ export default function Footer() {
           </div>
 
           {/* About */}
-          <div>
-            <h3 className="text-white font-semibold text-lg mb-4">About</h3>
+          <div className="relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <h3 className="text-white font-semibold text-lg mb-4 relative">
+              About
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+            </h3>
             <ul className="space-y-3">
               <li>
                 <a href="/about" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm flex items-center">
@@ -69,8 +93,12 @@ export default function Footer() {
           </div>
 
           {/* Legal */}
-          <div>
-            <h3 className="text-white font-semibold text-lg mb-4">Legal</h3>
+          <div className="relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <h3 className="text-white font-semibold text-lg mb-4 relative">
+              Legal
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+            </h3>
             <ul className="space-y-3">
               <li>
                 <a href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm flex items-center">
@@ -94,8 +122,12 @@ export default function Footer() {
           </div>
 
           {/* Social */}
-          <div>
-            <h3 className="text-white font-semibold text-lg mb-4">Social</h3>
+          <div className="relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <h3 className="text-white font-semibold text-lg mb-4 relative">
+              Social
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+            </h3>
             <ul className="space-y-3">
               <li>
                 <a href="https://discord.gg/sillydev" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm flex items-center">
@@ -120,7 +152,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-12 pt-8 border-t border-gray-800 text-center">
+        <div className="mt-12 pt-8 border-t border-purple-500/30 text-center relative">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-60"></div>
           <p className="text-gray-400 text-sm mb-2">
             2022 - 2025 Silly Development
           </p>
@@ -130,5 +163,6 @@ export default function Footer() {
         </div>
       </div>
     </footer>
+    </div>
   );
 }
