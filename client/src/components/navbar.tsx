@@ -82,10 +82,10 @@ export default function Navbar() {
 
           {/* Centered Navigation Links */}
           <div className="flex-1 flex justify-center">
-            <div className="flex items-center space-x-8">
+            <div className=" text-gray-100 flex items-center space-x-8">
               <Link
                 href="/explore"
-                className={`text-white hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
+                className={`text-[#f5f5f5] hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
                   location === "/explore" ? "text-purple-400" : ""
                 }`}
                 data-testid="link-explore"
