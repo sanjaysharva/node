@@ -10,7 +10,7 @@ export default function Footer() {
         background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #1a1a2e 75%, #0c0c0c 100%)',
       }}>
         {/* Space-like background pattern */}
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-40"></div>
           <div className="absolute top-10 left-10 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
           <div className="absolute top-20 right-20 w-0.5 h-0.5 bg-purple-300 rounded-full animate-pulse delay-300"></div>
           <div className="absolute bottom-20 left-20 w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse delay-700"></div>
