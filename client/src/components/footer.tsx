@@ -19,7 +19,7 @@ export default function Footer() {
           <div className="absolute top-60 right-1/4 w-0.5 h-0.5 bg-purple-500 rounded-full animate-pulse delay-200"></div>
         </div>
         
-        <div className="max-w-6xl mx-auto px-6 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             {/* Logo and Company Info */}
             <div className="md:col-span-1">
@@ -32,7 +32,7 @@ export default function Footer() {
                 />
                 <span className="text-white font-semibold text-lg">Axiom</span>
               </div>
-              <p className="text-gray-400 text-sm leading-relaxed">
+              <p className="text-gray-400 text-sm leading-relaxed ">
                 We are a small hosting provider focused on providing the best service we can to our thousands of users.
               </p>
             </div>
