@@ -153,6 +153,7 @@ export default function Footer() {
             </ul>
           </div>
         </div>
+      </div>
 
         {/* Bottom Section */}
         <div className="mt-12 pt-8 border-t border-purple-500/30 text-center relative">
