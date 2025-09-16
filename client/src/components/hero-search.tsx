@@ -28,7 +28,7 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
         <img
           src={backgroundImage}
           alt="Background"
-          className="absolute z-0 inset-0 w-full h-full object-cover object-bottom rounded-xl opacity-30"
+          className="absolute z-0 inset-0 w-full h-full object-cover object-bottom rounded-xl opacity-90"
         />
         <div className="absolute z-1 inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-purple-900/20 rounded-xl"></div>
       </div>
