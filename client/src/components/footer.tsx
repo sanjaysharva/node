@@ -5,9 +5,9 @@ export default function Footer() {
     <div>
       {/* Purple division line between home page and footer */}
       <div className="h-1 bg-gradient-to-r from-transparent via-purple-600 to-transparent opacity-80 animate-pulse"></div>
-      
+
       <footer className="bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white py-12 relative overflow-hidden" style={{
-        background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #1a1a2e 75%, #0c0c0c 100%)',
+        background: 'linear-gradient(to bottom, #1a1a1a 0%, #141414 40%, #0f0f0f 70%, #0a0a0a 100%)',
       }}>
         {/* Space-like background pattern */}
         <div className="absolute inset-0 opacity-40">
@@ -18,7 +18,7 @@ export default function Footer() {
           <div className="absolute top-40 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-1000"></div>
           <div className="absolute top-60 right-1/4 w-0.5 h-0.5 bg-purple-500 rounded-full animate-pulse delay-200"></div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             {/* Logo and Company Info */}
