@@ -9,30 +9,33 @@ export default function Footer() {
       <footer className="bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white py-12 relative overflow-hidden" style={{
         background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #1a1a2e 75%, #0c0c0c 100%)',
       }}>
-      {/* Space-like background pattern */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-10 left-10 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
-        <div className="absolute top-20 right-20 w-0.5 h-0.5 bg-purple-300 rounded-full animate-pulse delay-300"></div>
-        <div className="absolute bottom-20 left-20 w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse delay-700"></div>
-        <div className="absolute bottom-32 right-32 w-0.5 h-0.5 bg-purple-400 rounded-full animate-pulse delay-500"></div>
-        <div className="absolute top-40 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-1000"></div>
-        <div className="absolute top-60 right-1/4 w-0.5 h-0.5 bg-purple-500 rounded-full animate-pulse delay-200"></div>
-      </div>
-      
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-          {/* Logo and Company Info */}
-          <div className="md:col-span-1">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">SD</span>
+        {/* Space-like background pattern */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-10 left-10 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+          <div className="absolute top-20 right-20 w-0.5 h-0.5 bg-purple-300 rounded-full animate-pulse delay-300"></div>
+          <div className="absolute bottom-20 left-20 w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse delay-700"></div>
+          <div className="absolute bottom-32 right-32 w-0.5 h-0.5 bg-purple-400 rounded-full animate-pulse delay-500"></div>
+          <div className="absolute top-40 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-1000"></div>
+          <div className="absolute top-60 right-1/4 w-0.5 h-0.5 bg-purple-500 rounded-full animate-pulse delay-200"></div>
+        </div>
+        
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+            {/* Logo and Company Info */}
+            <div className="md:col-span-1">
+              <div className="flex items-center space-x-3 mb-4">
+                <img 
+                  src="/assets/axiom-logo.png" 
+                  alt="Axiom Logo" 
+                  className="w-12 h-12 rounded-full"
+                  data-testid="img-axiom-logo"
+                />
+                <span className="text-white font-semibold text-lg">Silly Development</span>
               </div>
-              <span className="text-white font-semibold text-lg">Silly Development</span>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                We are a small hosting provider focused on providing the best service we can to our thousands of users.
+              </p>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              We are a small hosting provider focused on providing the best service we can to our thousands of users.
-            </p>
-          </div>
 
           {/* Services */}
           <div className="relative">
