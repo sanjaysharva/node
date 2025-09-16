@@ -56,7 +56,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-[#1a1a2e] border-b border-[#16213e] sticky top-0 z-50 backdrop-blur-sm">
+    <nav className="bg-card border-b border-[#16213e] sticky top-0 z-50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -74,15 +74,15 @@ export default function Navbar() {
                 />
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               </div>
-              <span className="font-bold text-xl text-white bg-300% transition-all duration-300 group-hover:scale-105">
+              <span className="font-bold text-lg text-white bg-300% transition-all duration-300 group-hover:scale-105">
                 Axiom
               </span>
             </Link>
           </div>
 
           {/* Navigation Links next to logo */}
-          <div className="flex items-center ml-12">
-            <div className="text-sm flex items-center space-x-8">
+          <div className="flex absolute left-[250px] ml-12">
+            <div className="text-sm flex  space-x-8">
               <Link
                 href="/explore"
                 className={`flex items-center text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
