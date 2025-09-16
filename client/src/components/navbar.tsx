@@ -80,9 +80,9 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Centered Navigation Links */}
-          <div className="flex-1 flex justify-center">
-            <div className="text-sm flex items-left space-x-8">
+          {/* Navigation Links next to logo */}
+          <div className="flex items-center ml-12">
+            <div className="text-sm flex items-center space-x-8">
               <Link
                 href="/explore"
                 className={`flex items-center text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
