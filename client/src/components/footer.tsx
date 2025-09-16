@@ -30,7 +30,7 @@ export default function Footer() {
                   className="w-12 h-12 rounded-full"
                   data-testid="img-axiom-logo"
                 />
-                <span className="text-white font-semibold text-lg">Silly Development</span>
+                <span className="text-white font-semibold text-lg">Axiom</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">
                 We are a small hosting provider focused on providing the best service we can to our thousands of users.
