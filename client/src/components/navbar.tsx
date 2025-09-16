@@ -111,27 +111,80 @@ export default function Navbar() {
                 </button>
 
                 {serviceDropdownOpen && (
-                  <div className=" text-sm absolute top-full mt-2 w-56 bg-gray-800 rounded-xl shadow-2xl border border-[#16213e] py-2 z-50">
-                    <Link href="/advertise-server" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] text-sm transition-colors" data-testid="link-advertise-server">
-                      <Server className="w-4 h-4 mr-3 text-purple-400" />
-                      Advertise Server
-                    </Link>
-                    <Link href="/add-bot" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] transition-colors" data-testid="link-advertise-bot">
-                      <Bot className="w-4 h-4 mr-3 text-purple-400" />
-                      Advertise Bot
-                    </Link>
-                    <Link href="/add-event" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] transition-colors" data-testid="link-advertise-event">
-                      <Calendar className="w-4 h-4 mr-3 text-purple-400" />
-                      Advertise Event
-                    </Link>
-                    <Link href="/partnership" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] transition-colors" data-testid="link-partnership">
-                      <Users className="w-4 h-4 mr-3 text-purple-400" />
-                      Partnership
-                    </Link>
-                    <Link href="/server-templates" className="flex items-center px-4 py-3 text-white hover:bg-[#16213e] transition-colors" data-testid="link-template">
-                      <Hash className="w-4 h-4 mr-3 text-purple-400" />
-                      Template
-                    </Link>
+                  <div className="absolute top-full mt-2 w-[600px] bg-gray-800 rounded-xl shadow-2xl border border-[#16213e] p-6 z-50">
+                    <div className="grid grid-cols-2 gap-4">
+                      <Link href="/advertise-server" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-server">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                            <Server className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold text-sm mb-1">Discord Servers</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Host your own Discord server for you and your friends</p>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link href="/add-bot" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-bot">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                            <Bot className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold text-sm mb-1">Discord Bots</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Host your discord bot with our coding projects</p>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link href="/add-event" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-advertise-event">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                            <Calendar className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold text-sm mb-1">Event Hosting</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Host your own event server for you and your friends</p>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link href="/partnership" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-partnership">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                            <Users className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold text-sm mb-1">Partnership Hub</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Browse our full community partnerships</p>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link href="/server-templates" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-template">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                            <Hash className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold text-sm mb-1">Server Templates</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Browse our full range of server templates</p>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <div className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors cursor-pointer">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                            <Search className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold text-sm mb-1">View All Services</h3>
+                            <p className="text-gray-400 text-xs leading-relaxed">Browse our full range of services</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
