@@ -6,7 +6,7 @@ export default function Footer() {
       {/* Purple division line between home page and footer */}
       <div className="h-1 bg-gradient-to-r from-transparent via-purple-600 to-transparent opacity-80 animate-pulse"></div>
 
-      <footer className="bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white py-12 relative overflow-hidden" style={{
+      <footer className="bg-gradient-to-b from-blue-900 via-blue-800 to-black text-white py-12 relative overflow-hidden" style={{
         background: 'linear-gradient(to bottom, #1a1a1a 0%, #141414 40%, #0f0f0f 70%, #0a0a0a 100%)',
       }}>
         {/* Space-like background pattern */}
