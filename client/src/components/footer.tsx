@@ -9,7 +9,10 @@ export default function Footer() {
         <div className="block sm:hidden">
           <div className="flex flex-col items-center space-y-6 mb-8">
             <div className="flex items-center space-x-3">
-              <img alt="Axiom Logo" loading="lazy" width="70" height="70" decoding="async" data-nimg="1" className="rounded-full hover:shadow-lg hover:shadow-indigo-500/50 transition-shadow duration-300" style={{ color: 'transparent' }} src={bgk} /><span className="text-white font-bold text-2xl" style={{ fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>
+              <Link href="/">
+                <img alt="Axiom Logo" loading="lazy" width="70" height="70" decoding="async" data-nimg="1" className="rounded-full hover:shadow-lg hover:shadow-indigo-500/50 transition-shadow duration-300" style={{ color: 'transparent' }} src={bgk} />
+              </Link>
+              <span className="text-white font-bold text-2xl" style={{ fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>
                 Axiom
               </span>
             </div>
