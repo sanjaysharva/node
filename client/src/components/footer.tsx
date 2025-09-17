@@ -19,18 +19,16 @@ export default function Footer() {
               We are a small hosting provider focused on providing the best service we can to our thousands of users.</p>
           </div>
           <div className="grid grid-cols-2 gap-y-8 gap-x-4">
-                <div className="space-y-3 text-center">
+                <div className="space-y-5 text-center">
                   <h3 className="text-white font-semibold text-lg relative inline-block after:content-[''] after:block after:w-12 after:h-0.5 after:bg-indigo-600 after:mt-1 mx-auto">
                     Services
                   </h3>
                   <ul className="space-y-2">
                     <li>
                       <a className="text-gray-400 hover:text-white transition-all duration-200 text-sm flex items-center" href="/services/minecraft-server-hosting">
-                        <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="server" className="text-indigo-400 mr-2 w-2 h-3" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                          <path fill="currentColor" d="M64 32C28.7 32 0 60.7 0 96l0 64c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-64c0-35.3-28.7-64-64-64L64 32zm280 72a24 24 0 1 1 0 48 24 24 0 1 1 0-48zm48 24a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zM64 288c-35.3 0-64 28.7-64 64l0 64c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-64c0-35.3-28.7-64-64-64L64 288zm280 72a24 24 0 1 1 0 48 24 24 0 1 1 0-48zm56 24a24 24 0 1 1 48 0 24 24 0 1 1 -48 0z">
-                          </path>
-                        </svg>
-                        Minecraft
+                        <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="server" className="text-indigo-400 mr-2 w-3 h-3 absolute top-[500px]" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                          <path fill="currentColor" d="M64 32C28.7 32 0 60.7 0 96l0 64c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-64c0-35.3-28.7-64-64-64L64 32zm280 72a24 24 0 1 1 0 48 24 24 0 1 1 0-48zm48 24a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zM64 288c-35.3 0-64 28.7-64 64l0 64c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-64c0-35.3-28.7-64-64-64L64 288zm280 72a24 24 0 1 1 0 48 24 24 0 1 1 0-48zm56 24a24 24 0 1 1 48 0 24 24 0 1 1 -48 0z"></path>
+                        </svg>Minecraft
                       </a>
                     </li>
                     <li>
