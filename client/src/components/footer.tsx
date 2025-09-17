@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <div className="bg-gradient-to-b from-gray-900 to-black">
       {/* Animated accent line */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50 animate-pulse"></div>
+      <div className="h-1 bg-gradient-to-r from-transparent via-indigo-600 to-transparent opacity-50 animate-pulse"></div>
 
       <footer className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white relative overflow-hidden">
         {/* Space nebula overlay */}
