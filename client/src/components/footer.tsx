@@ -1,5 +1,4 @@
 import { Link } from "wouter";
-import bgk from "@/assets/axiom-logo.png"
 
 export default function Footer() {
   return (
@@ -10,7 +9,7 @@ export default function Footer() {
           <div className="flex flex-col items-center space-y-6 mb-8">
             <div className="flex items-center space-x-3">
               <Link href="/">
-                <img alt="Axiom Logo" loading="lazy" width="70" height="70" decoding="async" data-nimg="1" className="rounded-full hover:shadow-lg hover:shadow-indigo-500/50 transition-shadow duration-300" style={{ color: 'transparent' }} src={bgk} />
+                <img alt="Axiom Logo" loading="lazy" width="70" height="70" decoding="async" data-nimg="1" className="rounded-full hover:shadow-lg hover:shadow-indigo-500/50 transition-shadow duration-300" style={{ color: 'transparent' }} src="/assets/axiom-logo.png" />
               </Link>
               <span className="text-white font-bold text-2xl" style={{ fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>
                 Axiom
@@ -160,7 +159,7 @@ export default function Footer() {
         <div className="hidden sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 max-w-7xl mx-auto"><div className="lg:col-span-2">
           <div className="flex flex-col items-center sm:items-start space-y-4">
             <div className="flex items-center space-x-3">
-              <img alt="Silly Development Logo" loading="lazy" width="60" height="60" decoding="async" data-nimg="1" className="rounded-full hover:shadow-lg hover:shadow-indigo-500/50 transition-shadow duration-300" style={{color: 'transparent'}} src="/assets/images/logo-sillydev-circle.png" />
+              <img alt="Silly Development Logo" loading="lazy" width="60" height="60" decoding="async" data-nimg="1" className="rounded-full hover:shadow-lg hover:shadow-indigo-500/50 transition-shadow duration-300" style={{color: 'transparent'}} src="/assets/axiom-logo.png" />
               <span className="text-white font-bold text-xl" style={{ fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>
                   Silly Development
                 </span>
