@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="h-1 bg-gradient-to-r from-transparent via-purple-600 to-transparent opacity-80 animate-pulse"></div>
 
       <footer className="text-white py-12 relative overflow-hidden" style={{
-        background: 'linear-gradient(to bottom, #2563eb 0%, #1d4ed8 15%, #1e40af 30%, #1e3a8a 45%, #1e293b 60%, #0f172a 75%, #020617 90%, #000000 100%)',
+        background: 'linear-gradient(to bottom, #00072d 45%, #00072d 15%, #00072d 45%, #1e293b 0%, #020202 10%, #000000 10%)',
       }}>
         {/* Space-like background pattern */}
         <div className="absolute inset-0 opacity-40">
