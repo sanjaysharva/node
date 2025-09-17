@@ -2,42 +2,11 @@ import { Link } from "wouter";
 
 export default function Footer() {
   return (
-    <div>
-      {/* Purple division line between home page and footer */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-purple-600 to-transparent opacity-80 animate-pulse"></div>
+    <div className="bg-gradient-to-b from-gray-900 to-black">
+      {/* Animated accent line */}
+      <div className="h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50 animate-pulse"></div>
 
-      <footer className="text-white py-12 relative overflow-hidden" style={{
-        background: 'linear-gradient(to bottom, #020617 50%, #1e40af 10%, #1d4ed8 20%, #2563eb 30%, #1e293b 50%, #0f172a 70%, #020617 85%, #000000 100%)',
-      }}>
-        {/* Enhanced space-like background pattern with more stars */}
-        <div className="absolute inset-0 opacity-80">
-          {/* Large bright stars */}
-          <div className="absolute top-8 left-12 w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-lg shadow-white/50"></div>
-          <div className="absolute top-16 right-24 w-1 h-1 bg-blue-100 rounded-full animate-pulse delay-300 shadow-md shadow-blue-100/30"></div>
-          <div className="absolute top-24 left-1/3 w-1 h-1 bg-white rounded-full animate-pulse delay-700 shadow-sm shadow-white/40"></div>
-          <div className="absolute top-32 right-1/3 w-1.5 h-1.5 bg-blue-200 rounded-full animate-pulse delay-500 shadow-lg shadow-blue-200/50"></div>
-          <div className="absolute top-40 left-3/4 w-1 h-1 bg-white rounded-full animate-pulse delay-1000"></div>
-          <div className="absolute top-12 right-1/2 w-1 h-1 bg-blue-100 rounded-full animate-pulse delay-200"></div>
-          
-          {/* Medium stars */}
-          <div className="absolute top-20 left-1/5 w-0.5 h-0.5 bg-white rounded-full animate-pulse delay-400"></div>
-          <div className="absolute top-36 right-1/4 w-0.5 h-0.5 bg-blue-200 rounded-full animate-pulse delay-600"></div>
-          <div className="absolute top-28 left-2/3 w-0.5 h-0.5 bg-white rounded-full animate-pulse delay-800"></div>
-          <div className="absolute top-44 right-1/5 w-0.5 h-0.5 bg-blue-100 rounded-full animate-pulse delay-100"></div>
-          <div className="absolute top-14 left-1/2 w-0.5 h-0.5 bg-white rounded-full animate-pulse delay-900"></div>
-          <div className="absolute top-38 right-3/5 w-0.5 h-0.5 bg-blue-200 rounded-full animate-pulse delay-450"></div>
-          
-          {/* Small twinkling stars */}
-          <div className="absolute top-10 left-1/4 w-px h-px bg-white rounded-full animate-pulse delay-150"></div>
-          <div className="absolute top-18 right-2/3 w-px h-px bg-blue-100 rounded-full animate-pulse delay-350"></div>
-          <div className="absolute top-26 left-4/5 w-px h-px bg-white rounded-full animate-pulse delay-550"></div>
-          <div className="absolute top-34 right-1/6 w-px h-px bg-blue-200 rounded-full animate-pulse delay-750"></div>
-          <div className="absolute top-42 left-1/6 w-px h-px bg-white rounded-full animate-pulse delay-950"></div>
-          <div className="absolute top-22 right-4/5 w-px h-px bg-blue-100 rounded-full animate-pulse delay-250"></div>
-          <div className="absolute top-30 left-3/5 w-px h-px bg-white rounded-full animate-pulse delay-650"></div>
-          <div className="absolute top-46 right-2/5 w-px h-px bg-blue-200 rounded-full animate-pulse delay-850"></div>
-        </div>
-        
+      <footer className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white relative overflow-hidden">
         {/* Space nebula overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-800/15 via-transparent to-purple-900/10 opacity-40"></div>
 
@@ -61,10 +30,10 @@ export default function Footer() {
 
           {/* Services */}
           <div className="relative">
-            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-secondary to-transparent opacity-60"></div>
             <h3 className="text-white font-semibold text-lg mb-4 relative">
               Services
-              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-primary mt-1"></div>
             </h3>
             <ul className="space-y-3">
               <li>
@@ -90,10 +59,10 @@ export default function Footer() {
 
           {/* About */}
           <div className="relative">
-            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-secondary to-transparent opacity-60"></div>
             <h3 className="text-white font-semibold text-lg mb-4 relative">
               About
-              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-primary mt-1"></div>
             </h3>
             <ul className="space-y-3">
               <li>
@@ -119,10 +88,10 @@ export default function Footer() {
 
           {/* Legal */}
           <div className="relative">
-            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-secondary to-transparent opacity-60"></div>
             <h3 className="text-white font-semibold text-lg mb-4 relative">
               Legal
-              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-primary mt-1"></div>
             </h3>
             <ul className="space-y-3">
               <li>
@@ -148,10 +117,10 @@ export default function Footer() {
 
           {/* Social */}
           <div className="relative">
-            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-purple-500 via-purple-400 to-transparent opacity-60"></div>
+            <div className="absolute -left-4 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-secondary to-transparent opacity-60"></div>
             <h3 className="text-white font-semibold text-lg mb-4 relative">
               Social
-              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-purple-500 mt-1"></div>
+              <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-primary mt-1"></div>
             </h3>
             <ul className="space-y-3">
               <li>
@@ -176,10 +145,10 @@ export default function Footer() {
           </div>
         </div>
       </div>
-
+        
         {/* Bottom Section */}
-        <div className="mt-12 pt-8 border-t border-purple-500/30 text-center relative">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-60"></div>
+        <div className="mt-12 pt-8 border-t border-primary/30 text-center relative">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-60"></div>
           <p className="text-gray-400 text-sm mb-2">
             2022 - 2025 Silly Development
           </p>
