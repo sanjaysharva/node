@@ -7,17 +7,36 @@ export default function Footer() {
       <div className="h-1 bg-gradient-to-r from-transparent via-purple-600 to-transparent opacity-80 animate-pulse"></div>
 
       <footer className="text-white py-12 relative overflow-hidden" style={{
-        background: '#0a0a0f',
+        background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%)',
       }}>
-        {/* Space-like background pattern */}
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute top-10 left-10 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
-          <div className="absolute top-20 right-20 w-0.5 h-0.5 bg-purple-300 rounded-full animate-pulse delay-300"></div>
-          <div className="absolute bottom-20 left-20 w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse delay-700"></div>
-          <div className="absolute bottom-32 right-32 w-0.5 h-0.5 bg-purple-400 rounded-full animate-pulse delay-500"></div>
-          <div className="absolute top-40 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-1000"></div>
-          <div className="absolute top-60 right-1/4 w-0.5 h-0.5 bg-purple-500 rounded-full animate-pulse delay-200"></div>
+        {/* Enhanced space-like background pattern */}
+        <div className="absolute inset-0 opacity-60">
+          {/* Large stars */}
+          <div className="absolute top-16 left-16 w-1 h-1 bg-white rounded-full animate-pulse"></div>
+          <div className="absolute top-24 right-32 w-1 h-1 bg-blue-200 rounded-full animate-pulse delay-300"></div>
+          <div className="absolute bottom-40 left-32 w-1.5 h-1.5 bg-purple-300 rounded-full animate-pulse delay-700"></div>
+          <div className="absolute bottom-24 right-16 w-1 h-1 bg-blue-100 rounded-full animate-pulse delay-500"></div>
+          <div className="absolute top-48 left-1/3 w-1 h-1 bg-white rounded-full animate-pulse delay-1000"></div>
+          <div className="absolute top-32 right-1/4 w-1 h-1 bg-purple-200 rounded-full animate-pulse delay-200"></div>
+          
+          {/* Medium stars */}
+          <div className="absolute top-8 left-1/4 w-0.5 h-0.5 bg-white rounded-full animate-pulse delay-400"></div>
+          <div className="absolute top-28 right-1/3 w-0.5 h-0.5 bg-blue-300 rounded-full animate-pulse delay-600"></div>
+          <div className="absolute bottom-16 left-1/2 w-0.5 h-0.5 bg-purple-400 rounded-full animate-pulse delay-800"></div>
+          <div className="absolute bottom-48 right-1/5 w-0.5 h-0.5 bg-white rounded-full animate-pulse delay-100"></div>
+          <div className="absolute top-36 left-3/4 w-0.5 h-0.5 bg-blue-200 rounded-full animate-pulse delay-900"></div>
+          
+          {/* Small stars */}
+          <div className="absolute top-12 left-2/3 w-px h-px bg-white rounded-full animate-pulse delay-150"></div>
+          <div className="absolute top-44 right-2/3 w-px h-px bg-blue-100 rounded-full animate-pulse delay-350"></div>
+          <div className="absolute bottom-28 left-1/5 w-px h-px bg-purple-200 rounded-full animate-pulse delay-550"></div>
+          <div className="absolute bottom-12 right-3/4 w-px h-px bg-white rounded-full animate-pulse delay-750"></div>
+          <div className="absolute top-20 left-4/5 w-px h-px bg-blue-300 rounded-full animate-pulse delay-950"></div>
+          <div className="absolute bottom-36 right-1/2 w-px h-px bg-purple-100 rounded-full animate-pulse delay-250"></div>
         </div>
+        
+        {/* Nebula-like gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20 opacity-30"></div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
