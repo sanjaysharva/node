@@ -27,6 +27,8 @@ import SupportTicket from "./pages/support-ticket";
 import ContactUs from "./pages/contact-us";
 import TermsOfService from "./pages/terms-of-service";
 import PrivacyPolicy from "./pages/privacy-policy";
+import AboutUs from "./pages/about-us";
+import FairUsePolicy from "./pages/fair-use-policy";
 import Blog from "./pages/blog";
 import Partnership from "@/pages/partnership";
 import AddPartnership from "@/pages/add-partnership";
@@ -72,6 +74,8 @@ function Router() {
       <Route path="/contact-us" component={ContactUs} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/about-us" component={AboutUs} />
+      <Route path="/fair-use-policy" component={FairUsePolicy} />
       <Route path="/blog" component={Blog} />
       <Route path="/trade" component={Trade} />
       <Route path="/payment/:type" component={Payment} />
