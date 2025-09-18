@@ -21,8 +21,11 @@ export default function SearchPage() {
   // Get search params from URL
   const searchParams = new URLSearchParams(window.location.search);
   const initialQuery = searchParams.get("q") || "";
+  const initialType = searchParams.get("type") || "all";
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [contentType, setContentType] = useState<"servers" | "bots">("servers");
+  const [contentType, setContentType] = useState<"servers" | "bots" | "events" | "all">(
+    initialType as "servers" | "bots" | "events" | "all"
+  );
   const [sortBy, setSortBy] = useState("members");
 
   // Update URL when search query changes
@@ -39,19 +42,33 @@ export default function SearchPage() {
     }
   }, [searchQuery]);
 
-  // Fetch search results
+  // Fetch search results for specific content types
   const { data: searchResults, isLoading: loadingResults } = useQuery({
-    queryKey: ["/api/servers/search", searchQuery, sortBy, contentType],
+    queryKey: ["/api/search", searchQuery, sortBy, contentType],
     queryFn: async () => {
-      if (!searchQuery.trim()) return [];
+      if (!searchQuery.trim() || contentType === "all") return [];
 
       const params = new URLSearchParams();
       params.set("search", searchQuery);
       params.set("limit", "50");
       params.set("offset", "0");
-      if (sortBy) params.set("sort", sortBy);
+      if (sortBy && contentType !== "events") params.set("sort", sortBy);
 
-      const endpoint = contentType === "servers" ? "/api/servers" : "/api/bots";
+      let endpoint;
+      switch (contentType) {
+        case "servers":
+          endpoint = "/api/servers";
+          break;
+        case "bots":
+          endpoint = "/api/bots";
+          break;
+        case "events":
+          endpoint = "/api/events";
+          break;
+        default:
+          return [];
+      }
+
       const response = await fetch(`${endpoint}?${params}`);
       if (!response.ok) {
         console.error(`Failed to fetch ${contentType}: ${response.statusText}`);
@@ -66,7 +83,7 @@ export default function SearchPage() {
       // Ensure data is always an array, handle potential API inconsistencies
       return Array.isArray(data) ? data : [];
     },
-    enabled: !!searchQuery.trim(), // Only enable query if searchQuery is not empty
+    enabled: !!searchQuery.trim() && contentType !== "all", // Only enable query if searchQuery is not empty and not "all"
     onError: (error) => {
       console.error("Query Error:", error);
       toast({
@@ -75,6 +92,38 @@ export default function SearchPage() {
         variant: "destructive",
       });
     },
+  });
+
+  // Fetch mixed results for broader search when no specific type is selected
+  const { data: mixedResults, isLoading: loadingMixedResults } = useQuery({
+    queryKey: ["/api/search/mixed", searchQuery, sortBy],
+    queryFn: async () => {
+      if (!searchQuery.trim()) return { servers: [], bots: [], events: [] };
+
+      const params = new URLSearchParams();
+      params.set("search", searchQuery);
+      params.set("limit", "20");
+      params.set("offset", "0");
+      if (sortBy) params.set("sort", sortBy);
+
+      // Fetch from all endpoints in parallel
+      const [serversResponse, botsResponse, eventsResponse] = await Promise.all([
+        fetch(`/api/servers?${params}`).catch(() => ({ ok: false })),
+        fetch(`/api/bots?${params}`).catch(() => ({ ok: false })),
+        fetch(`/api/events?${params}`).catch(() => ({ ok: false }))
+      ]);
+
+      const servers = serversResponse.ok ? await serversResponse.json() : [];
+      const bots = botsResponse.ok ? await botsResponse.json() : [];
+      const events = eventsResponse.ok ? await eventsResponse.json() : [];
+
+      return {
+        servers: Array.isArray(servers) ? servers : [],
+        bots: Array.isArray(bots) ? bots : [],
+        events: Array.isArray(events) ? events : []
+      };
+    },
+    enabled: !!searchQuery.trim() && !contentType, // Only when no specific type is selected
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -167,6 +216,14 @@ export default function SearchPage() {
         <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-8">
           <div className="flex items-center space-x-4">
             <Button
+              variant={contentType === "all" ? "default" : "outline"}
+              onClick={() => setContentType("all")}
+              className="flex items-center space-x-2 border-gray-600 text-gray-400 hover:text-gray-300 data-[state=open]:bg-gray-600/20"
+            >
+              <Search className="w-4 h-4" />
+              <span>All</span>
+            </Button>
+            <Button
               variant={contentType === "servers" ? "default" : "outline"}
               onClick={() => setContentType("servers")}
               className="flex items-center space-x-2 border-purple-600 text-purple-400 hover:text-purple-300 data-[state=open]:bg-purple-600/20"
@@ -181,6 +238,14 @@ export default function SearchPage() {
             >
               <Bot className="w-4 h-4" />
               <span>Bots</span>
+            </Button>
+            <Button
+              variant={contentType === "events" ? "default" : "outline"}
+              onClick={() => setContentType("events")}
+              className="flex items-center space-x-2 border-green-600 text-green-400 hover:text-green-300 data-[state=open]:bg-green-600/20"
+            >
+              <i className="fas fa-calendar w-4 h-4"></i>
+              <span>Events</span>
             </Button>
           </div>
 
@@ -206,7 +271,7 @@ export default function SearchPage() {
 
         {/* Search Results */}
         <div className="space-y-6">
-          {loadingResults ? (
+          {(loadingResults || loadingMixedResults) ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[...Array(8)].map((_, i) => (
                 <Card key={i} className="border border-gray-700 bg-gray-900/50">
@@ -225,6 +290,117 @@ export default function SearchPage() {
                 </Card>
               ))}
             </div>
+          ) : contentType === "all" && mixedResults ? (
+            // Mixed results for "All" content type
+            <>
+              {mixedResults.servers?.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-purple-400 flex items-center gap-2">
+                    <Server className="w-5 h-5" />
+                    Servers ({mixedResults.servers.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {mixedResults.servers.map((server: ServerType) => (
+                      <ServerCard
+                        key={server.id}
+                        server={server}
+                        onJoin={handleJoinServer}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {mixedResults.bots?.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-blue-400 flex items-center gap-2">
+                    <Bot className="w-5 h-5" />
+                    Bots ({mixedResults.bots.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {mixedResults.bots.map((bot: any) => (
+                      <Card key={bot.id} className="border border-gray-700 bg-gray-900/50 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
+                        <CardContent className="p-0">
+                          <div className="flex items-start space-x-4 mb-4">
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                              {bot.iconUrl ? (
+                                <img src={bot.iconUrl} alt={bot.name} className="w-full h-full rounded-xl" />
+                              ) : (
+                                <Bot className="w-8 h-8 text-white" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg text-white mb-1">{bot.name}</h3>
+                              <p className="text-gray-400 text-sm mb-2 line-clamp-2">{bot.description}</p>
+                              <div className="flex items-center gap-2 text-xs text-gray-400">
+                                <span>🤖 Bot</span>
+                                {bot.tags && bot.tags.length > 0 && (
+                                  <span>• {bot.tags.join(", ")}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            className="w-full bg-blue-600 hover:bg-blue-700" 
+                            onClick={() => bot.inviteUrl && window.open(bot.inviteUrl, '_blank')}
+                          >
+                            Add Bot
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {mixedResults.events?.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-green-400 flex items-center gap-2">
+                    <i className="fas fa-calendar w-5 h-5"></i>
+                    Events ({mixedResults.events.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {mixedResults.events.map((event: any) => (
+                      <Card key={event.id} className="border border-gray-700 bg-gray-900/50 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
+                        <CardContent className="p-0">
+                          {event.imageUrl && (
+                            <div className="w-full h-32 mb-4 overflow-hidden rounded-lg">
+                              <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <h3 className="font-bold text-lg text-white mb-2">{event.title}</h3>
+                          <p className="text-gray-400 text-sm mb-3 line-clamp-2">{event.description}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                            <i className="fas fa-calendar mr-1"></i>
+                            {new Date(event.startDate).toLocaleDateString()}
+                            {event.location && (
+                              <>
+                                <span>•</span>
+                                <i className="fas fa-map-marker-alt mr-1"></i>
+                                {event.location}
+                              </>
+                            )}
+                          </div>
+                          <Button className="w-full bg-green-600 hover:bg-green-700">
+                            View Event
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(!mixedResults.servers?.length && !mixedResults.bots?.length && !mixedResults.events?.length) && (
+                <Card className="border border-gray-700 bg-gray-900/50">
+                  <CardContent className="p-8 text-center">
+                    <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">No results found</h3>
+                    <p className="text-gray-400">Try different search terms or browse specific categories.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           ) : searchResults && searchResults.length > 0 ? (
             <>
               <div className="mb-4">
@@ -242,13 +418,43 @@ export default function SearchPage() {
                       server={item as ServerType}
                       onJoin={handleJoinServer}
                     />
+                  ) : contentType === "events" ? (
+                    <Card key={item.id} className="border border-gray-700 bg-gray-900/50 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-0">
+                        {item.imageUrl && (
+                          <div className="w-full h-32 mb-4 overflow-hidden rounded-lg">
+                            <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <h3 className="font-bold text-lg text-white mb-2">{item.title}</h3>
+                        <p className="text-gray-400 text-sm mb-3 line-clamp-2">{item.description}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                          <i className="fas fa-calendar mr-1"></i>
+                          {new Date(item.startDate).toLocaleDateString()}
+                          {item.location && (
+                            <>
+                              <span>•</span>
+                              <i className="fas fa-map-marker-alt mr-1"></i>
+                              {item.location}
+                            </>
+                          )}
+                        </div>
+                        <Button className="w-full bg-green-600 hover:bg-green-700">
+                          View Event
+                        </Button>
+                      </CardContent>
+                    </Card>
                   ) : (
                     // Bot Card Component
                     <Card key={item.id} className="border border-gray-700 bg-gray-900/50 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
                       <CardContent className="p-0">
                         <div className="flex items-start space-x-4 mb-4">
                           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                            <Bot className="w-8 h-8 text-white" />
+                            {item.iconUrl ? (
+                              <img src={item.iconUrl} alt={item.name} className="w-full h-full rounded-xl" />
+                            ) : (
+                              <Bot className="w-8 h-8 text-white" />
+                            )}
                           </div>
                           <div className="flex-1">
                             <h3 className="font-bold text-lg text-white mb-1">{item.name}</h3>

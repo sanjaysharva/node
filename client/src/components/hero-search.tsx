@@ -17,7 +17,27 @@ export default function HeroSearch({ onSearch }: HeroSearchProps) {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+      // Check if search query contains bot-related terms
+      const query = searchQuery.trim().toLowerCase();
+      const botTerms = ['bot', 'music bot', 'moderation bot', 'game bot', 'utility bot', 'fun bot'];
+      const eventTerms = ['event', 'tournament', 'competition', 'meetup', 'workshop'];
+      const serverTerms = ['server', 'guild', 'community', 'discord server'];
+      
+      let targetPage = '/explore';
+      
+      // Determine if this should go to search page for mixed results or explore for specific category
+      if (botTerms.some(term => query.includes(term))) {
+        targetPage = `/search?q=${encodeURIComponent(searchQuery.trim())}&type=bots`;
+      } else if (eventTerms.some(term => query.includes(term))) {
+        targetPage = `/search?q=${encodeURIComponent(searchQuery.trim())}&type=events`;
+      } else if (serverTerms.some(term => query.includes(term))) {
+        targetPage = `/search?q=${encodeURIComponent(searchQuery.trim())}&type=servers`;
+      } else {
+        // General search - show all results
+        targetPage = `/search?q=${encodeURIComponent(searchQuery.trim())}&type=all`;
+      }
+      
+      navigate(targetPage);
     }
     onSearch(searchQuery);
   };

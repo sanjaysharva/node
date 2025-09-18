@@ -37,9 +37,9 @@ export default function Explore() {
     },
   });
 
-  // Fetch servers
+  // Fetch servers (only when servers tab is active)
   const { data: servers, isLoading: loadingServers } = useQuery<Server[]>({
-    queryKey: ["/api/servers", searchQuery, sortBy],
+    queryKey: ["/api/servers", searchQuery, sortBy, activeTab],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
@@ -51,11 +51,12 @@ export default function Explore() {
       if (!response.ok) throw new Error("Failed to fetch servers");
       return response.json();
     },
+    enabled: activeTab === "servers",
   });
 
-  // Fetch bots
+  // Fetch bots (only when bots tab is active)
   const { data: bots, isLoading: loadingBots } = useQuery<Bot[]>({
-    queryKey: ["/api/bots", searchQuery, sortBy],
+    queryKey: ["/api/bots", searchQuery, sortBy, activeTab],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
@@ -67,11 +68,12 @@ export default function Explore() {
       if (!response.ok) throw new Error("Failed to fetch bots");
       return response.json();
     },
+    enabled: activeTab === "bots",
   });
 
-  // Fetch events
+  // Fetch events (only when events tab is active)
   const { data: events, isLoading: loadingEvents } = useQuery<Event[]>({
-    queryKey: ["/api/events", searchQuery],
+    queryKey: ["/api/events", searchQuery, activeTab],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
@@ -82,6 +84,7 @@ export default function Explore() {
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json();
     },
+    enabled: activeTab === "events",
   });
 
   const handleJoinServer = (serverId: string) => {
