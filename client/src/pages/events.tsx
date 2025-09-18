@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
@@ -39,7 +38,7 @@ export default function Events() {
       if (filterBy !== "all") params.set("filter", filterBy);
       params.set("limit", "50");
       params.set("offset", "0");
-      
+
       const response = await fetch(`/api/events?${params}`);
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json();
@@ -90,8 +89,18 @@ export default function Events() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Admin Slideshow Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Hero Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+            Discord Events
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Discover and join amazing events happening across Discord communities
+          </p>
+        </div>
+
+        {/* Admin Slideshow Section */}
         {loadingSlideshows ? (
           <Skeleton className="w-full h-64 rounded-2xl" />
         ) : slideshows && slideshows.length > 0 ? (
@@ -130,16 +139,6 @@ export default function Events() {
       </section>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-            Discord Events
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Discover and join amazing events happening across Discord communities
-          </p>
-        </div>
-
         {/* Search and Filter Controls */}
         <div className="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto mb-8">
           <div className="flex-1">
@@ -202,11 +201,11 @@ export default function Events() {
                         />
                         <div className="absolute inset-0 bg-black/30" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        
+
                         <div className="absolute top-4 right-4">
                           {getStatusBadge(status)}
                         </div>
-                        
+
                         {event.featured && (
                           <div className="absolute top-4 left-4">
                             <Badge className="bg-yellow-500/90 text-yellow-900">
@@ -215,7 +214,7 @@ export default function Events() {
                             </Badge>
                           </div>
                         )}
-                        
+
                         <div className="absolute bottom-4 left-4 text-white">
                           <h3 className="font-bold text-lg line-clamp-2">{event.title}</h3>
                         </div>
@@ -224,11 +223,11 @@ export default function Events() {
                       <div className="h-48 bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 relative overflow-hidden">
                         <div className="absolute inset-0 bg-black/30" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        
+
                         <div className="absolute top-4 right-4">
                           {getStatusBadge(status)}
                         </div>
-                        
+
                         {event.featured && (
                           <div className="absolute top-4 left-4">
                             <Badge className="bg-yellow-500/90 text-yellow-900">
@@ -237,7 +236,7 @@ export default function Events() {
                             </Badge>
                           </div>
                         )}
-                        
+
                         <div className="absolute bottom-4 left-4 text-white">
                           <h3 className="font-bold text-lg line-clamp-2">{event.title}</h3>
                         </div>
@@ -255,7 +254,7 @@ export default function Events() {
                           <Calendar className="w-4 h-4 text-primary" />
                           <span>{new Date(event.startDate).toLocaleDateString()}</span>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="w-4 h-4 text-primary" />
                           <span>
@@ -263,7 +262,7 @@ export default function Events() {
                             {event.endDate && ` - ${new Date(event.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                           </span>
                         </div>
-                        
+
                         {event.location && (
                           <div className="flex items-center gap-2 text-sm">
                             <MapPin className="w-4 h-4 text-primary" />
