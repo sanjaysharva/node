@@ -320,15 +320,15 @@ export default function Navbar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/profile" data-testid="button-profile">
+                    <Link href="/profile" data-testid="Profile">
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/add-event" data-testid='/your-events'>
+                    <Link href="/your-events" data-testid="Events">
                       <Calendar className="mr-2 h-4 w-4" />
-                      Add Event
+                      Your Event
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -338,9 +338,9 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/add-bot" data-testid='/your-bots'>
+                    <Link href="/your-bots" data-testid="Bots">
                       <Bot className="mr-2 h-4 w-4" />
-                      Add Bot
+                      Your Bot
                     </Link>
                   </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/jobs')}>
