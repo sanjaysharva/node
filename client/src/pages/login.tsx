@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { loginWithDiscord } from "@/lib/auth";
-import Nav from "@/components/nav";
+import Navbar from "@/components/navbar";
 import backgroundImage from "@assets/uKEPXc_1757871248097.jpg";
 
 export default function Login() {
@@ -26,7 +26,7 @@ export default function Login() {
     >
       {/* Dark overlay to make background much darker */}
       <div className="absolute inset-0  bg-[#1d1d36]/80"></div>
-      <Nav />
+      <Navbar />
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 rounded-box">
         <div className="w-full w-[500px] h-[500px] rounded-box">
         <div className="bg-[#1d1d36] rounded-xl p-8 shadow-2xl h-[530px] w-[450px] absolute left-[545px]">

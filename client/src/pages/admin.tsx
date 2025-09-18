@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Progress } from "@/components/ui/progress";
-import Nav from "@/components/nav";
+import Navbar from "@/components/navbar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest } from "@/lib/queryClient";
@@ -516,7 +516,7 @@ export default function AdminPage() {
   if (!isAuthenticated || !user?.isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-        <Nav />
+        <Navbar />
         <div className="container mx-auto px-4 py-16">
           <Card className="border border-purple-500/20 bg-gray-900/50 backdrop-blur-sm">
             <CardContent className="p-8 text-center">
@@ -531,7 +531,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      <Nav />
+      <Navbar />
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">

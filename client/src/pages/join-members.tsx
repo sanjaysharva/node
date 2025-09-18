@@ -21,7 +21,7 @@ import {
   Calculator,
   Wallet
 } from "lucide-react";
-import Nav from "@/components/nav";
+import Navbar from "@/components/navbar";
 import { Link } from "wouter";
 import { usePageTitle } from "@/hooks/use-page-title";
 
@@ -201,7 +201,7 @@ export default function JoinMembers() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-950">
-        <Nav />
+        <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
           <Card className="w-full max-w-md bg-gray-900 border-gray-800">
             <CardHeader className="text-center">
@@ -218,7 +218,7 @@ export default function JoinMembers() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      <Nav />
+      <Navbar />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header Section */}
