@@ -362,8 +362,16 @@ export default function Quest() {
       </div>
       
 
-      <section className="relative overflow-hidden  border-b border-border" >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section className="relative overflow-hidden border-b border-border">
+        <div className="absolute inset-0 w-full h-full">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
             <div className="space-y-4">
               <div className="inline-block p-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-400">
@@ -377,14 +385,6 @@ export default function Quest() {
               </p>
             </div>
 
-          </div>
-          <div className="absolute inset-0 w-full h-full">
-          <img
-            src={backgroundImage}
-            alt="Background"
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
             <div className="mt-6">
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
