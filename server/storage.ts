@@ -115,6 +115,7 @@ export interface IStorage {
   getFaqs(options?: { search?: string; category?: string; isActive?: boolean; limit?: number; offset?: number }): Promise<Faq[]>;
   createFaq(faq: InsertFaq): Promise<Faq>;
   updateFaq(id: string, faq: Partial<InsertFaq>): Promise<Faq | undefined>;
+  deleteFaq(id: string): Promise<boolean>;
   toggleFaqActive(id: string, isActive: boolean): Promise<Faq | undefined>;
 
   // Support ticket operations
@@ -1353,6 +1354,11 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date()
     }).where(eq(faqs.id, id)).returning();
     return updatedFaq || undefined;
+  }
+
+  async deleteFaq(id: string): Promise<boolean> {
+    const result = await this.db.delete(faqs).where(eq(faqs.id, id));
+    return result.affectedRows > 0;
   }
 
   async toggleFaqActive(id: string, isActive: boolean): Promise<Faq | undefined> {

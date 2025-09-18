@@ -2624,7 +2624,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = parseInt(req.query.offset as string) || 0;
       const search = req.query.search as string;
       const category = req.query.category as string;
-      const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : true;
+      // Admin can see all FAQs, regular users only see active ones
+      const isActive = req.user?.isAdmin ? 
+        (req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined) : 
+        true;
 
       const faqs = await storage.getFaqs({
         search,
@@ -2638,6 +2641,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching FAQs:", error);
       res.status(500).json({ message: "Failed to fetch FAQs" });
+    }
+  });
+
+  // FAQ management routes (admin only)
+  app.post("/api/faqs", requireAdmin, async (req, res) => {
+    try {
+      const faqData = insertFaqSchema.parse(req.body);
+      const faq = await storage.createFaq(faqData);
+      res.status(201).json(faq);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create FAQ" });
+    }
+  });
+
+  app.put("/api/faqs/:id", requireAdmin, async (req, res) => {
+    try {
+      const faqData = insertFaqSchema.partial().parse(req.body);
+      const updatedFaq = await storage.updateFaq(req.params.id, faqData);
+      if (!updatedFaq) {
+        return res.status(404).json({ message: "FAQ not found" });
+      }
+      res.json(updatedFaq);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update FAQ" });
+    }
+  });
+
+  app.delete("/api/faqs/:id", requireAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteFaq(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "FAQ not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete FAQ" });
     }
   });
 

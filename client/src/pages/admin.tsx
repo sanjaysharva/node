@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, Edit, Timer, Upload, Image, Play, Pause, Eye, EyeOff, Zap, TrendingUp, Star, Users, Server, Bot, Calendar, MessageCircle, BarChart3, Search, Filter, Settings, Activity, Download, FileText, Globe, Shield, HeartHandshake } from "lucide-react";
+import { Trash2, Plus, Edit, Timer, Upload, Image, Play, Pause, Eye, EyeOff, Zap, TrendingUp, Star, Users, Server, Bot, Calendar, MessageCircle, BarChart3, Search, Filter, Settings, Activity, Download, FileText, Globe, Shield, HeartHandshake, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -19,7 +19,7 @@ import Navbar from "@/components/navbar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest } from "@/lib/queryClient";
-import { insertSlideshowSchema, type Slideshow } from "@shared/schema";
+import { insertSlideshowSchema, type Slideshow, insertFaqSchema, type Faq } from "@shared/schema";
 
 // Interface definitions
 interface Ad {
@@ -129,6 +129,18 @@ export default function AdminPage() {
     enabled: !!user?.isAdmin,
   });
 
+  // Fetch all FAQs for admin management
+  const { data: allFaqs, isLoading: faqsLoading, refetch: refetchFaqs } = useQuery<Faq[]>({
+    queryKey: ["/api/faqs", "admin"],
+    queryFn: async () => {
+      // Fetch all FAQs (admin can see inactive ones too)
+      const response = await fetch("/api/faqs");
+      if (!response.ok) throw new Error("Failed to fetch FAQs");
+      return response.json();
+    },
+    enabled: !!user?.isAdmin,
+  });
+
   // Slideshow mutations
   const createSlideshowMutation = useMutation({
     mutationFn: async (slideshowData: any) => {
@@ -205,6 +217,82 @@ export default function AdminPage() {
     },
   });
 
+  // FAQ mutations
+  const createFaqMutation = useMutation({
+    mutationFn: async (faqData: any) => {
+      const response = await apiRequest("POST", "/api/faqs", faqData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/faqs"] });
+      refetchFaqs();
+      setShowFaqForm(false);
+      setFaqFormData({
+        question: "",
+        answer: "",
+        category: "general",
+        tags: [] as string[],
+        order: 0,
+      });
+      toast({
+        title: "Success!",
+        description: "FAQ created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create FAQ",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateFaqMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest("PUT", `/api/faqs/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/faqs"] });
+      refetchFaqs();
+      setEditingFaq(null);
+      setShowFaqForm(false);
+      toast({
+        title: "Success!",
+        description: "FAQ updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update FAQ",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteFaqMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/faqs/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/faqs"] });
+      refetchFaqs();
+      toast({
+        title: "Success!",
+        description: "FAQ deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete FAQ",
+        variant: "destructive",
+      });
+    },
+  });
+
   // State for forms
   const [showForm, setShowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
@@ -226,6 +314,17 @@ export default function AdminPage() {
     linkUrl: "",
     order: 0,
     active: true,
+  });
+
+  // FAQ management state
+  const [showFaqForm, setShowFaqForm] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<Faq | null>(null);
+  const [faqFormData, setFaqFormData] = useState({
+    question: "",
+    answer: "",
+    category: "general",
+    tags: [] as string[],
+    order: 0,
   });
 
   // Google Ad Preview Component
@@ -588,7 +687,7 @@ export default function AdminPage() {
             <TabsTrigger value="servers" className="data-[state=active]:bg-purple-600">Servers</TabsTrigger>
             <TabsTrigger value="support" className="data-[state=active]:bg-purple-600">Live Support</TabsTrigger>
             <TabsTrigger value="bot" className="data-[state=active]:bg-purple-600">Bot Control</TabsTrigger>
-            <TabsTrigger value="performance" className="data-[state=active]:bg-purple-600">Performance</TabsTrigger>
+            <TabsTrigger value="faqs" className="data-[state=active]:bg-purple-600">FAQs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -1126,18 +1225,215 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="performance" className="space-y-6">
+          <TabsContent value="faqs" className="space-y-6">
             <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-white">Performance Monitoring</CardTitle>
-                <CardDescription className="text-gray-400">
-                  System performance metrics and health monitoring
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white flex items-center">
+                      <HelpCircle className="w-5 h-5 mr-2 text-cyan-400" />
+                      FAQ Management
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Manage frequently asked questions for user support
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setShowFaqForm(true)}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                    data-testid="button-add-faq"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add FAQ
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <p className="text-gray-400">Performance monitoring dashboard coming soon.</p>
-                </div>
+                {/* FAQ Form Dialog */}
+                {showFaqForm && (
+                  <div className="mb-6 p-6 bg-gray-800 border border-gray-600 rounded-lg">
+                    <h3 className="text-lg font-medium text-white mb-4">
+                      {editingFaq ? "Edit FAQ" : "Create New FAQ"}
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="faq-question" className="text-gray-300">Question</Label>
+                        <Input
+                          id="faq-question"
+                          value={faqFormData.question}
+                          onChange={(e) => setFaqFormData({ ...faqFormData, question: e.target.value })}
+                          placeholder="Enter the frequently asked question"
+                          className="bg-gray-800 border-gray-600 text-white"
+                          data-testid="input-faq-question"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="faq-answer" className="text-gray-300">Answer</Label>
+                        <Textarea
+                          id="faq-answer"
+                          value={faqFormData.answer}
+                          onChange={(e) => setFaqFormData({ ...faqFormData, answer: e.target.value })}
+                          placeholder="Enter the detailed answer"
+                          className="bg-gray-800 border-gray-600 text-white"
+                          rows={4}
+                          data-testid="textarea-faq-answer"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="faq-category" className="text-gray-300">Category</Label>
+                          <Select 
+                            value={faqFormData.category} 
+                            onValueChange={(value) => setFaqFormData({ ...faqFormData, category: value })}
+                          >
+                            <SelectTrigger className="bg-gray-800 border-gray-600 text-white" data-testid="select-faq-category">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-600">
+                              <SelectItem value="general">General</SelectItem>
+                              <SelectItem value="servers">Servers</SelectItem>
+                              <SelectItem value="bots">Bots</SelectItem>
+                              <SelectItem value="account">Account</SelectItem>
+                              <SelectItem value="technical">Technical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="faq-order" className="text-gray-300">Display Order</Label>
+                          <Input
+                            id="faq-order"
+                            type="number"
+                            value={faqFormData.order}
+                            onChange={(e) => setFaqFormData({ ...faqFormData, order: parseInt(e.target.value) || 0 })}
+                            placeholder="0"
+                            className="bg-gray-800 border-gray-600 text-white"
+                            data-testid="input-faq-order"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowFaqForm(false);
+                            setEditingFaq(null);
+                            setFaqFormData({
+                              question: "",
+                              answer: "",
+                              category: "general",
+                              tags: [],
+                              order: 0,
+                            });
+                          }}
+                          className="border-gray-600 text-gray-300"
+                          data-testid="button-cancel-faq"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (editingFaq) {
+                              updateFaqMutation.mutate({
+                                id: editingFaq.id,
+                                data: faqFormData
+                              });
+                            } else {
+                              createFaqMutation.mutate(faqFormData);
+                            }
+                          }}
+                          disabled={createFaqMutation.isPending || updateFaqMutation.isPending}
+                          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                          data-testid="button-save-faq"
+                        >
+                          {createFaqMutation.isPending || updateFaqMutation.isPending ? (
+                            <>
+                              <Timer className="w-4 h-4 mr-2 animate-spin" />
+                              {editingFaq ? "Updating..." : "Creating..."}
+                            </>
+                          ) : (
+                            editingFaq ? "Update FAQ" : "Create FAQ"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* FAQ List */}
+                {faqsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                        <div className="animate-pulse">
+                          <div className="h-4 bg-gray-700 rounded w-2/3 mb-2"></div>
+                          <div className="h-3 bg-gray-700 rounded w-full mb-1"></div>
+                          <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {allFaqs?.map((faq) => (
+                      <div key={faq.id} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-white font-medium mb-2" data-testid={`text-faq-question-${faq.id}`}>
+                              {faq.question}
+                            </h4>
+                            <p className="text-gray-300 text-sm mb-3" data-testid={`text-faq-answer-${faq.id}`}>
+                              {faq.answer}
+                            </p>
+                            <div className="flex items-center space-x-2 text-sm text-gray-400">
+                              <Badge variant="outline">{faq.category}</Badge>
+                              <span>Order: {faq.order}</span>
+                              <Badge variant={faq.isActive ? "default" : "destructive"}>
+                                {faq.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingFaq(faq);
+                                setFaqFormData({
+                                  question: faq.question,
+                                  answer: faq.answer,
+                                  category: faq.category,
+                                  tags: faq.tags as string[] || [],
+                                  order: faq.order || 0,
+                                });
+                                setShowFaqForm(true);
+                              }}
+                              className="border-gray-600 text-gray-300"
+                              data-testid={`button-edit-faq-${faq.id}`}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteFaqMutation.mutate(faq.id)}
+                              className="border-red-500 text-red-400"
+                              data-testid={`button-delete-faq-${faq.id}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {allFaqs?.length === 0 && (
+                      <div className="text-center py-8">
+                        <HelpCircle className="w-12 h-12 text-gray-600 mx-auto mb-2" />
+                        <p className="text-gray-400">No FAQs created yet</p>
+                        <p className="text-sm text-gray-500">Create your first FAQ to help users</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
