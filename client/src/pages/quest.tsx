@@ -27,7 +27,7 @@ interface ServerStatus {
 }
 
 export default function Quest() {
-  const { user, isAuthenticated, refreshUser: refreshUserData } = useAuth(); // Renamed for clarity and to match potential usage in changes
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -123,6 +123,7 @@ export default function Quest() {
     }
 
     const updateTimer = () => {
+      if (!userQuests.lastDailyReward) return;
       const lastClaim = new Date(userQuests.lastDailyReward);
       const now = new Date();
       const diffMs = lastClaim.getTime() + 24 * 60 * 60 * 1000 - now.getTime();
