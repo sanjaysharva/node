@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Coins, Users, Gift, Zap, Video, Clock, Trophy, CheckCircle, ExternalLink, UserPlus, Copy, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import backgroundImage from "@assets/generated_images/6682744.gif"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Link } from "wouter";
 
@@ -359,8 +360,9 @@ export default function Quest() {
           </Button>
         </Link>
       </div>
+      
 
-      <section className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 border-b border-border">
+      <section className="relative overflow-hidden  border-b border-border" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
             <div className="space-y-4">
@@ -375,6 +377,14 @@ export default function Quest() {
               </p>
             </div>
 
+          </div>
+          <div className="absolute inset-0 w-full h-full">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
             <div className="mt-6">
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
