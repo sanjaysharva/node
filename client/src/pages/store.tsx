@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Coins, Zap, Crown, ShoppingCart, ArrowRight } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { Link } from "wouter";
+import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
 
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 
@@ -48,7 +49,15 @@ export default function Store() {
 
       {/* Hero Section */}
       {/* Changed the gradient to reflect "Discord Communities" and removed purple emphasis */}
-      <div className="relative overflow-hidden bg-[url('attached_assets/generated_images/mengo-fedorov-forest-snow-parallax.gif')] bg-top bg-cover border-blue-400/30">
+      <div className="relative overflow-hidden border-blue-400/30">
+        <div className="absolute inset-0 w-full h-full">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+        </div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
             <div className="space-y-4">
