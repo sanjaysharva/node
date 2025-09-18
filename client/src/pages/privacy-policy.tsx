@@ -250,6 +250,8 @@ export default function PrivacyPolicy() {
           </Card>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
