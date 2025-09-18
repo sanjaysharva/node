@@ -49,7 +49,7 @@ export default function Store() {
       {/* Hero Section */}
       {/* Changed the gradient to reflect "Discord Communities" and removed purple emphasis */}
       <div className="relative overflow-hidden bg-[url('attached_assets/generated_images/mengo-fedorov-forest-snow-parallax.gif')] bg-top bg-cover border-blue-400/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
             <div className="space-y-4">
               <div className="inline-block p-3 rounded-xl bg-gradient-to-r from-orange-400 to-red-400">
