@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { Coins, ArrowRight, User, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
-import Navbar from "@/components/navbar";
 
 export default function Trade() {
   const [tradeCoins, setTradeCoins] = useState("");
@@ -115,8 +114,7 @@ export default function Trade() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+        <div className="flex items-center justify-center min-h-screen">
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <CardTitle>Login Required</CardTitle>
@@ -132,23 +130,23 @@ export default function Trade() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      {/* Back to Join Members Button - Top Left */}
+      <div className="absolute top-4 left-4 z-10">
+        <Link href="/join-members">
+          <Button 
+            variant="outline" 
+            className="border-border bg-card/80 backdrop-blur-sm hover:bg-card text-foreground hover:text-primary transition-all duration-300"
+            data-testid="button-back-to-join-members-trade"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Member Exchange
+          </Button>
+        </Link>
+      </div>
       
       {/* Header */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <Link href="/join-members">
-              <Button 
-                variant="outline" 
-                className="border-border bg-card/50 hover:bg-card text-foreground hover:text-primary transition-all duration-300"
-                data-testid="button-back-to-join-members-trade"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Member Exchange
-              </Button>
-            </Link>
-          </div>
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
             💰 Trade Coins
           </h1>

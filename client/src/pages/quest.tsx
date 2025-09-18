@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Link } from "wouter";
-import Navbar from "@/components/navbar";
 
 interface QuestCompletion {
   questId: string;
@@ -279,7 +278,6 @@ export default function Quest() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center max-w-md mx-auto">
             <h1 className="text-3xl font-bold mb-4 text-foreground">Authentication Required</h1>
@@ -348,7 +346,19 @@ export default function Quest() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      {/* Back to Join Members Button - Top Left */}
+      <div className="absolute top-4 left-4 z-10">
+        <Link href="/join-members">
+          <Button 
+            variant="outline" 
+            className="border-border bg-card/80 backdrop-blur-sm hover:bg-card text-foreground hover:text-primary transition-all duration-300"
+            data-testid="button-back-to-join-members"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Member Exchange
+          </Button>
+        </Link>
+      </div>
 
       <section className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -366,18 +376,6 @@ export default function Quest() {
             </div>
 
             <div className="mt-6">
-              <div className="flex flex-wrap justify-center gap-4 mb-6">
-                <Link href="/join-members">
-                  <Button 
-                    variant="outline" 
-                    className="border-border bg-card/50 hover:bg-card text-foreground hover:text-primary transition-all duration-300"
-                    data-testid="button-back-to-join-members"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Member Exchange
-                  </Button>
-                </Link>
-              </div>
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
                   <div className="flex items-center gap-2">
