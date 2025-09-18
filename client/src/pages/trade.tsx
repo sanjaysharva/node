@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { Coins, ArrowRight, User } from "lucide-react";
+import { Coins, ArrowRight, User, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 import Navbar from "@/components/navbar";
 
 export default function Trade() {

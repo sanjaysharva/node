@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Users, Gift, Zap, Video, Clock, Trophy, CheckCircle, ExternalLink, UserPlus, Copy } from "lucide-react";
+import { Coins, Users, Gift, Zap, Video, Clock, Trophy, CheckCircle, ExternalLink, UserPlus, Copy, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Link } from "wouter";
 import Navbar from "@/components/navbar";
 
 interface QuestCompletion {
@@ -365,6 +366,18 @@ export default function Quest() {
             </div>
 
             <div className="mt-6">
+              <div className="flex flex-wrap justify-center gap-4 mb-6">
+                <Link href="/join-members">
+                  <Button 
+                    variant="outline" 
+                    className="border-border bg-card/50 hover:bg-card text-foreground hover:text-primary transition-all duration-300"
+                    data-testid="button-back-to-join-members"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Member Exchange
+                  </Button>
+                </Link>
+              </div>
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
                   <div className="flex items-center gap-2">
