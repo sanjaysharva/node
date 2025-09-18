@@ -1,5 +1,6 @@
 
 import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
@@ -9,21 +10,30 @@ export default function TermsOfService() {
       <Navbar />
       
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-700 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
-            <div className="inline-block p-3 rounded-xl bg-white/20">
-              <FileText className="w-8 h-8" />
+            <div className="space-y-4">
+              <div className="inline-block p-3 rounded-xl bg-gradient-to-r from-purple-400 to-pink-400">
+                <FileText className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
+                Terms of Service
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Legal terms and conditions for using our platform
+              </p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold">
-              Terms of Service
-            </h1>
-            <p className="text-xl max-w-2xl mx-auto opacity-90">
-              Last updated: {new Date().toLocaleDateString()}
-            </p>
+            <div className="mt-6">
+              <div className="inline-block bg-card border border-border rounded-xl px-6 py-3">
+                <p className="text-muted-foreground">
+                  Last updated: {new Date().toLocaleDateString()}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
@@ -191,6 +201,8 @@ export default function TermsOfService() {
           </Card>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
