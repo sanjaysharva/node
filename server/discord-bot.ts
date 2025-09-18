@@ -169,6 +169,36 @@ const commands = [
         .setDescription('Custom message')
         .setRequired(false)
     ),
+
+  // New slash command for bot review
+  new SlashCommandBuilder()
+    .setName('accept')
+    .setDescription('Review and accept/decline a bot submission')
+    .addStringOption(option =>
+      option.setName('bot_id')
+        .setDescription('The ID of the bot to review')
+        .setRequired(true)
+    )
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user ID of the bot owner')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('description')
+        .setDescription('Description of the bot')
+        .setRequired(true)
+    )
+    .addUserOption(option =>
+      option.setName('reviewed_by')
+        .setDescription('The user ID of the reviewer')
+        .setRequired(true)
+    )
+    .addBooleanOption(option =>
+      option.setName('decision')
+        .setDescription('True to accept, false to decline')
+        .setRequired(true)
+    ),
 ];
 
 client.once('clientReady', async () => {
@@ -419,6 +449,114 @@ client.on('interactionCreate', async (interaction) => {
         const reply = await interaction.reply({ embeds: [embed], fetchReply: true });
         await reply.react(emoji);
         await storage.addReactionRole(interaction.guild.id, reply.id, emoji, role.id);
+        break;
+      }
+      case 'accept': {
+        if (!interaction.guild) {
+          await interaction.reply('This command can only be used in a server!');
+          return;
+        }
+        // Ensure only admins can use this command
+        const memberPerms = interaction.guild.members.cache.get(interaction.user.id);
+        if (!memberPerms?.permissions.has(PermissionsBitField.Flags.Administrator)) {
+          await interaction.reply({ content: '❌ You need Administrator permissions to use this command.', ephemeral: true });
+          return;
+        }
+
+        const botId = interaction.options.getString('bot_id', true);
+        const botOwnerId = interaction.options.getUser('user', true).id;
+        const botDescription = interaction.options.getString('description', true);
+        const reviewedById = interaction.options.getUser('reviewed_by', true).id;
+        const isAccepted = interaction.options.getBoolean('decision', true);
+
+        const bot = await storage.getBot(botId);
+        if (!bot) {
+          await interaction.reply({ content: '❌ Bot not found in the database.', ephemeral: true });
+          return;
+        }
+
+        if (bot.ownerId !== botOwnerId) {
+          await interaction.reply({ content: '❌ The provided user is not the owner of this bot.', ephemeral: true });
+          return;
+        }
+
+        const reviewer = await storage.getUserByDiscordId(reviewedById);
+        if (!reviewer) {
+          await interaction.reply({ content: '❌ Reviewer not found in the database.', ephemeral: true });
+          return;
+        }
+
+        if (isAccepted) {
+          // Bot accepted
+          await storage.updateBotStatus(botId, 'accepted', reviewedById);
+
+          // Send green embed message
+          const embed = new EmbedBuilder()
+            .setTitle('✅ Bot Accepted')
+            .setDescription(`**${bot.name}** has been reviewed and accepted by **${interaction.user.tag}**.`)
+            .addFields(
+              { name: 'Bot ID', value: botId, inline: true },
+              { name: 'Owner', value: `<@${botOwnerId}>`, inline: true },
+              { name: 'Description', value: botDescription, inline: false },
+              { name: 'Reviewed By', value: `<@${reviewedById}>`, inline: true }
+            )
+            .setColor('#00FF00')
+            .setTimestamp();
+
+          await interaction.reply({ embeds: [embed] });
+
+          // Send bot profile with invite link
+          const botProfileEmbed = new EmbedBuilder()
+            .setTitle(`Bot Profile: ${bot.name}`)
+            .setDescription(`${bot.description}\n\n**Commands:**\n\`\`\`\n${bot.commands.join('\n')}\n\`\`\`\n**Rating:** ${bot.rating || 'Not rated yet'}`)
+            .setColor('#7289DA')
+            .addFields(
+              { name: 'Invite Link', value: `[Invite ${bot.name}](https://discord.com/oauth2/authorize?client_id=${bot.clientId}&scope=bot&permissions=8)` }
+            )
+            .setFooter({ text: `Provided by ${bot.ownerUsername || 'Unknown'}` });
+
+          const owner = await client.users.fetch(botOwnerId);
+          try {
+            await owner.send({ embeds: [botProfileEmbed] });
+          } catch (dmError) {
+            console.log(`Could not send bot profile DM to ${botOwnerId}`);
+          }
+
+        } else {
+          // Bot declined
+          await storage.updateBotStatus(botId, 'declined', reviewedById);
+
+          // Send red embed message
+          const embed = new EmbedBuilder()
+            .setTitle('❌ Bot Declined')
+            .setDescription(`**${bot.name}** has been reviewed and declined by **${interaction.user.tag}**.`)
+            .addFields(
+              { name: 'Bot ID', value: botId, inline: true },
+              { name: 'Owner', value: `<@${botOwnerId}>`, inline: true },
+              { name: 'Description', value: botDescription, inline: false },
+              { name: 'Reviewed By', value: `<@${reviewedById}>`, inline: true }
+            )
+            .setColor('#FF0000')
+            .setTimestamp();
+
+          await interaction.reply({ embeds: [embed] });
+
+          // Send message to owner about decline and link to fair use page
+          const declineEmbed = new EmbedBuilder()
+            .setTitle('Bot Declined')
+            .setDescription(`Your bot **${bot.name}** was declined. Please review our fair use policy for more information.`)
+            .setColor('#FF0000')
+            .addFields(
+              { name: 'Link to Fair Use Policy', value: '[Fair Use Policy](https://yourwebsite.com/fair-use)' }
+            );
+
+          const owner = await client.users.fetch(botOwnerId);
+          try {
+            await owner.send({ embeds: [declineEmbed] });
+          } catch (dmError) {
+            console.log(`Could not send decline DM to ${botOwnerId}`);
+          }
+        }
         break;
       }
     }
@@ -885,7 +1023,7 @@ client.on('GuildMemberAdd', async (member) => {
       if (inviterUser) {
         const coinsToAward = 3; // 3 coins for successful invite (as per quest)
         const newBalance = (inviterUser.coins || 0) + coinsToAward;
-        
+
         // Update user data
         const updatedInviteCount = (inviterUser.inviteCount || 0) + 1;
         await Promise.all([

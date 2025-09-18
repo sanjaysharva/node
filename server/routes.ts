@@ -857,6 +857,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/bots/user/:userId", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Verify ownership or admin access
+    const isOwner = req.user.id === req.params.userId;
+    const isAdmin = (req.user as any).isAdmin;
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "You can only access your own bots" });
+    }
+
+    try {
+      const bots = await storage.getBotsByUser(req.params.userId);
+      res.json(bots);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user bots" });
+    }
+  });
+
+  app.get("/api/bots/:id", async (req, res) => {
+    try {
+      const bot = await storage.getBot(req.params.id);
+      if (!bot) {
+        return res.status(404).json({ message: "Bot not found" });
+      }
+      res.json(bot);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch bot" });
+    }
+  });
+
+  app.post("/api/bots/:id/vote", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+
+      const result = await storage.voteOnBot(id, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error voting on bot:", error);
+      res.status(500).json({ message: "Failed to vote" });
+    }
+  });
+
   app.get("/api/bots/popular", async (req, res) => {
     try {
       const { limit = "6" } = req.query;
@@ -2655,6 +2701,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to submit contact form" });
+    }
+  });
+
+  // Discord bot submission notification
+  app.post("/api/discord/bot-submitted", async (req, res) => {
+    try {
+      const bot = req.body;
+      const { discordBot } = await import('./discord-bot');
+      
+      if (discordBot && discordBot.isReady()) {
+        const ADMIN_CHANNEL_ID = "1234567890"; // Replace with actual admin channel ID
+        
+        const embed = new (await import('discord.js')).EmbedBuilder()
+          .setTitle('🤖 New Bot Submission')
+          .setColor('#7C3AED')
+          .addFields(
+            { name: '🤖 Bot Name', value: bot.name, inline: true },
+            { name: '👤 Owner', value: bot.ownerId, inline: true },
+            { name: '🔗 Invite Link', value: bot.inviteUrl, inline: false },
+            { name: '📝 Description', value: bot.description.substring(0, 1000), inline: false }
+          )
+          .setTimestamp();
+
+        if (bot.iconUrl) {
+          embed.setThumbnail(bot.iconUrl);
+        }
+
+        const channel = await discordBot.channels.fetch(ADMIN_CHANNEL_ID);
+        if (channel && channel.isTextBased()) {
+          await channel.send({ 
+            content: '📋 **New bot submission for review!**\n\n*Use `/accept botid:' + bot.id + ' user:@owner action:accept/decline` to process.*',
+            embeds: [embed] 
+          });
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Discord notification error:', error);
+      res.status(500).json({ message: "Failed to send Discord notification" });
     }
   });
 

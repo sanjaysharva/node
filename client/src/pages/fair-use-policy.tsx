@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,7 @@ export default function FairUsePolicy() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -44,12 +43,12 @@ export default function FairUsePolicy() {
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
               <p>
-                This Fair Use Policy outlines the acceptable use of Axiom's services, including our 
-                Discord server advertising platform, community features, and related services. This policy 
+                This Fair Use Policy outlines the acceptable use of Axiom's services, including our
+                Discord server advertising platform, community features, and related services. This policy
                 is designed to ensure that all users can enjoy our services fairly and without disruption.
               </p>
               <p>
-                By using Axiom's services, you agree to comply with this Fair Use Policy in addition to 
+                By using Axiom's services, you agree to comply with this Fair Use Policy in addition to
                 our Terms of Service and Privacy Policy.
               </p>
             </CardContent>
@@ -254,7 +253,7 @@ export default function FairUsePolicy() {
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
               <p>
-                We may update this Fair Use Policy from time to time to reflect changes in our services, 
+                We may update this Fair Use Policy from time to time to reflect changes in our services,
                 legal requirements, or community needs. When we make changes:
               </p>
               <ul>
@@ -273,7 +272,7 @@ export default function FairUsePolicy() {
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
               <p>
-                If you have questions about this Fair Use Policy or need clarification on any aspect, 
+                If you have questions about this Fair Use Policy or need clarification on any aspect,
                 please contact us:
               </p>
               <ul>
@@ -285,6 +284,37 @@ export default function FairUsePolicy() {
               <p>
                 We're committed to maintaining a fair and enjoyable platform for all users.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Bot Review Guidelines */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Scale className="w-5 h-5 mr-2 text-blue-500" />
+                Bot Review Guidelines
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="prose dark:prose-invert max-w-none">
+              <p>
+                Discord bots submitted to Axiom undergo a thorough review process (up to 2 days) to ensure quality and safety:
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Uptime Requirement:</strong> Bot must be online and responsive 24/7</li>
+                <li><strong>No Self-Bots:</strong> Automated user accounts are strictly prohibited</li>
+                <li><strong>Functional Commands:</strong> All advertised commands must work properly</li>
+                <li><strong>Appropriate Content:</strong> Bot responses must be family-friendly</li>
+                <li><strong>No Token Logging:</strong> Bots must not log or steal user tokens</li>
+                <li><strong>Privacy Compliance:</strong> Must follow Discord's Terms of Service</li>
+                <li><strong>Accurate Information:</strong> Bot description and features must be truthful</li>
+                <li><strong>No Malicious Code:</strong> Bots must not contain harmful or destructive code</li>
+              </ul>
+              <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-4 mt-4">
+                <p className="text-blue-200">
+                  <strong>Review Process:</strong> Our team checks bot functionality, uptime, and compliance.
+                  Approved bots are made available immediately. Declined submissions receive detailed feedback for improvement.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -23,11 +23,14 @@ export interface IStorage {
   // Bot operations
   getBots(options?: { tags?: string[]; search?: string; limit?: number; offset?: number }): Promise<Bot[]>;
   getPopularBots(limit?: number): Promise<Bot[]>;
-  getBot(id: string): Promise<Bot | undefined>;
+  getBot(id: string): Promise<Bot | null>;
   getBotsByOwner(ownerId: string): Promise<Bot[]>;
+  getBotsByUser(userId: string): Promise<Bot[]>;
   createBot(insertBot: InsertBot): Promise<Bot>;
-  updateBot(id: string, bot: Partial<InsertBot>): Promise<Bot | undefined>;
+  updateBot(id: string, bot: Partial<InsertBot>): Promise<Bot | null>;
   deleteBot(id: string): Promise<boolean>;
+  voteOnBot(botId: string, userId: string): Promise<{ success: boolean; message: string }>;
+
 
   // Ad operations
   getAds(position?: string): Promise<Ad[]>;
@@ -45,6 +48,8 @@ export interface IStorage {
   atomicServerJoin(params: { userId: string; serverId: string; coinsToAward: number; currentCoins: number; advertisingMembersNeeded: number }): Promise<{ newBalance: number; advertisingComplete: boolean }>;
   transferCoins(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; fromBalance: number; toBalance: number }>;
   getUserByDiscordUsername(username: string): Promise<User | undefined>;
+  addUserCoins(userId: string, amount: number): Promise<void>;
+
 
   // Count operations
   getServerCount(): Promise<number>;
@@ -141,7 +146,8 @@ export interface IStorage {
   getServerTemplates(options?: { search?: string; category?: string; limit?: number; offset?: number }): Promise<any[]>;
   createServerTemplate(template: any): Promise<any>;
   getTemplateByLink(templateLink: string): Promise<any>;
-  analyzePartnershipServer(serverLink: string): Promise<any>;
+  setPendingTemplate(guildId: string, data: any): Promise<void>;
+  getTemplateProcess(guildId: string): Promise<any>;
 
   // Job operations
   getJobs(options?: { search?: string; type?: string; limit?: number; offset?: number }): Promise<Job[]>;
@@ -299,28 +305,84 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getBot(id: string): Promise<Bot | undefined> {
-    const [bot] = await this.db.select().from(bots).where(eq(bots.id, id));
-    return bot || undefined;
+  async getBot(id: string): Promise<Bot | null> {
+    const [bot] = await this.db
+      .select()
+      .from(bots)
+      .where(eq(bots.id, id));
+    return bot || null;
   }
 
   async getBotsByOwner(ownerId: string): Promise<Bot[]> {
     return await this.db.select().from(bots).where(eq(bots.ownerId, ownerId));
   }
 
+  async getBotsByUser(userId: string): Promise<Bot[]> {
+    return this.db
+      .select()
+      .from(bots)
+      .where(eq(bots.ownerId, userId))
+      .orderBy(desc(bots.createdAt));
+  }
+
   async createBot(insertBot: InsertBot): Promise<Bot> {
-    const [bot] = await this.db.insert(bots).values(insertBot).returning();
+    // Set bots as unverified by default (pending review)
+    const botData = {
+      ...insertBot,
+      verified: false,
+      featured: null, // null means pending, false means declined
+    };
+    const [bot] = await this.db.insert(bots).values(botData).returning();
     return bot;
   }
 
-  async updateBot(id: string, bot: Partial<InsertBot>): Promise<Bot | undefined> {
-    const [updatedBot] = await this.db.update(bots).set({ ...bot, updatedAt: new Date() }).where(eq(bots.id, id)).returning();
-    return updatedBot || undefined;
+  async updateBot(id: string, updates: Partial<InsertBot>): Promise<Bot | null> {
+    const [updatedBot] = await this.db
+      .update(bots)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(bots.id, id))
+      .returning();
+    return updatedBot || null;
   }
 
   async deleteBot(id: string): Promise<boolean> {
     const result = await this.db.delete(bots).where(eq(bots.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async voteOnBot(botId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    // Check if user already voted in the last 12 hours
+    const existingVote = await this.db
+      .select()
+      .from(votes)
+      .where(
+        and(
+          eq(votes.serverId, botId), // Using serverId field for bot votes
+          eq(votes.userId, userId),
+          sql`${votes.createdAt} > NOW() - INTERVAL 12 HOUR`
+        )
+      );
+
+    if (existingVote.length > 0) {
+      return { success: false, message: "You can only vote once every 12 hours" };
+    }
+
+    // Add vote
+    await this.db.insert(votes).values({
+      serverId: botId, // Using serverId field for bot votes
+      userId,
+      voteType: "up",
+    });
+
+    // Update bot vote count
+    await this.db
+      .update(bots)
+      .set({ 
+        totalVotes: sql`${bots.totalVotes} + 1` 
+      })
+      .where(eq(bots.id, botId));
+
+    return { success: true, message: "Vote recorded successfully" };
   }
 
   // Ad operations
@@ -463,7 +525,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(users)
       .set({ inviteCount: (user.inviteCount || 0) + 1 })
       .where(eq(users.id, userId));
-    
+
     // Get the updated user since MySQL doesn't support returning
     return await this.getUser(userId);
   }
@@ -475,7 +537,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(users)
       .set({ referralCount: (user.referralCount || 0) + 1 })
       .where(eq(users.id, userId));
-    
+
     // Get the updated user since MySQL doesn't support returning
     return await this.getUser(userId);
   }
@@ -506,7 +568,7 @@ export class DatabaseStorage implements IStorage {
         lastLoginDate: today
       })
       .where(eq(users.id, userId));
-    
+
     // Get the updated user since MySQL doesn't support returning
     return await this.getUser(userId);
   }
@@ -690,7 +752,7 @@ export class DatabaseStorage implements IStorage {
 
       // Get updated user coins since MySQL doesn't support returning
       const [updatedUser] = await tx.select({ coins: users.coins }).from(users).where(eq(users.id, userId));
-      
+
       if (!updatedUser) {
         throw new Error("Failed to update user coins");
       }
@@ -1250,7 +1312,7 @@ export class DatabaseStorage implements IStorage {
   // FAQ operations implementation
   async getFaqs(options?: { search?: string; category?: string; isActive?: boolean; limit?: number; offset?: number }): Promise<Faq[]> {
     const conditions = [];
-    
+
     if (options?.search) {
       conditions.push(
         or(
@@ -1259,21 +1321,21 @@ export class DatabaseStorage implements IStorage {
         )
       );
     }
-    
+
     if (options?.category) {
       conditions.push(eq(faqs.category, options.category));
     }
-    
+
     if (options?.isActive !== undefined) {
       conditions.push(eq(faqs.isActive, options.isActive));
     }
-    
+
     const baseQuery = this.db.select().from(faqs);
     const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const withOrder = withWhere.orderBy(faqs.order, desc(faqs.createdAt));
     const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
     const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
-    
+
     return await finalQuery;
   }
 
@@ -1305,7 +1367,7 @@ export class DatabaseStorage implements IStorage {
   async createSupportTicket(ticketData: InsertSupportTicket & { userId: string }): Promise<SupportTicket> {
     // Generate unique ticket ID
     const ticketId = `TKT-${Date.now().toString().slice(-8)}`;
-    
+
     const [newTicket] = await this.db.insert(supportTickets).values({
       ...ticketData,
       ticketId,
@@ -1316,21 +1378,21 @@ export class DatabaseStorage implements IStorage {
 
   async getSupportTickets(options?: { userId?: string; status?: string; limit?: number; offset?: number }): Promise<SupportTicket[]> {
     const conditions = [];
-    
+
     if (options?.userId) {
       conditions.push(eq(supportTickets.userId, options.userId));
     }
-    
+
     if (options?.status) {
       conditions.push(eq(supportTickets.status, options.status));
     }
-    
+
     const baseQuery = this.db.select().from(supportTickets);
     const withWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const withOrder = withWhere.orderBy(desc(supportTickets.createdAt));
     const withLimit = options?.limit ? withOrder.limit(options.limit) : withOrder;
     const finalQuery = options?.offset ? withLimit.offset(options.offset) : withLimit;
-    
+
     return await finalQuery;
   }
 

@@ -39,6 +39,8 @@ import Jobs from "@/pages/jobs";
 import Trade from "@/pages/trade";
 import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
+import YourBots from "@/pages/your-bots";
+import BotDetail from "@/pages/bot-detail";
 
 
 
@@ -80,6 +82,8 @@ function Router() {
       <Route path="/trade" component={Trade} />
       <Route path="/payment/:type" component={Payment} />
       <Route path="/payment/success" component={PaymentSuccess} />
+      <Route path="/your-bots" component={YourBots} />
+      <Route path="/bot/:id" component={BotDetail} />
       <Route component={NotFound} />
     </Switch>
   );
