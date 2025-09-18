@@ -122,44 +122,7 @@ export default function Explore() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Admin Slideshow Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {loadingSlideshows ? (
-          <Skeleton className="w-full h-64 rounded-2xl" />
-        ) : slideshows && slideshows.length > 0 ? (
-          <Carousel className="w-full">
-            <CarouselContent>
-              {slideshows.map((slide: Slideshow) => (
-                <CarouselItem key={slide.id}>
-                  <div className="relative h-64 rounded-2xl overflow-hidden">
-                    <img
-                      src={slide.imageUrl}
-                      alt={slide.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <h2 className="text-3xl font-bold mb-2">{slide.title}</h2>
-                        {slide.linkUrl && (
-                          <Button
-                            onClick={() => slide.linkUrl && window.open(slide.linkUrl, '_blank', 'noopener,noreferrer')}
-                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-                            data-testid={`button-slideshow-${slide.id}`}
-                          >
-                            Learn More
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
-        ) : null}
-      </section>
+      
 
       {/* Header Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -239,6 +202,45 @@ export default function Explore() {
               </Select>
             )}
           </div>
+
+          {/* Admin Slideshow Section - Moved here between tabs and content */}
+          <section className="mb-8">
+            {loadingSlideshows ? (
+              <Skeleton className="w-full h-64 rounded-2xl" />
+            ) : slideshows && slideshows.length > 0 ? (
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {slideshows.map((slide: Slideshow) => (
+                    <CarouselItem key={slide.id}>
+                      <div className="relative h-64 rounded-2xl overflow-hidden">
+                        <img
+                          src={slide.imageUrl}
+                          alt={slide.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="text-center text-white">
+                            <h2 className="text-3xl font-bold mb-2">{slide.title}</h2>
+                            {slide.linkUrl && (
+                              <Button
+                                onClick={() => slide.linkUrl && window.open(slide.linkUrl, '_blank', 'noopener,noreferrer')}
+                                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                                data-testid={`button-slideshow-${slide.id}`}
+                              >
+                                Learn More
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+            ) : null}
+          </section>
 
           <TabsContent value="servers">
             {loadingServers ? (
