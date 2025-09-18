@@ -143,9 +143,8 @@ export default function AdminPage() {
         title: "",
         imageUrl: "",
         linkUrl: "",
-        position: 0,
-        page: "explore",
-        isActive: true,
+        order: 0,
+        active: true,
       });
       toast({
         title: "Success!",
@@ -225,9 +224,8 @@ export default function AdminPage() {
     title: "",
     imageUrl: "",
     linkUrl: "",
-    position: 0,
-    page: "explore",
-    isActive: true,
+    order: 0,
+    active: true,
   });
 
   // Google Ad Preview Component
@@ -895,36 +893,22 @@ export default function AdminPage() {
                             data-testid="input-slideshow-link"
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="slideshow-page" className="text-gray-300">Page</Label>
-                            <Select value={slideshowFormData.page} onValueChange={(value) => setSlideshowFormData({ ...slideshowFormData, page: value })}>
-                              <SelectTrigger className="bg-gray-800 border-gray-600 text-white" data-testid="select-slideshow-page">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-gray-800 border-gray-600">
-                                <SelectItem value="explore">Explore</SelectItem>
-                                <SelectItem value="events">Events</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="slideshow-position" className="text-gray-300">Position</Label>
-                            <Input
-                              id="slideshow-position"
-                              type="number"
-                              value={slideshowFormData.position}
-                              onChange={(e) => setSlideshowFormData({ ...slideshowFormData, position: parseInt(e.target.value) || 0 })}
-                              placeholder="0"
-                              className="bg-gray-800 border-gray-600 text-white"
-                              data-testid="input-slideshow-position"
-                            />
-                          </div>
+                        <div>
+                          <Label htmlFor="slideshow-order" className="text-gray-300">Display Order</Label>
+                          <Input
+                            id="slideshow-order"
+                            type="number"
+                            value={slideshowFormData.order}
+                            onChange={(e) => setSlideshowFormData({ ...slideshowFormData, order: parseInt(e.target.value) || 0 })}
+                            placeholder="0"
+                            className="bg-gray-800 border-gray-600 text-white"
+                            data-testid="input-slideshow-order"
+                          />
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch
-                            checked={slideshowFormData.isActive}
-                            onCheckedChange={(checked) => setSlideshowFormData({ ...slideshowFormData, isActive: checked })}
+                            checked={slideshowFormData.active}
+                            onCheckedChange={(checked) => setSlideshowFormData({ ...slideshowFormData, active: checked })}
                             data-testid="switch-slideshow-active"
                           />
                           <Label className="text-gray-300">Active</Label>
@@ -939,9 +923,8 @@ export default function AdminPage() {
                                 title: "",
                                 imageUrl: "",
                                 linkUrl: "",
-                                position: 0,
-                                page: "explore",
-                                isActive: true,
+                                order: 0,
+                                active: true,
                               });
                             }}
                             className="border-gray-600 text-gray-300"
@@ -1001,12 +984,9 @@ export default function AdminPage() {
                                 {slideshow.title}
                               </h4>
                               <div className="flex items-center space-x-2 text-sm text-gray-400">
-                                <Badge variant={slideshow.page === "explore" ? "default" : "secondary"}>
-                                  {slideshow.page}
-                                </Badge>
-                                <span>Position: {slideshow.position}</span>
-                                <Badge variant={slideshow.isActive ? "default" : "destructive"}>
-                                  {slideshow.isActive ? "Active" : "Inactive"}
+                                <span>Order: {slideshow.order}</span>
+                                <Badge variant={slideshow.active ? "default" : "destructive"}>
+                                  {slideshow.active ? "Active" : "Inactive"}
                                 </Badge>
                               </div>
                             </div>
@@ -1021,9 +1001,8 @@ export default function AdminPage() {
                                   title: slideshow.title,
                                   imageUrl: slideshow.imageUrl,
                                   linkUrl: slideshow.linkUrl || "",
-                                  position: slideshow.position || 0,
-                                  page: slideshow.page,
-                                  isActive: slideshow.isActive || false,
+                                  order: slideshow.order || 0,
+                                  active: slideshow.active || false,
                                 });
                                 setShowSlideshowForm(true);
                               }}
@@ -1038,13 +1017,13 @@ export default function AdminPage() {
                               onClick={() => {
                                 updateSlideshowMutation.mutate({
                                   id: slideshow.id,
-                                  data: { isActive: !slideshow.isActive }
+                                  data: { active: !slideshow.active }
                                 });
                               }}
                               className="border-gray-600 text-gray-300"
                               data-testid={`button-toggle-slideshow-${slideshow.id}`}
                             >
-                              {slideshow.isActive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              {slideshow.active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                             </Button>
                             <Button
                               size="sm"
