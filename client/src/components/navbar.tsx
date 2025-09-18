@@ -326,7 +326,7 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/add-event" data-testid="button-add-event">
+                    <Link href="/add-event" data-testid='/your-events'>
                       <Calendar className="mr-2 h-4 w-4" />
                       Add Event
                     </Link>
@@ -338,16 +338,14 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/add-bot" data-testid="button-add-bot">
+                    <Link href="/add-bot" data-testid='/your-bots'>
                       <Bot className="mr-2 h-4 w-4" />
                       Add Bot
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/add-job" data-testid="button-add-job">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Job
-                    </Link>
+                <DropdownMenuItem onClick={() => navigate('/jobs')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Job Board</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/partnership')}>
                     <Users className="mr-2 h-4 w-4" />
@@ -361,26 +359,11 @@ export default function Navbar() {
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     <span>Store</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/quest')}>
-                    <Trophy className="mr-2 h-4 w-4" />
-                    <span>Quest</span>
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/join-members')}>
                     <Users className="mr-2 h-4 w-4" />
                     <span>Join Members</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/add-partnership')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    <span>Create Partnership</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/add-template')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    <span>Create Template</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/jobs')}>
-                    <Users className="mr-2 h-4 w-4" />
-                    <span>Job Board</span>
-                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem data-testid="button-settings">
                     <Settings className="mr-2 h-4 w-4" />
