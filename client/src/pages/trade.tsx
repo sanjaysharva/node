@@ -137,6 +137,18 @@ export default function Trade() {
       {/* Header */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <Link href="/join-members">
+              <Button 
+                variant="outline" 
+                className="border-border bg-card/50 hover:bg-card text-foreground hover:text-primary transition-all duration-300"
+                data-testid="button-back-to-join-members-trade"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Member Exchange
+              </Button>
+            </Link>
+          </div>
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
             💰 Trade Coins
           </h1>
