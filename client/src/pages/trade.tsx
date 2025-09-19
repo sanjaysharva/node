@@ -156,14 +156,14 @@ export default function Trade() {
         </div>
 
         {/* Your Balance */}
-        <Card className="mb-8 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-2 border-green-200 dark:border-green-800">
+        <Card className="mb-8 bg-card border-2 border-green-200 dark:border-green-800">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="flex items-center justify-center space-x-2 mb-2">
+              <div className="flex bg-card items-center justify-center space-x-2 mb-2">
                 <Coins className="w-6 h-6 text-yellow-500" />
                 <span className="text-lg font-semibold">Your Balance</span>
               </div>
-              <div className="text-4xl font-bold text-green-600 dark:text-green-400">
+              <div className="text-4xl font-bold text-green-600 dark:text-white">
                 {user?.coins || 0} coins
               </div>
             </div>
