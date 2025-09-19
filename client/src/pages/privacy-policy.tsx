@@ -1,6 +1,7 @@
 
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import backgroundImage from "@assets/generated_images/b82f28a7e9c8fcb3868d3d94652c107c.gif"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield } from "lucide-react";
 
@@ -10,7 +11,15 @@ export default function PrivacyPolicy() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-purple-900/50 border-b border-border">
+      <section className="relative overflow-hidden  border-b border-border">
+        <div className="absolute inset-0 w-full h-full">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
             <div className="space-y-4">

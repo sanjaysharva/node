@@ -42,7 +42,7 @@ export default function Navbar() {
                   />
                   <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
                 </div>
-                <span className="font-bold text-xl text-white bg-300% transition-all duration-300 group-hover:scale-105">
+                <span className="font-bold text-xl text-white bg-300% transition-all duration-300 group-hover:scale-105" style={{ fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>
                   Axiom
                 </span>
               </Link>
@@ -73,7 +73,7 @@ export default function Navbar() {
                 />
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg scale-150 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               </div>
-              <span className="font-bold text-lg text-white bg-300% transition-all duration-300 group-hover:scale-105">
+              <span className="font-bold text-lg text-white bg-300% transition-all duration-300 group-hover:scale-105" style={{ fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>
                 Axiom
               </span>
             </Link>
@@ -125,7 +125,7 @@ export default function Navbar() {
                         </div>
                       </Link>
                       
-                      <Link href="/add-bot" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-your-servers">
+                      <Link href="/your-bots" className="group p-4 rounded-lg hover:bg-[#16213e] transition-colors" data-testid="link-your-servers">
                         <div className="flex items-start space-x-3">
                           <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
                             <Bot className="w-5 h-5 text-purple-400" />
@@ -231,6 +231,10 @@ export default function Navbar() {
 
                 {supportDropdownOpen && (
                 <div className="absolute top-full mt-2 w-56 bg-card rounded-lg shadow-lg border border-card text-sm py-2 z-50 right-0">
+                  <Link href="/blog" className="flex items-center px-4 py-2 text-white hover:bg-gray-700 transition-colors" data-testid="link-support-ticket">
+                    <Ticket className="w-4 h-4 mr-3" />
+                    Blog
+                  </Link>
                   <Link href="/help" className="flex items-center px-4 py-2 text-white hover:bg-gray-700 transition-colors" data-testid="link-help">
                     <HelpCircle className="w-4 h-4 mr-3" />
                     Help
@@ -243,6 +247,7 @@ export default function Navbar() {
                     <Ticket className="w-4 h-4 mr-3" />
                     Support Ticket
                   </Link>
+                  
                   
                   <div className="border-t border-gray-600 my-2"></div>
                   
