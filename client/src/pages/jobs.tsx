@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, MapPin, Clock, DollarSign, Users, Briefcase } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
 
 interface Job {
   id: string;
@@ -63,27 +64,47 @@ export default function Jobs() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-4">
-              Job Board
-            </h1>
-            <p className="text-xl text-muted-foreground mb-6">
-              Find Discord-related jobs and services. Post what you need or offer your skills.
-            </p>
-            
+      {/* Hero Section with Background */}
+      <section className="relative overflow-hidden border-b border-border">
+        <div className="absolute inset-0 w-full h-full">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center space-y-6">
+            <div className="space-y-4">
+              <div className="inline-block p-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500">
+                <Briefcase className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
+                Job Board
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Find Discord-related jobs and services. Post what you need or offer your skills.
+              </p>
+            </div>
+
             {isAuthenticated && (
-              <Button 
-                onClick={() => navigate('/add-job')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Post Job
-              </Button>
+              <div className="mt-6">
+                <Button 
+                  onClick={() => navigate('/add-job')}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 text-lg"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Post Job
+                </Button>
+              </div>
             )}
           </div>
+        </div>
+      </section>
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto">
 
           {/* Search and Filters */}
           <div className="mb-8">

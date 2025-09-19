@@ -1,8 +1,8 @@
-
 import { sql, relations } from "drizzle-orm";
-import { mysqlTable, text, varchar, int, timestamp, boolean, json } from "drizzle-orm/mysql-core";
+import { mysqlTable, text, varchar, int, timestamp, boolean, json, decimal } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { createId } from "@paralleldrive/cuid2";
 
 export const users = mysqlTable("users", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
@@ -103,20 +103,21 @@ export const events = mysqlTable("events", {
 });
 
 export const ads = mysqlTable("ads", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  imageUrl: text("image_url"),
-  clickUrl: varchar("click_url", { length: 255 }).notNull(),
-  type: varchar("type", { length: 50 }).notNull(),
-  position: varchar("position", { length: 50 }).notNull(),
-  active: boolean("active").default(true),
-  impressions: int("impressions").default(0),
-  clicks: int("clicks").default(0),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  id: varchar("id", { length: 191 }).primaryKey().$defaultFn(() => createId()),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  content: text("content").notNull(),
+  imageUrl: varchar("image_url", { length: 500 }),
+  targetUrl: varchar("target_url", { length: 500 }),
+  linkUrl: varchar("link_url", { length: 500 }),
+  position: varchar("position", { length: 50 }).notNull().default("sidebar"),
+  isActive: boolean("is_active").notNull().default(true),
+  impressions: int("impressions").notNull().default(0),
+  clicks: int("clicks").notNull().default(0),
+  budget: decimal("budget", { precision: 10, scale: 2 }).default("0.00"),
+  spent: decimal("spent", { precision: 10, scale: 2 }).default("0.00"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export const slideshows = mysqlTable("slideshows", {

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Plus, Users, Star, ExternalLink, MessageCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
 
 interface Partnership {
   id: string;
@@ -59,19 +60,35 @@ export default function Partnership() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
+      {/* Hero Section with Background */}
+      <section className="relative overflow-hidden border-b border-border">
+        <div className="absolute inset-0 w-full h-full">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center space-y-6">
+            <div className="space-y-4">
+              <div className="inline-block p-3 rounded-xl bg-gradient-to-r from-purple-400 to-cyan-400">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text">
+                Partnership Hub
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Connect, collaborate, and grow your Discord community through meaningful partnerships
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-4">
-              Partnership Hub
-            </h1>
-            <p className="text-xl text-muted-foreground mb-6">
-              Connect, collaborate, and grow your Discord community through meaningful partnerships
-            </p>
-            
-            
-          </div>
 
           {/* Search and Filters */}
           <div className="mb-8">

@@ -1,6 +1,6 @@
 import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, faqs, supportTickets, contactSubmissions, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes, jobs, type Job, type InsertJob, type Faq, type InsertFaq, type SupportTicket, type InsertSupportTicket, type ContactSubmission, type InsertContactSubmission } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, ilike, like, sql, isNull, count } from 'drizzle-orm';
+import { eq, desc, and, or, ilike, like, sql, isNull, count, asc } from 'drizzle-orm';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
 import crypto from "crypto";
 
@@ -378,8 +378,8 @@ export class DatabaseStorage implements IStorage {
     // Update bot vote count
     await this.db
       .update(bots)
-      .set({ 
-        totalVotes: sql`${bots.totalVotes} + 1` 
+      .set({
+        totalVotes: sql`${bots.totalVotes} + 1`
       })
       .where(eq(bots.id, botId));
 
@@ -388,15 +388,19 @@ export class DatabaseStorage implements IStorage {
 
   // Ad operations
   async getAds(position?: string): Promise<Ad[]> {
-    const conditions = [eq(ads.isActive, true)];
+    try {
+      let query = this.db.select().from(ads).where(eq(ads.isActive, true));
 
-    if (position) {
-      conditions.push(eq(ads.position, position));
+      if (position) {
+        query = query.where(eq(ads.position, position));
+      }
+
+      const result = await query.orderBy(desc(ads.createdAt));
+      return result || [];
+    } catch (error) {
+      console.error('Database error in getAds:', error);
+      return [];
     }
-
-    return await this.db.select().from(ads)
-      .where(and(...conditions))
-      .orderBy(desc(ads.createdAt));
   }
 
   async getAd(id: string): Promise<Ad | undefined> {
@@ -405,18 +409,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAd(insertAd: InsertAd): Promise<Ad> {
-    const [ad] = await this.db.insert(ads).values(insertAd).returning();
-    return ad;
+    try {
+      const result = await this.db.insert(ads).values({
+        ...insertAd,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Database error in createAd:', error);
+      throw error;
+    }
   }
 
   async updateAd(id: string, ad: Partial<InsertAd>): Promise<Ad | undefined> {
-    const [updatedAd] = await this.db.update(ads).set({ ...ad, updatedAt: new Date() }).where(eq(ads.id, id)).returning();
-    return updatedAd || undefined;
+    try {
+      const result = await this.db.update(ads)
+        .set({
+          ...ad,
+          updatedAt: new Date()
+        })
+        .where(eq(ads.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Database error in updateAd:', error);
+      throw error;
+    }
   }
 
   async deleteAd(id: string): Promise<boolean> {
-    const result = await this.db.delete(ads).where(eq(ads.id, id));
-    return (result.rowCount ?? 0) > 0;
+    try {
+      await this.db.delete(ads).where(eq(ads.id, id));
+      return true;
+    } catch (error) {
+      console.error('Database error in deleteAd:', error);
+      return false;
+    }
   }
 
   // Wallet operations
@@ -635,38 +664,69 @@ export class DatabaseStorage implements IStorage {
 
   // Slideshow operations
   async getSlideshows(page?: string, includeInactive?: boolean): Promise<Slideshow[]> {
-    const conditions = [];
+    try {
+      let whereConditions = [];
 
-    if (!includeInactive) {
-      conditions.push(eq(slideshows.isActive, true));
+      if (!includeInactive) {
+        whereConditions.push(eq(slideshows.isActive, true));
+      }
+
+      // If page is specified, filter by page
+      if (page) {
+        // Note: Add page field to slideshow schema if needed
+        // For now, return all slideshows
+      }
+
+      const query = whereConditions.length > 0
+        ? this.db.select().from(slideshows).where(and(...whereConditions))
+        : this.db.select().from(slideshows);
+
+      const result = await query.orderBy(asc(slideshows.order));
+      return result || [];
+    } catch (error) {
+      console.error('Database error in getSlideshows:', error);
+      return [];
     }
-
-    if (page) {
-      conditions.push(eq(slideshows.page, page));
-    }
-
-    return await this.db.select().from(slideshows)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(slideshows.position, desc(slideshows.createdAt));
   }
 
   async createSlideshow(insertSlideshow: InsertSlideshow): Promise<Slideshow> {
-    const [slideshow] = await this.db.insert(slideshows).values(insertSlideshow).returning();
-    return slideshow;
+    try {
+      const result = await this.db.insert(slideshows).values({
+        ...insertSlideshow,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Database error in createSlideshow:', error);
+      throw error;
+    }
   }
 
   async updateSlideshow(id: string, updateData: Partial<InsertSlideshow>): Promise<Slideshow | undefined> {
-    const [slideshow] = await this.db.update(slideshows)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(eq(slideshows.id, id))
-      .returning();
-    return slideshow;
+    try {
+      const result = await this.db.update(slideshows)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(eq(slideshows.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Database error in updateSlideshow:', error);
+      throw error;
+    }
   }
 
   async deleteSlideshow(id: string): Promise<boolean> {
-    const result = await this.db.delete(slideshows)
-      .where(eq(slideshows.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    try {
+      await this.db.delete(slideshows).where(eq(slideshows.id, id));
+      return true;
+    } catch (error) {
+      console.error('Database error in deleteSlideshow:', error);
+      return false;
+    }
   }
 
   // Event operations
