@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, Edit, Timer, Upload, Image, Play, Pause, Eye, EyeOff, Zap, TrendingUp, Star, Users, Server, Bot, Calendar, MessageCircle, BarChart3, Search, Filter, Settings, Activity, Download, FileText, Globe, Shield, HeartHandshake, HelpCircle } from "lucide-react";
+import { Trash2, Plus, Edit, Timer, Upload, Image, Play, Pause, Eye, EyeOff, Zap, TrendingUp, Star, Users, Server, Bot, Calendar, MessageCircle, BarChart3, Search, Filter, Settings, Activity, Download, FileText, Globe, Shield, HeartHandshake, HelpCircle, BookOpen, PenTool } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -20,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest } from "@/lib/queryClient";
 import { insertSlideshowSchema, type Slideshow, insertFaqSchema, type Faq } from "@shared/schema";
+import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
 
 // Interface definitions
 interface Ad {
@@ -37,6 +39,20 @@ interface Ad {
   ctr?: number;
   conversions?: number;
   cost?: number;
+}
+
+interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  category: string;
+  coverImage?: string;
+  published: boolean;
+  featured: boolean;
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface LiveChatMessage {
@@ -74,6 +90,19 @@ export default function AdminPage() {
   const [searchFilter, setSearchFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedServers, setSelectedServers] = useState<string[]>([]);
+
+  // Blog management state
+  const [showBlogForm, setShowBlogForm] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
+  const [blogFormData, setBlogFormData] = useState({
+    title: "",
+    content: "",
+    excerpt: "",
+    category: "announcements",
+    coverImage: "",
+    published: false,
+    featured: false,
+  });
 
   // Fetch data with new endpoints
   const { data: adsData, isLoading: adsLoading, refetch: refetchAds } = useQuery<Ad[]>({
@@ -136,6 +165,17 @@ export default function AdminPage() {
       // Fetch all FAQs (admin can see inactive ones too)
       const response = await fetch("/api/faqs");
       if (!response.ok) throw new Error("Failed to fetch FAQs");
+      return response.json();
+    },
+    enabled: !!user?.isAdmin,
+  });
+
+  // Fetch all blog posts for admin management
+  const { data: allBlogs, isLoading: blogsLoading, refetch: refetchBlogs } = useQuery<BlogPost[]>({
+    queryKey: ["/api/blog/posts", "admin"],
+    queryFn: async () => {
+      const response = await fetch("/api/blog/posts?includeUnpublished=true");
+      if (!response.ok) throw new Error("Failed to fetch blog posts");
       return response.json();
     },
     enabled: !!user?.isAdmin,
@@ -293,6 +333,84 @@ export default function AdminPage() {
     },
   });
 
+  // Blog mutations
+  const createBlogMutation = useMutation({
+    mutationFn: async (blogData: any) => {
+      const response = await apiRequest("POST", "/api/blog/posts", blogData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/blog/posts"] });
+      refetchBlogs();
+      setShowBlogForm(false);
+      setBlogFormData({
+        title: "",
+        content: "",
+        excerpt: "",
+        category: "announcements",
+        coverImage: "",
+        published: false,
+        featured: false,
+      });
+      toast({
+        title: "Success!",
+        description: "Blog post created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create blog post",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateBlogMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest("PUT", `/api/blog/posts/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/blog/posts"] });
+      refetchBlogs();
+      setEditingBlog(null);
+      setShowBlogForm(false);
+      toast({
+        title: "Success!",
+        description: "Blog post updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update blog post",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteBlogMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/blog/posts/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/blog/posts"] });
+      refetchBlogs();
+      toast({
+        title: "Success!",
+        description: "Blog post deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete blog post",
+        variant: "destructive",
+      });
+    },
+  });
+
   // State for forms
   const [showForm, setShowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
@@ -355,13 +473,13 @@ export default function AdminPage() {
 
   // Live Chat Component
   const LiveChatPanel = () => (
-    <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+    <Card className="border border-border bg-card/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
+        <CardTitle className="text-foreground flex items-center">
           <MessageCircle className="w-5 h-5 mr-2 text-blue-400" />
           Live Chat Support
         </CardTitle>
-        <CardDescription className="text-gray-400">
+        <CardDescription className="text-muted-foreground">
           Manage live chat conversations with users
         </CardDescription>
       </CardHeader>
@@ -369,20 +487,20 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chat List */}
           <div className="space-y-2">
-            <h4 className="font-medium text-white mb-2">Active Conversations</h4>
+            <h4 className="font-medium text-foreground mb-2">Active Conversations</h4>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {liveChatMessages.map((chat) => (
                 <div
                   key={chat.id}
-                  className={`p-3 border border-gray-600 rounded-lg cursor-pointer transition-colors ${
-                    selectedChat === chat.id ? 'bg-blue-600/20 border-blue-500' : 'bg-gray-800 hover:bg-gray-700'
+                  className={`p-3 border border-border rounded-lg cursor-pointer transition-colors ${
+                    selectedChat === chat.id ? 'bg-primary/20 border-primary' : 'bg-card hover:bg-card/80'
                   }`}
                   onClick={() => setSelectedChat(chat.id)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium text-white">{chat.username}</p>
-                      <p className="text-sm text-gray-300 truncate">{chat.message}</p>
+                      <p className="font-medium text-foreground">{chat.username}</p>
+                      <p className="text-sm text-muted-foreground truncate">{chat.message}</p>
                     </div>
                     <Badge
                       variant={chat.status === 'read' ? 'default' : 'destructive'}
@@ -397,21 +515,21 @@ export default function AdminPage() {
           </div>
 
           {/* Chat Interface */}
-          <div className="border border-gray-600 rounded-lg p-4 bg-gray-800">
-            <h4 className="font-medium text-white mb-4">Chat Response</h4>
+          <div className="border border-border rounded-lg p-4 bg-card">
+            <h4 className="font-medium text-foreground mb-4">Chat Response</h4>
             <div className="space-y-4">
               <Textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your response..."
-                className="bg-gray-700 border-gray-600 text-white"
+                className="bg-background border-border text-foreground"
                 rows={4}
               />
               <div className="flex space-x-2">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Button size="sm" className="bg-primary hover:bg-primary/90">
                   Send Response
                 </Button>
-                <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
+                <Button size="sm" variant="outline" className="border-border text-muted-foreground">
                   Mark Resolved
                 </Button>
               </div>
@@ -424,13 +542,13 @@ export default function AdminPage() {
 
   // Server Analytics Component
   const ServerAnalyticsPanel = () => (
-    <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+    <Card className="border border-border bg-card/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
+        <CardTitle className="text-foreground flex items-center">
           <BarChart3 className="w-5 h-5 mr-2 text-green-400" />
           Server Analytics & Insights
         </CardTitle>
-        <CardDescription className="text-gray-400">
+        <CardDescription className="text-muted-foreground">
           Real-time server performance and growth metrics
         </CardDescription>
       </CardHeader>
@@ -443,11 +561,11 @@ export default function AdminPage() {
                 placeholder="Search servers..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="bg-gray-800 border-gray-600"
+                className="bg-background border-border"
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48 bg-gray-800 border-gray-600">
+              <SelectTrigger className="w-48 bg-background border-border">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -462,8 +580,8 @@ export default function AdminPage() {
           {/* Analytics Table */}
           <Table>
             <TableHeader>
-              <TableRow className="border-gray-700">
-                <TableHead className="text-gray-300">
+              <TableRow className="border-border">
+                <TableHead className="text-muted-foreground">
                   <Checkbox
                     checked={selectedServers.length > 0 && serverAnalytics?.every(s => selectedServers.includes(s.serverId))}
                     onCheckedChange={(checked) => {
@@ -477,17 +595,17 @@ export default function AdminPage() {
                   />
                   Server
                 </TableHead>
-                <TableHead className="text-gray-300">Members</TableHead>
-                <TableHead className="text-gray-300">Daily Growth</TableHead>
-                <TableHead className="text-gray-300">Active Rate</TableHead>
-                <TableHead className="text-gray-300">Messages/Day</TableHead>
-                <TableHead className="text-gray-300">Join Rate</TableHead>
+                <TableHead className="text-muted-foreground">Members</TableHead>
+                <TableHead className="text-muted-foreground">Daily Growth</TableHead>
+                <TableHead className="text-muted-foreground">Active Rate</TableHead>
+                <TableHead className="text-muted-foreground">Messages/Day</TableHead>
+                <TableHead className="text-muted-foreground">Join Rate</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {serverAnalytics?.map((server) => (
-                <TableRow key={server.serverId} className="border-gray-700">
-                  <TableCell className="text-white">
+                <TableRow key={server.serverId} className="border-border">
+                  <TableCell className="text-foreground">
                     <div className="flex items-center">
                       <Checkbox
                         checked={selectedServers.includes(server.serverId)}
@@ -503,7 +621,7 @@ export default function AdminPage() {
                       {server.serverName}
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-300">{server.memberCount.toLocaleString()}</TableCell>
+                  <TableCell className="text-muted-foreground">{server.memberCount.toLocaleString()}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
                       <span className={`text-sm ${server.dailyGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -511,14 +629,14 @@ export default function AdminPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-300">
+                  <TableCell className="text-muted-foreground">
                     <div className="flex items-center space-x-2">
                       <Progress value={server.activeMembers} className="w-16" />
                       <span className="text-xs">{server.activeMembers}%</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-300">{server.messagesSent.toLocaleString()}</TableCell>
-                  <TableCell className="text-gray-300">{server.joinRate}%</TableCell>
+                  <TableCell className="text-muted-foreground">{server.messagesSent.toLocaleString()}</TableCell>
+                  <TableCell className="text-muted-foreground">{server.joinRate}%</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -526,17 +644,17 @@ export default function AdminPage() {
 
           {/* Bulk Operations */}
           {selectedServers.length > 0 && (
-            <div className="flex space-x-2 mt-4 p-3 bg-gray-800 rounded-lg">
-              <span className="text-gray-300">{selectedServers.length} servers selected:</span>
-              <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
+            <div className="flex space-x-2 mt-4 p-3 bg-card rounded-lg">
+              <span className="text-muted-foreground">{selectedServers.length} servers selected:</span>
+              <Button size="sm" variant="outline" className="border-border text-muted-foreground">
                 <Download className="w-4 h-4 mr-1" />
                 Export Data
               </Button>
-              <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
+              <Button size="sm" variant="outline" className="border-border text-muted-foreground">
                 <Settings className="w-4 h-4 mr-1" />
                 Bulk Edit
               </Button>
-              <Button size="sm" variant="outline" className="border-red-500 text-red-400">
+              <Button size="sm" variant="outline" className="border-destructive text-destructive">
                 <Trash2 className="w-4 h-4 mr-1" />
                 Remove
               </Button>
@@ -549,52 +667,52 @@ export default function AdminPage() {
 
   // Ad Performance Analytics Component
   const AdPerformancePanel = () => (
-    <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+    <Card className="border border-border bg-card/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
+        <CardTitle className="text-foreground flex items-center">
           <TrendingUp className="w-5 h-5 mr-2 text-purple-400" />
           Ad Performance Analytics
         </CardTitle>
-        <CardDescription className="text-gray-400">
+        <CardDescription className="text-muted-foreground">
           Detailed metrics and performance data for advertisements
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow className="border-gray-700">
-              <TableHead className="text-gray-300">Ad Title</TableHead>
-              <TableHead className="text-gray-300">Impressions</TableHead>
-              <TableHead className="text-gray-300">Clicks</TableHead>
-              <TableHead className="text-gray-300">CTR</TableHead>
-              <TableHead className="text-gray-300">Conversions</TableHead>
-              <TableHead className="text-gray-300">Cost</TableHead>
-              <TableHead className="text-gray-300">Preview</TableHead>
+            <TableRow className="border-border">
+              <TableHead className="text-muted-foreground">Ad Title</TableHead>
+              <TableHead className="text-muted-foreground">Impressions</TableHead>
+              <TableHead className="text-muted-foreground">Clicks</TableHead>
+              <TableHead className="text-muted-foreground">CTR</TableHead>
+              <TableHead className="text-muted-foreground">Conversions</TableHead>
+              <TableHead className="text-muted-foreground">Cost</TableHead>
+              <TableHead className="text-muted-foreground">Preview</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {adsData?.map((ad) => (
-              <TableRow key={ad.id} className="border-gray-700">
-                <TableCell className="text-white font-medium">{ad.title}</TableCell>
-                <TableCell className="text-gray-300">{(ad.impressions || 0).toLocaleString()}</TableCell>
-                <TableCell className="text-gray-300">{(ad.clicks || 0).toLocaleString()}</TableCell>
+              <TableRow key={ad.id} className="border-border">
+                <TableCell className="text-foreground font-medium">{ad.title}</TableCell>
+                <TableCell className="text-muted-foreground">{(ad.impressions || 0).toLocaleString()}</TableCell>
+                <TableCell className="text-muted-foreground">{(ad.clicks || 0).toLocaleString()}</TableCell>
                 <TableCell>
                   <span className={`text-sm ${(ad.ctr || 0) >= 2 ? 'text-green-400' : 'text-yellow-400'}`}>
                     {((ad.ctr || 0) * 100).toFixed(2)}%
                   </span>
                 </TableCell>
-                <TableCell className="text-gray-300">{ad.conversions || 0}</TableCell>
-                <TableCell className="text-gray-300">${(ad.cost || 0).toFixed(2)}</TableCell>
+                <TableCell className="text-muted-foreground">{ad.conversions || 0}</TableCell>
+                <TableCell className="text-muted-foreground">${(ad.cost || 0).toFixed(2)}</TableCell>
                 <TableCell>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
+                      <Button size="sm" variant="outline" className="border-border text-muted-foreground">
                         <Eye className="w-4 h-4" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-gray-900 border-gray-700">
+                    <DialogContent className="bg-background border-border">
                       <DialogHeader>
-                        <DialogTitle className="text-white">Ad Preview</DialogTitle>
+                        <DialogTitle className="text-foreground">Ad Preview</DialogTitle>
                       </DialogHeader>
                       <div className="flex justify-center p-4">
                         <GoogleAdPreview ad={ad} />
@@ -612,13 +730,13 @@ export default function AdminPage() {
 
   if (!isAuthenticated || !user?.isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
-          <Card className="border border-purple-500/20 bg-gray-900/50 backdrop-blur-sm">
+          <Card className="border border-border bg-card/50 backdrop-blur-sm">
             <CardContent className="p-8 text-center">
-              <h1 className="text-2xl font-bold mb-4 text-white">Access Denied</h1>
-              <p className="text-gray-300">You need admin privileges to access this page.</p>
+              <h1 className="text-2xl font-bold mb-4 text-foreground">Access Denied</h1>
+              <p className="text-muted-foreground">You need admin privileges to access this page.</p>
             </CardContent>
           </Card>
         </div>
@@ -627,124 +745,137 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20"></div>
-        <div className="relative container mx-auto px-4 py-16">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-              Admin Control Center
-            </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Comprehensive platform management with real-time analytics and advanced tools
-            </p>
+      {/* Hero Section with Background */}
+      <section className="relative overflow-hidden border-b border-border">
+        <div className="absolute inset-0 w-full h-full z-0">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center space-y-6">
+            <div className="space-y-4">
+              <div className="inline-block p-3 rounded-xl bg-gradient-to-r from-purple-400 to-cyan-400">
+                <Settings className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text">
+                Admin Control Center
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Comprehensive platform management with real-time analytics and advanced tools
+              </p>
+            </div>
 
             {/* Live Stats Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+              <div className="bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
                 <div className="flex items-center justify-center space-x-2">
                   <Activity className="w-5 h-5 text-green-400" />
-                  <span className="text-white font-bold">{liveStats?.onlineUsers || 0}</span>
+                  <span className="text-foreground font-bold">{liveStats?.onlineUsers || 0}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Online Users</p>
+                <p className="text-xs text-muted-foreground mt-1">Online Users</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+              <div className="bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
                 <div className="flex items-center justify-center space-x-2">
                   <Server className="w-5 h-5 text-blue-400" />
-                  <span className="text-white font-bold">{liveStats?.totalServers || 0}</span>
+                  <span className="text-foreground font-bold">{liveStats?.totalServers || 0}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Total Servers</p>
+                <p className="text-xs text-muted-foreground mt-1">Total Servers</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+              <div className="bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
                 <div className="flex items-center justify-center space-x-2">
                   <TrendingUp className="w-5 h-5 text-purple-400" />
-                  <span className="text-white font-bold">{liveStats?.activeAds || 0}</span>
+                  <span className="text-foreground font-bold">{liveStats?.activeAds || 0}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Active Ads</p>
+                <p className="text-xs text-muted-foreground mt-1">Active Ads</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+              <div className="bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
                 <div className="flex items-center justify-center space-x-2">
                   <Bot className="w-5 h-5 text-orange-400" />
-                  <span className="text-white font-bold">{liveStats?.botCommands || 0}</span>
+                  <span className="text-foreground font-bold">{liveStats?.botCommands || 0}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Bot Commands/Hour</p>
+                <p className="text-xs text-muted-foreground mt-1">Bot Commands/Hour</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-8 bg-gray-800/50 border border-gray-700">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-purple-600">Overview</TabsTrigger>
-            <TabsTrigger value="ads" className="data-[state=active]:bg-purple-600">Google Ads</TabsTrigger>
-            <TabsTrigger value="slideshows" className="data-[state=active]:bg-purple-600">Slideshows</TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-purple-600">Analytics</TabsTrigger>
-            <TabsTrigger value="servers" className="data-[state=active]:bg-purple-600">Servers</TabsTrigger>
-            <TabsTrigger value="support" className="data-[state=active]:bg-purple-600">Live Support</TabsTrigger>
-            <TabsTrigger value="bot" className="data-[state=active]:bg-purple-600">Bot Control</TabsTrigger>
-            <TabsTrigger value="faqs" className="data-[state=active]:bg-purple-600">FAQs</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-9 bg-card/50 border border-border">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-primary">Overview</TabsTrigger>
+            <TabsTrigger value="ads" className="data-[state=active]:bg-primary">Google Ads</TabsTrigger>
+            <TabsTrigger value="slideshows" className="data-[state=active]:bg-primary">Slideshows</TabsTrigger>
+            <TabsTrigger value="blogs" className="data-[state=active]:bg-primary">Blog Posts</TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-primary">Analytics</TabsTrigger>
+            <TabsTrigger value="servers" className="data-[state=active]:bg-primary">Servers</TabsTrigger>
+            <TabsTrigger value="support" className="data-[state=active]:bg-primary">Live Support</TabsTrigger>
+            <TabsTrigger value="bot" className="data-[state=active]:bg-primary">Bot Control</TabsTrigger>
+            <TabsTrigger value="faqs" className="data-[state=active]:bg-primary">FAQs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="border border-purple-500/20 bg-gray-900/50 backdrop-blur-sm">
+              <Card className="border border-border bg-card/50 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Total Users</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
                   <Users className="h-4 w-4 text-purple-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">{liveStats?.totalUsers || 0}</div>
-                  <p className="text-xs text-gray-400">+12% from last month</p>
+                  <div className="text-2xl font-bold text-foreground">{liveStats?.totalUsers || 0}</div>
+                  <p className="text-xs text-muted-foreground">+12% from last month</p>
                 </CardContent>
               </Card>
 
-              <Card className="border border-blue-500/20 bg-gray-900/50 backdrop-blur-sm">
+              <Card className="border border-border bg-card/50 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Ad Revenue</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Ad Revenue</CardTitle>
                   <TrendingUp className="h-4 w-4 text-blue-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">${liveStats?.adRevenue || 0}</div>
-                  <p className="text-xs text-gray-400">+8% from last week</p>
+                  <div className="text-2xl font-bold text-foreground">${liveStats?.adRevenue || 0}</div>
+                  <p className="text-xs text-muted-foreground">+8% from last week</p>
                 </CardContent>
               </Card>
 
-              <Card className="border border-green-500/20 bg-gray-900/50 backdrop-blur-sm">
+              <Card className="border border-border bg-card/50 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Support Tickets</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Support Tickets</CardTitle>
                   <HeartHandshake className="h-4 w-4 text-green-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">{liveStats?.supportTickets || 0}</div>
-                  <p className="text-xs text-gray-400">5 pending resolution</p>
+                  <div className="text-2xl font-bold text-foreground">{liveStats?.supportTickets || 0}</div>
+                  <p className="text-xs text-muted-foreground">5 pending resolution</p>
                 </CardContent>
               </Card>
 
-              <Card className="border border-orange-500/20 bg-gray-900/50 backdrop-blur-sm">
+              <Card className="border border-border bg-card/50 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Bot Uptime</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Bot Uptime</CardTitle>
                   <Shield className="h-4 w-4 text-orange-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">99.9%</div>
-                  <p className="text-xs text-gray-400">All systems operational</p>
+                  <div className="text-2xl font-bold text-foreground">99.9%</div>
+                  <p className="text-xs text-muted-foreground">All systems operational</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Quick Actions */}
-            <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
+                <CardTitle className="text-foreground flex items-center">
                   <Zap className="w-5 h-5 mr-2 text-yellow-400" />
                   Quick Actions
                 </CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-muted-foreground">
                   Frequently used administrative tasks
                 </CardDescription>
               </CardHeader>
@@ -758,21 +889,22 @@ export default function AdminPage() {
                     Create Google Ad
                   </Button>
                   <Button
+                    onClick={() => setShowBlogForm(true)}
                     className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 h-16 flex-col"
                   >
-                    <Activity className="w-5 h-5 mb-1" />
-                    Live Monitor
+                    <PenTool className="w-5 h-5 mb-1" />
+                    Write Blog Post
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800 h-16 flex-col"
+                    className="border-border text-muted-foreground hover:bg-card h-16 flex-col"
                   >
                     <FileText className="w-5 h-5 mb-1" />
                     Export Reports
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800 h-16 flex-col"
+                    className="border-border text-muted-foreground hover:bg-card h-16 flex-col"
                   >
                     <Settings className="w-5 h-5 mb-1" />
                     System Config
@@ -783,16 +915,16 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="ads" className="space-y-6">
-            <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-white">Google-Style Advertisement Management</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle className="text-foreground">Google-Style Advertisement Management</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   Create and manage Google Ads-style advertisements with professional layouts
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-white">Current Advertisements</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Current Advertisements</h3>
                   <Dialog open={showForm} onOpenChange={setShowForm}>
                     <DialogTrigger asChild>
                       <Button>
@@ -800,10 +932,10 @@ export default function AdminPage() {
                         Create Google Ad
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl bg-gray-900 border-gray-700">
+                    <DialogContent className="max-w-4xl bg-background border-border">
                       <DialogHeader>
-                        <DialogTitle className="text-white">Create Google-Style Advertisement</DialogTitle>
-                        <DialogDescription className="text-gray-400">
+                        <DialogTitle className="text-foreground">Create Google-Style Advertisement</DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
                           Create professional advertisements with Google Ads appearance
                         </DialogDescription>
                       </DialogHeader>
@@ -811,61 +943,61 @@ export default function AdminPage() {
                         {/* Form */}
                         <div className="space-y-4">
                           <div>
-                            <Label htmlFor="ad-title" className="text-gray-300">Headline</Label>
+                            <Label htmlFor="ad-title" className="text-muted-foreground">Headline</Label>
                             <Input
                               id="ad-title"
                               value={formData.title}
                               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                               placeholder="Your compelling headline"
-                              className="bg-gray-800 border-gray-600 text-white"
+                              className="bg-background border-border text-foreground"
                               maxLength={30}
                             />
-                            <p className="text-xs text-gray-400 mt-1">{formData.title.length}/30 characters</p>
+                            <p className="text-xs text-muted-foreground mt-1">{formData.title.length}/30 characters</p>
                           </div>
 
                           <div>
-                            <Label htmlFor="ad-content" className="text-gray-300">Description</Label>
+                            <Label htmlFor="ad-content" className="text-muted-foreground">Description</Label>
                             <Textarea
                               id="ad-content"
                               value={formData.description}
                               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                               placeholder="Describe your offer or service"
                               rows={3}
-                              className="bg-gray-800 border-gray-600 text-white"
+                              className="bg-background border-border text-foreground"
                               maxLength={90}
                             />
-                            <p className="text-xs text-gray-400 mt-1">{formData.description.length}/90 characters</p>
+                            <p className="text-xs text-muted-foreground mt-1">{formData.description.length}/90 characters</p>
                           </div>
 
                           <div>
-                            <Label htmlFor="ad-url" className="text-gray-300">Final URL</Label>
+                            <Label htmlFor="ad-url" className="text-muted-foreground">Final URL</Label>
                             <Input
                               id="ad-url"
                               value={formData.targetUrl}
                               onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
                               placeholder="https://your-website.com"
-                              className="bg-gray-800 border-gray-600 text-white"
+                              className="bg-background border-border text-foreground"
                             />
                           </div>
 
                           <div>
-                            <Label htmlFor="ad-image" className="text-gray-300">Image URL (Optional)</Label>
+                            <Label htmlFor="ad-image" className="text-muted-foreground">Image URL (Optional)</Label>
                             <Input
                               id="ad-image"
                               value={formData.imageUrl}
                               onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                               placeholder="https://your-image.jpg"
-                              className="bg-gray-800 border-gray-600 text-white"
+                              className="bg-background border-border text-foreground"
                             />
                           </div>
 
                           <div>
-                            <Label htmlFor="ad-position" className="text-gray-300">Placement</Label>
+                            <Label htmlFor="ad-position" className="text-muted-foreground">Placement</Label>
                             <Select onValueChange={(value) => setFormData({ ...formData, position: value })} defaultValue={formData.position}>
-                              <SelectTrigger className="bg-gray-800 border-gray-600">
+                              <SelectTrigger className="bg-background border-border">
                                 <SelectValue placeholder="Select position" />
                               </SelectTrigger>
-                              <SelectContent className="bg-gray-800 border-gray-600">
+                              <SelectContent className="bg-background border-border">
                                 <SelectItem value="search-results">Search Results</SelectItem>
                                 <SelectItem value="sidebar">Sidebar</SelectItem>
                                 <SelectItem value="header">Header Banner</SelectItem>
@@ -875,18 +1007,18 @@ export default function AdminPage() {
                             </Select>
                           </div>
 
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                          <Button className="w-full bg-primary hover:bg-primary/90">
                             Create Advertisement
                           </Button>
                         </div>
 
                         {/* Live Preview */}
                         <div className="space-y-4">
-                          <h4 className="font-medium text-white">Live Preview</h4>
+                          <h4 className="font-medium text-foreground">Live Preview</h4>
                           <div className="bg-gray-100 p-6 rounded-lg">
                             <GoogleAdPreview ad={formData} />
                           </div>
-                          <div className="text-xs text-gray-400 space-y-1">
+                          <div className="text-xs text-muted-foreground space-y-1">
                             <p>• Headlines should be compelling and under 30 characters</p>
                             <p>• Descriptions should be clear and under 90 characters</p>
                             <p>• Images should be high quality and relevant</p>
@@ -900,23 +1032,23 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {adsData?.map((ad) => (
-                    <div key={ad.id} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                    <div key={ad.id} className="bg-card border border-border rounded-lg p-4">
                       <div className="mb-3">
                         <GoogleAdPreview ad={ad} />
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <div className="text-gray-300">
+                        <div className="text-muted-foreground">
                           <p>CTR: {((ad.ctr || 0) * 100).toFixed(2)}%</p>
                           <p>Clicks: {(ad.clicks || 0).toLocaleString()}</p>
                         </div>
                         <div className="flex space-x-1">
-                          <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
+                          <Button size="sm" variant="outline" className="border-border text-muted-foreground">
                             <Edit className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
+                          <Button size="sm" variant="outline" className="border-border text-muted-foreground">
                             {ad.isActive ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                           </Button>
-                          <Button size="sm" variant="outline" className="border-red-500 text-red-400">
+                          <Button size="sm" variant="outline" className="border-destructive text-destructive">
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
@@ -929,19 +1061,19 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="slideshows" className="space-y-6">
-            <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
+                <CardTitle className="text-foreground flex items-center">
                   <Image className="w-5 h-5 mr-2 text-cyan-400" />
                   Slideshow Management
                 </CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-muted-foreground">
                   Manage slideshows for explore and events pages
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-white">Current Slideshows</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Current Slideshows</h3>
                   <Dialog open={showSlideshowForm} onOpenChange={setShowSlideshowForm}>
                     <DialogTrigger asChild>
                       <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600" data-testid="button-create-slideshow">
@@ -949,58 +1081,58 @@ export default function AdminPage() {
                         Create Slideshow
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl bg-gray-900 border-gray-700">
+                    <DialogContent className="max-w-2xl bg-background border-border">
                       <DialogHeader>
-                        <DialogTitle className="text-white">
+                        <DialogTitle className="text-foreground">
                           {editingSlideshow ? "Edit Slideshow" : "Create Slideshow"}
                         </DialogTitle>
-                        <DialogDescription className="text-gray-400">
+                        <DialogDescription className="text-muted-foreground">
                           {editingSlideshow ? "Update slideshow details" : "Create a new slideshow for explore or events pages"}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="slideshow-title" className="text-gray-300">Title</Label>
+                          <Label htmlFor="slideshow-title" className="text-muted-foreground">Title</Label>
                           <Input
                             id="slideshow-title"
                             value={slideshowFormData.title}
                             onChange={(e) => setSlideshowFormData({ ...slideshowFormData, title: e.target.value })}
                             placeholder="Slideshow title"
-                            className="bg-gray-800 border-gray-600 text-white"
+                            className="bg-background border-border text-foreground"
                             data-testid="input-slideshow-title"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="slideshow-image" className="text-gray-300">Image URL</Label>
+                          <Label htmlFor="slideshow-image" className="text-muted-foreground">Image URL</Label>
                           <Input
                             id="slideshow-image"
                             value={slideshowFormData.imageUrl}
                             onChange={(e) => setSlideshowFormData({ ...slideshowFormData, imageUrl: e.target.value })}
                             placeholder="https://example.com/image.jpg"
-                            className="bg-gray-800 border-gray-600 text-white"
+                            className="bg-background border-border text-foreground"
                             data-testid="input-slideshow-image"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="slideshow-link" className="text-gray-300">Link URL (Optional)</Label>
+                          <Label htmlFor="slideshow-link" className="text-muted-foreground">Link URL (Optional)</Label>
                           <Input
                             id="slideshow-link"
                             value={slideshowFormData.linkUrl}
                             onChange={(e) => setSlideshowFormData({ ...slideshowFormData, linkUrl: e.target.value })}
                             placeholder="https://example.com"
-                            className="bg-gray-800 border-gray-600 text-white"
+                            className="bg-background border-border text-foreground"
                             data-testid="input-slideshow-link"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="slideshow-order" className="text-gray-300">Display Order</Label>
+                          <Label htmlFor="slideshow-order" className="text-muted-foreground">Display Order</Label>
                           <Input
                             id="slideshow-order"
                             type="number"
                             value={slideshowFormData.order}
                             onChange={(e) => setSlideshowFormData({ ...slideshowFormData, order: parseInt(e.target.value) || 0 })}
                             placeholder="0"
-                            className="bg-gray-800 border-gray-600 text-white"
+                            className="bg-background border-border text-foreground"
                             data-testid="input-slideshow-order"
                           />
                         </div>
@@ -1010,7 +1142,7 @@ export default function AdminPage() {
                             onCheckedChange={(checked) => setSlideshowFormData({ ...slideshowFormData, active: checked })}
                             data-testid="switch-slideshow-active"
                           />
-                          <Label className="text-gray-300">Active</Label>
+                          <Label className="text-muted-foreground">Active</Label>
                         </div>
                         <div className="flex justify-end space-x-2 pt-4">
                           <Button
@@ -1026,7 +1158,7 @@ export default function AdminPage() {
                                 active: true,
                               });
                             }}
-                            className="border-gray-600 text-gray-300"
+                            className="border-border text-muted-foreground"
                             data-testid="button-cancel-slideshow"
                           >
                             Cancel
@@ -1057,10 +1189,10 @@ export default function AdminPage() {
                 {slideshowsLoading ? (
                   <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                      <div key={i} className="bg-card border border-border rounded-lg p-4">
                         <div className="animate-pulse">
-                          <div className="h-4 bg-gray-700 rounded w-1/3 mb-2"></div>
-                          <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                          <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-1/2"></div>
                         </div>
                       </div>
                     ))}
@@ -1068,7 +1200,7 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-4">
                     {allSlideshows?.map((slideshow) => (
-                      <div key={slideshow.id} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                      <div key={slideshow.id} className="bg-card border border-border rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
                             {slideshow.imageUrl && (
@@ -1079,10 +1211,10 @@ export default function AdminPage() {
                               />
                             )}
                             <div>
-                              <h4 className="text-white font-medium" data-testid={`text-slideshow-title-${slideshow.id}`}>
+                              <h4 className="text-foreground font-medium" data-testid={`text-slideshow-title-${slideshow.id}`}>
                                 {slideshow.title}
                               </h4>
-                              <div className="flex items-center space-x-2 text-sm text-gray-400">
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                                 <span>Order: {slideshow.order}</span>
                                 <Badge variant={slideshow.active ? "default" : "destructive"}>
                                   {slideshow.active ? "Active" : "Inactive"}
@@ -1105,7 +1237,7 @@ export default function AdminPage() {
                                 });
                                 setShowSlideshowForm(true);
                               }}
-                              className="border-gray-600 text-gray-300"
+                              className="border-border text-muted-foreground"
                               data-testid={`button-edit-slideshow-${slideshow.id}`}
                             >
                               <Edit className="w-3 h-3" />
@@ -1119,7 +1251,7 @@ export default function AdminPage() {
                                   data: { active: !slideshow.active }
                                 });
                               }}
-                              className="border-gray-600 text-gray-300"
+                              className="border-border text-muted-foreground"
                               data-testid={`button-toggle-slideshow-${slideshow.id}`}
                             >
                               {slideshow.active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -1128,7 +1260,7 @@ export default function AdminPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => deleteSlideshowMutation.mutate(slideshow.id)}
-                              className="border-red-500 text-red-400"
+                              className="border-destructive text-destructive"
                               data-testid={`button-delete-slideshow-${slideshow.id}`}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -1139,9 +1271,257 @@ export default function AdminPage() {
                     ))}
                     {allSlideshows?.length === 0 && (
                       <div className="text-center py-8">
-                        <Image className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-                        <p className="text-gray-400">No slideshows created yet</p>
-                        <p className="text-sm text-gray-500">Create your first slideshow to get started</p>
+                        <Image className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">No slideshows created yet</p>
+                        <p className="text-sm text-muted-foreground">Create your first slideshow to get started</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="blogs" className="space-y-6">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-foreground flex items-center">
+                      <BookOpen className="w-5 h-5 mr-2 text-cyan-400" />
+                      Blog Post Management
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      Create and manage blog posts for the community
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setShowBlogForm(true)}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                    data-testid="button-add-blog"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Blog Post
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Blog Form Dialog */}
+                {showBlogForm && (
+                  <div className="mb-6 p-6 bg-card border border-border rounded-lg">
+                    <h3 className="text-lg font-medium text-foreground mb-4">
+                      {editingBlog ? "Edit Blog Post" : "Create New Blog Post"}
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="blog-title" className="text-muted-foreground">Title</Label>
+                        <Input
+                          id="blog-title"
+                          value={blogFormData.title}
+                          onChange={(e) => setBlogFormData({ ...blogFormData, title: e.target.value })}
+                          placeholder="Enter blog post title"
+                          className="bg-background border-border text-foreground"
+                          data-testid="input-blog-title"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="blog-excerpt" className="text-muted-foreground">Excerpt</Label>
+                        <Textarea
+                          id="blog-excerpt"
+                          value={blogFormData.excerpt}
+                          onChange={(e) => setBlogFormData({ ...blogFormData, excerpt: e.target.value })}
+                          placeholder="Brief description or excerpt"
+                          className="bg-background border-border text-foreground"
+                          rows={2}
+                          data-testid="textarea-blog-excerpt"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="blog-content" className="text-muted-foreground">Content</Label>
+                        <Textarea
+                          id="blog-content"
+                          value={blogFormData.content}
+                          onChange={(e) => setBlogFormData({ ...blogFormData, content: e.target.value })}
+                          placeholder="Write your blog post content..."
+                          className="bg-background border-border text-foreground"
+                          rows={8}
+                          data-testid="textarea-blog-content"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="blog-category" className="text-muted-foreground">Category</Label>
+                          <Select 
+                            value={blogFormData.category} 
+                            onValueChange={(value) => setBlogFormData({ ...blogFormData, category: value })}
+                          >
+                            <SelectTrigger className="bg-background border-border text-foreground" data-testid="select-blog-category">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background border-border">
+                              <SelectItem value="announcements">Announcements</SelectItem>
+                              <SelectItem value="tutorials">Tutorials</SelectItem>
+                              <SelectItem value="community">Community</SelectItem>
+                              <SelectItem value="updates">Platform Updates</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="blog-cover" className="text-muted-foreground">Cover Image URL</Label>
+                          <Input
+                            id="blog-cover"
+                            value={blogFormData.coverImage}
+                            onChange={(e) => setBlogFormData({ ...blogFormData, coverImage: e.target.value })}
+                            placeholder="https://example.com/cover.jpg"
+                            className="bg-background border-border text-foreground"
+                            data-testid="input-blog-cover"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={blogFormData.published}
+                            onCheckedChange={(checked) => setBlogFormData({ ...blogFormData, published: checked })}
+                            data-testid="switch-blog-published"
+                          />
+                          <Label className="text-muted-foreground">Published</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={blogFormData.featured}
+                            onCheckedChange={(checked) => setBlogFormData({ ...blogFormData, featured: checked })}
+                            data-testid="switch-blog-featured"
+                          />
+                          <Label className="text-muted-foreground">Featured</Label>
+                        </div>
+                      </div>
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowBlogForm(false);
+                            setEditingBlog(null);
+                            setBlogFormData({
+                              title: "",
+                              content: "",
+                              excerpt: "",
+                              category: "announcements",
+                              coverImage: "",
+                              published: false,
+                              featured: false,
+                            });
+                          }}
+                          className="border-border text-muted-foreground"
+                          data-testid="button-cancel-blog"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (editingBlog) {
+                              updateBlogMutation.mutate({
+                                id: editingBlog.id,
+                                data: blogFormData
+                              });
+                            } else {
+                              createBlogMutation.mutate(blogFormData);
+                            }
+                          }}
+                          disabled={createBlogMutation.isPending || updateBlogMutation.isPending}
+                          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                          data-testid="button-save-blog"
+                        >
+                          {createBlogMutation.isPending || updateBlogMutation.isPending ? (
+                            <>
+                              <Timer className="w-4 h-4 mr-2 animate-spin" />
+                              {editingBlog ? "Updating..." : "Creating..."}
+                            </>
+                          ) : (
+                            editingBlog ? "Update Blog Post" : "Create Blog Post"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Blog List */}
+                {blogsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="bg-card border border-border rounded-lg p-4">
+                        <div className="animate-pulse">
+                          <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-full mb-1"></div>
+                          <div className="h-3 bg-muted rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {allBlogs?.map((blog) => (
+                      <div key={blog.id} className="bg-card border border-border rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-foreground font-medium mb-2" data-testid={`text-blog-title-${blog.id}`}>
+                              {blog.title}
+                            </h4>
+                            <p className="text-muted-foreground text-sm mb-3" data-testid={`text-blog-excerpt-${blog.id}`}>
+                              {blog.excerpt}
+                            </p>
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Badge variant="outline">{blog.category}</Badge>
+                              <Badge variant={blog.published ? "default" : "destructive"}>
+                                {blog.published ? "Published" : "Draft"}
+                              </Badge>
+                              {blog.featured && (
+                                <Badge variant="secondary">Featured</Badge>
+                              )}
+                              <span>{new Date(blog.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingBlog(blog);
+                                setBlogFormData({
+                                  title: blog.title,
+                                  content: blog.content,
+                                  excerpt: blog.excerpt,
+                                  category: blog.category,
+                                  coverImage: blog.coverImage || "",
+                                  published: blog.published,
+                                  featured: blog.featured,
+                                });
+                                setShowBlogForm(true);
+                              }}
+                              className="border-border text-muted-foreground"
+                              data-testid={`button-edit-blog-${blog.id}`}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteBlogMutation.mutate(blog.id)}
+                              className="border-destructive text-destructive"
+                              data-testid={`button-delete-blog-${blog.id}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {allBlogs?.length === 0 && (
+                      <div className="text-center py-8">
+                        <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">No blog posts created yet</p>
+                        <p className="text-sm text-muted-foreground">Create your first blog post to get started</p>
                       </div>
                     )}
                   </div>
@@ -1161,45 +1541,45 @@ export default function AdminPage() {
           <TabsContent value="support" className="space-y-6">
             <LiveChatPanel />
 
-            <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
+                <CardTitle className="text-foreground flex items-center">
                   <Bot className="w-5 h-5 mr-2 text-blue-400" />
                   Discord Bot Assistance
                 </CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-muted-foreground">
                   Automated Discord bot responses and assistance
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-white mb-2">Bot Status</h4>
+                    <h4 className="font-medium text-foreground mb-2">Bot Status</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-gray-300">Online Status:</span>
+                        <span className="text-muted-foreground">Online Status:</span>
                         <Badge className="bg-green-600">Online</Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-300">Commands/Hour:</span>
-                        <span className="text-white">{liveStats?.botCommands || 0}</span>
+                        <span className="text-muted-foreground">Commands/Hour:</span>
+                        <span className="text-foreground">{liveStats?.botCommands || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-300">Servers Connected:</span>
-                        <span className="text-white">{liveStats?.botServers || 0}</span>
+                        <span className="text-muted-foreground">Servers Connected:</span>
+                        <span className="text-foreground">{liveStats?.botServers || 0}</span>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-medium text-white mb-2">Quick Actions</h4>
+                    <h4 className="font-medium text-foreground mb-2">Quick Actions</h4>
                     <div className="space-y-2">
-                      <Button size="sm" variant="outline" className="w-full border-gray-600 text-gray-300">
+                      <Button size="sm" variant="outline" className="w-full border-border text-muted-foreground">
                         Restart Bot
                       </Button>
-                      <Button size="sm" variant="outline" className="w-full border-gray-600 text-gray-300">
+                      <Button size="sm" variant="outline" className="w-full border-border text-muted-foreground">
                         Update Commands
                       </Button>
-                      <Button size="sm" variant="outline" className="w-full border-gray-600 text-gray-300">
+                      <Button size="sm" variant="outline" className="w-full border-border text-muted-foreground">
                         View Logs
                       </Button>
                     </div>
@@ -1210,31 +1590,31 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="bot" className="space-y-6">
-            <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-white">Discord Bot Control Panel</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle className="text-foreground">Discord Bot Control Panel</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   Manage Discord bot settings and monitor performance
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <p className="text-gray-400">Bot control interface will be available here.</p>
+                  <p className="text-muted-foreground">Bot control interface will be available here.</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="faqs" className="space-y-6">
-            <Card className="border border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-white flex items-center">
+                    <CardTitle className="text-foreground flex items-center">
                       <HelpCircle className="w-5 h-5 mr-2 text-cyan-400" />
                       FAQ Management
                     </CardTitle>
-                    <CardDescription className="text-gray-400">
+                    <CardDescription className="text-muted-foreground">
                       Manage frequently asked questions for user support
                     </CardDescription>
                   </div>
@@ -1251,45 +1631,45 @@ export default function AdminPage() {
               <CardContent>
                 {/* FAQ Form Dialog */}
                 {showFaqForm && (
-                  <div className="mb-6 p-6 bg-gray-800 border border-gray-600 rounded-lg">
-                    <h3 className="text-lg font-medium text-white mb-4">
+                  <div className="mb-6 p-6 bg-card border border-border rounded-lg">
+                    <h3 className="text-lg font-medium text-foreground mb-4">
                       {editingFaq ? "Edit FAQ" : "Create New FAQ"}
                     </h3>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="faq-question" className="text-gray-300">Question</Label>
+                        <Label htmlFor="faq-question" className="text-muted-foreground">Question</Label>
                         <Input
                           id="faq-question"
                           value={faqFormData.question}
                           onChange={(e) => setFaqFormData({ ...faqFormData, question: e.target.value })}
                           placeholder="Enter the frequently asked question"
-                          className="bg-gray-800 border-gray-600 text-white"
+                          className="bg-background border-border text-foreground"
                           data-testid="input-faq-question"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="faq-answer" className="text-gray-300">Answer</Label>
+                        <Label htmlFor="faq-answer" className="text-muted-foreground">Answer</Label>
                         <Textarea
                           id="faq-answer"
                           value={faqFormData.answer}
                           onChange={(e) => setFaqFormData({ ...faqFormData, answer: e.target.value })}
                           placeholder="Enter the detailed answer"
-                          className="bg-gray-800 border-gray-600 text-white"
+                          className="bg-background border-border text-foreground"
                           rows={4}
                           data-testid="textarea-faq-answer"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="faq-category" className="text-gray-300">Category</Label>
+                          <Label htmlFor="faq-category" className="text-muted-foreground">Category</Label>
                           <Select 
                             value={faqFormData.category} 
                             onValueChange={(value) => setFaqFormData({ ...faqFormData, category: value })}
                           >
-                            <SelectTrigger className="bg-gray-800 border-gray-600 text-white" data-testid="select-faq-category">
+                            <SelectTrigger className="bg-background border-border text-foreground" data-testid="select-faq-category">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-600">
+                            <SelectContent className="bg-background border-border">
                               <SelectItem value="general">General</SelectItem>
                               <SelectItem value="servers">Servers</SelectItem>
                               <SelectItem value="bots">Bots</SelectItem>
@@ -1299,14 +1679,14 @@ export default function AdminPage() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="faq-order" className="text-gray-300">Display Order</Label>
+                          <Label htmlFor="faq-order" className="text-muted-foreground">Display Order</Label>
                           <Input
                             id="faq-order"
                             type="number"
                             value={faqFormData.order}
                             onChange={(e) => setFaqFormData({ ...faqFormData, order: parseInt(e.target.value) || 0 })}
                             placeholder="0"
-                            className="bg-gray-800 border-gray-600 text-white"
+                            className="bg-background border-border text-foreground"
                             data-testid="input-faq-order"
                           />
                         </div>
@@ -1325,7 +1705,7 @@ export default function AdminPage() {
                               order: 0,
                             });
                           }}
-                          className="border-gray-600 text-gray-300"
+                          className="border-border text-muted-foreground"
                           data-testid="button-cancel-faq"
                         >
                           Cancel
@@ -1363,11 +1743,11 @@ export default function AdminPage() {
                 {faqsLoading ? (
                   <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                      <div key={i} className="bg-card border border-border rounded-lg p-4">
                         <div className="animate-pulse">
-                          <div className="h-4 bg-gray-700 rounded w-2/3 mb-2"></div>
-                          <div className="h-3 bg-gray-700 rounded w-full mb-1"></div>
-                          <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                          <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-full mb-1"></div>
+                          <div className="h-3 bg-muted rounded w-1/2"></div>
                         </div>
                       </div>
                     ))}
@@ -1375,16 +1755,16 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-4">
                     {allFaqs?.map((faq) => (
-                      <div key={faq.id} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                      <div key={faq.id} className="bg-card border border-border rounded-lg p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h4 className="text-white font-medium mb-2" data-testid={`text-faq-question-${faq.id}`}>
+                            <h4 className="text-foreground font-medium mb-2" data-testid={`text-faq-question-${faq.id}`}>
                               {faq.question}
                             </h4>
-                            <p className="text-gray-300 text-sm mb-3" data-testid={`text-faq-answer-${faq.id}`}>
+                            <p className="text-muted-foreground text-sm mb-3" data-testid={`text-faq-answer-${faq.id}`}>
                               {faq.answer}
                             </p>
-                            <div className="flex items-center space-x-2 text-sm text-gray-400">
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                               <Badge variant="outline">{faq.category}</Badge>
                               <span>Order: {faq.order}</span>
                               <Badge variant={faq.isActive ? "default" : "destructive"}>
@@ -1407,7 +1787,7 @@ export default function AdminPage() {
                                 });
                                 setShowFaqForm(true);
                               }}
-                              className="border-gray-600 text-gray-300"
+                              className="border-border text-muted-foreground"
                               data-testid={`button-edit-faq-${faq.id}`}
                             >
                               <Edit className="w-3 h-3" />
@@ -1416,7 +1796,7 @@ export default function AdminPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => deleteFaqMutation.mutate(faq.id)}
-                              className="border-red-500 text-red-400"
+                              className="border-destructive text-destructive"
                               data-testid={`button-delete-faq-${faq.id}`}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -1427,9 +1807,9 @@ export default function AdminPage() {
                     ))}
                     {allFaqs?.length === 0 && (
                       <div className="text-center py-8">
-                        <HelpCircle className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-                        <p className="text-gray-400">No FAQs created yet</p>
-                        <p className="text-sm text-gray-500">Create your first FAQ to help users</p>
+                        <HelpCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">No FAQs created yet</p>
+                        <p className="text-sm text-muted-foreground">Create your first FAQ to help users</p>
                       </div>
                     )}
                   </div>

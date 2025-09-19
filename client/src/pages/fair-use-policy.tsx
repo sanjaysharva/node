@@ -13,11 +13,8 @@ export default function FairUsePolicy() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden  border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
-          
-        </div>
-        <div className="absolute inset-0 w-full h-full">
+      <section className="relative overflow-hidden border-b border-border">
+        <div className="absolute inset-0 w-full h-full z-0">
           <img
             src={backgroundImage}
             alt="Background"
@@ -25,7 +22,7 @@ export default function FairUsePolicy() {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
             <div className="space-y-4">
               <div className="inline-block p-3 rounded-xl bg-gradient-to-r from-purple-400 to-pink-400">
@@ -49,7 +46,7 @@ export default function FairUsePolicy() {
         </div>
       </section>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-white ">
         <div className="space-y-8">
           {/* Introduction */}
           <Card>
