@@ -117,7 +117,7 @@ export default function ServerTemplates() {
       </section>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto"></div>
+        <div className="max-w-7xl mx-auto">
 
           {/* Search and Filters */}
           <div className="mb-8">
@@ -276,6 +276,7 @@ export default function ServerTemplates() {
           )}
         </div>
       </div>
+    </div>
 
       {/* Template Preview Modal */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
