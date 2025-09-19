@@ -184,7 +184,7 @@ export default function AdminPage() {
   // Slideshow mutations
   const createSlideshowMutation = useMutation({
     mutationFn: async (slideshowData: any) => {
-      const response = await apiRequest("POST", "/api/slideshows", slideshowData);
+      const response = await apiRequest("/api/slideshows", "POST", slideshowData);
       return response.json();
     },
     onSuccess: () => {
@@ -214,7 +214,7 @@ export default function AdminPage() {
 
   const updateSlideshowMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await apiRequest("PUT", `/api/slideshows/${id}`, data);
+      const response = await apiRequest(`/api/slideshows/${id}`, "PUT", data);
       return response.json();
     },
     onSuccess: () => {
@@ -238,7 +238,7 @@ export default function AdminPage() {
 
   const deleteSlideshowMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/slideshows/${id}`);
+      await apiRequest(`/api/slideshows/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/slideshows"] });
@@ -260,7 +260,7 @@ export default function AdminPage() {
   // FAQ mutations
   const createFaqMutation = useMutation({
     mutationFn: async (faqData: any) => {
-      const response = await apiRequest("POST", "/api/faqs", faqData);
+      const response = await apiRequest("/api/faqs", "POST", faqData);
       return response.json();
     },
     onSuccess: () => {
@@ -290,7 +290,7 @@ export default function AdminPage() {
 
   const updateFaqMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await apiRequest("PUT", `/api/faqs/${id}`, data);
+      const response = await apiRequest(`/api/faqs/${id}`, "PUT", data);
       return response.json();
     },
     onSuccess: () => {
@@ -314,7 +314,7 @@ export default function AdminPage() {
 
   const deleteFaqMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/faqs/${id}`);
+      await apiRequest(`/api/faqs/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/faqs"] });
@@ -336,7 +336,7 @@ export default function AdminPage() {
   // Blog mutations
   const createBlogMutation = useMutation({
     mutationFn: async (blogData: any) => {
-      const response = await apiRequest("POST", "/api/blog/posts", blogData);
+      const response = await apiRequest("/api/blog/posts", "POST", blogData);
       return response.json();
     },
     onSuccess: () => {
@@ -368,7 +368,7 @@ export default function AdminPage() {
 
   const updateBlogMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await apiRequest("PUT", `/api/blog/posts/${id}`, data);
+      const response = await apiRequest(`/api/blog/posts/${id}`, "PUT", data);
       return response.json();
     },
     onSuccess: () => {
@@ -392,7 +392,7 @@ export default function AdminPage() {
 
   const deleteBlogMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/blog/posts/${id}`);
+      await apiRequest(`/api/blog/posts/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/blog/posts"] });
@@ -1604,6 +1604,232 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="blogs" className="space-y-6">
+            <Card className="border border-border bg-card/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center">
+                  <PenTool className="w-5 h-5 mr-2 text-green-400" />
+                  Blog Management
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Create and manage blog posts for the community
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Current Blog Posts</h3>
+                  <Dialog open={showBlogForm} onOpenChange={setShowBlogForm}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Blog Post
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl bg-background border-border">
+                      <DialogHeader>
+                        <DialogTitle className="text-foreground">
+                          {editingBlog ? "Edit Blog Post" : "Create Blog Post"}
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
+                          {editingBlog ? "Update blog post details" : "Create a new blog post for the community"}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="blog-title" className="text-muted-foreground">Title</Label>
+                            <Input
+                              id="blog-title"
+                              value={blogFormData.title}
+                              onChange={(e) => setBlogFormData({ ...blogFormData, title: e.target.value })}
+                              placeholder="Blog post title"
+                              className="bg-background border-border text-foreground"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="blog-category" className="text-muted-foreground">Category</Label>
+                            <Select
+                              value={blogFormData.category}
+                              onValueChange={(value) => setBlogFormData({ ...blogFormData, category: value })}
+                            >
+                              <SelectTrigger className="bg-background border-border">
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="announcements">Announcements</SelectItem>
+                                <SelectItem value="updates">Updates</SelectItem>
+                                <SelectItem value="guides">Guides</SelectItem>
+                                <SelectItem value="community">Community</SelectItem>
+                                <SelectItem value="news">News</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="blog-excerpt" className="text-muted-foreground">Excerpt</Label>
+                          <Textarea
+                            id="blog-excerpt"
+                            value={blogFormData.excerpt}
+                            onChange={(e) => setBlogFormData({ ...blogFormData, excerpt: e.target.value })}
+                            placeholder="Brief description of the blog post"
+                            className="bg-background border-border text-foreground"
+                            rows={2}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="blog-content" className="text-muted-foreground">Content</Label>
+                          <Textarea
+                            id="blog-content"
+                            value={blogFormData.content}
+                            onChange={(e) => setBlogFormData({ ...blogFormData, content: e.target.value })}
+                            placeholder="Write your blog post content here..."
+                            className="bg-background border-border text-foreground"
+                            rows={8}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="blog-cover" className="text-muted-foreground">Cover Image URL</Label>
+                          <Input
+                            id="blog-cover"
+                            value={blogFormData.coverImage}
+                            onChange={(e) => setBlogFormData({ ...blogFormData, coverImage: e.target.value })}
+                            placeholder="https://example.com/image.jpg"
+                            className="bg-background border-border text-foreground"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={blogFormData.published}
+                              onCheckedChange={(checked) => setBlogFormData({ ...blogFormData, published: checked })}
+                            />
+                            <Label className="text-muted-foreground">Published</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={blogFormData.featured}
+                              onCheckedChange={(checked) => setBlogFormData({ ...blogFormData, featured: checked })}
+                            />
+                            <Label className="text-muted-foreground">Featured</Label>
+                          </div>
+                        </div>
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowBlogForm(false);
+                              setEditingBlog(null);
+                              setBlogFormData({
+                                title: "",
+                                content: "",
+                                excerpt: "",
+                                category: "announcements",
+                                coverImage: "",
+                                published: false,
+                                featured: false,
+                              });
+                            }}
+                            className="border-border text-muted-foreground"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              if (editingBlog) {
+                                updateBlogMutation.mutate({
+                                  id: editingBlog.id,
+                                  data: blogFormData
+                                });
+                              } else {
+                                createBlogMutation.mutate(blogFormData);
+                              }
+                            }}
+                            disabled={createBlogMutation.isPending || updateBlogMutation.isPending}
+                            className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
+                          >
+                            {editingBlog ? "Update" : "Create"} Blog Post
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {blogsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="bg-card border border-border rounded-lg p-4">
+                        <div className="animate-pulse">
+                          <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {allBlogs?.map((blog) => (
+                      <div key={blog.id} className="bg-card border border-border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3">
+                              <h4 className="text-foreground font-medium">{blog.title}</h4>
+                              <Badge variant={blog.published ? "default" : "destructive"}>
+                                {blog.published ? "Published" : "Draft"}
+                              </Badge>
+                              {blog.featured && (
+                                <Badge variant="secondary">Featured</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{blog.excerpt}</p>
+                            <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-2">
+                              <span>Category: {blog.category}</span>
+                              <span>•</span>
+                              <span>Created: {new Date(blog.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingBlog(blog);
+                                setBlogFormData({
+                                  title: blog.title,
+                                  content: blog.content,
+                                  excerpt: blog.excerpt,
+                                  category: blog.category,
+                                  coverImage: blog.coverImage || "",
+                                  published: blog.published,
+                                  featured: blog.featured,
+                                });
+                                setShowBlogForm(true);
+                              }}
+                              className="border-border text-muted-foreground"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteBlogMutation.mutate(blog.id)}
+                              disabled={deleteBlogMutation.isPending}
+                              className="border-destructive text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="faqs" className="space-y-6"></TabsContent>
 
           <TabsContent value="faqs" className="space-y-6">
             <Card className="border border-border bg-card/50 backdrop-blur-sm">

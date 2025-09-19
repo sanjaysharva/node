@@ -59,7 +59,7 @@ export default function AddBot() {
         ...data,
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
       };
-      return apiRequest("POST", "/api/bots", processedData);
+      return apiRequest("/api/bots", "POST", processedData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bots"] });

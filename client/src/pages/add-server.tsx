@@ -67,7 +67,7 @@ export default function AdvertiseServer() {
         ...data,
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
       };
-      return apiRequest("POST", "/api/servers", processedData);
+      return apiRequest("/api/servers", "POST", processedData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/servers"] });
@@ -89,7 +89,7 @@ export default function AdvertiseServer() {
   // Validate invite mutation
   const validateInviteMutation = useMutation({
     mutationFn: async (inviteCode: string) => {
-      const response = await apiRequest("POST", "/api/discord/validate-invite", { inviteCode });
+      const response = await apiRequest("/api/discord/validate-invite", "POST", { inviteCode });
       return response.json();
     },
     onSuccess: (data) => {
