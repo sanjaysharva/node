@@ -276,7 +276,6 @@ export default function ServerTemplates() {
           )}
         </div>
       </div>
-    </div>
 
       {/* Template Preview Modal */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
