@@ -410,12 +410,14 @@ export class DatabaseStorage implements IStorage {
 
   async createAd(insertAd: InsertAd): Promise<Ad> {
     try {
-      const result = await this.db.insert(ads).values({
+      const [result] = await this.db.insert(ads).values({
         ...insertAd,
         createdAt: new Date(),
         updatedAt: new Date()
-      }).returning();
-      return result[0];
+      });
+      // Get the created ad since MySQL doesn't support returning
+      const [ad] = await this.db.select().from(ads).where(eq(ads.id, insertAd.id || result.insertId));
+      return ad;
     } catch (error) {
       console.error('Database error in createAd:', error);
       throw error;
@@ -424,14 +426,15 @@ export class DatabaseStorage implements IStorage {
 
   async updateAd(id: string, ad: Partial<InsertAd>): Promise<Ad | undefined> {
     try {
-      const result = await this.db.update(ads)
+      await this.db.update(ads)
         .set({
           ...ad,
           updatedAt: new Date()
         })
-        .where(eq(ads.id, id))
-        .returning();
-      return result[0];
+        .where(eq(ads.id, id));
+      // Get the updated ad since MySQL doesn't support returning
+      const [updatedAd] = await this.db.select().from(ads).where(eq(ads.id, id));
+      return updatedAd;
     } catch (error) {
       console.error('Database error in updateAd:', error);
       throw error;
@@ -691,12 +694,14 @@ export class DatabaseStorage implements IStorage {
 
   async createSlideshow(insertSlideshow: InsertSlideshow): Promise<Slideshow> {
     try {
-      const result = await this.db.insert(slideshows).values({
+      const [result] = await this.db.insert(slideshows).values({
         ...insertSlideshow,
         createdAt: new Date(),
         updatedAt: new Date()
-      }).returning();
-      return result[0];
+      });
+      // Get the created slideshow since MySQL doesn't support returning
+      const [slideshow] = await this.db.select().from(slideshows).where(eq(slideshows.id, insertSlideshow.id || result.insertId));
+      return slideshow;
     } catch (error) {
       console.error('Database error in createSlideshow:', error);
       throw error;
@@ -705,14 +710,15 @@ export class DatabaseStorage implements IStorage {
 
   async updateSlideshow(id: string, updateData: Partial<InsertSlideshow>): Promise<Slideshow | undefined> {
     try {
-      const result = await this.db.update(slideshows)
+      await this.db.update(slideshows)
         .set({
           ...updateData,
           updatedAt: new Date()
         })
-        .where(eq(slideshows.id, id))
-        .returning();
-      return result[0];
+        .where(eq(slideshows.id, id));
+      // Get the updated slideshow since MySQL doesn't support returning
+      const [slideshow] = await this.db.select().from(slideshows).where(eq(slideshows.id, id));
+      return slideshow;
     } catch (error) {
       console.error('Database error in updateSlideshow:', error);
       throw error;

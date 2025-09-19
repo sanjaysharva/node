@@ -126,10 +126,11 @@ export const slideshows = mysqlTable("slideshows", {
   description: text("description"),
   imageUrl: text("image_url").notNull(),
   linkUrl: varchar("link_url", { length: 255 }),
-  active: boolean("active").default(true),
+  isActive: boolean("is_active").default(true),
   order: int("order").default(0),
   ownerId: varchar("owner_id", { length: 36 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const serverJoins = mysqlTable("server_joins", {
