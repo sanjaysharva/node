@@ -44,13 +44,13 @@ export default function TermsOfService() {
         </div>
       </section>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-white">
         <div className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>1. Acceptance of Terms</CardTitle>
+              <CardTitle className="text-red-500">1. Acceptance of Terms</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 By accessing and using Smart Serve ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. 
                 If you do not agree to abide by the above, please do not use this service.
@@ -60,9 +60,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>2. Description of Service</CardTitle>
+              <CardTitle className="text-blue-500">2. Description of Service</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 Smart Serve is a Discord directory platform that allows users to discover and list Discord servers and bots. 
                 The service includes features such as server listings, bot directory, community events, and advertising tools.
@@ -72,9 +72,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>3. User Accounts and Registration</CardTitle>
+              <CardTitle className="text-green-500">3. User Accounts and Registration</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-sm text-white">
               <ul>
                 <li>You must provide accurate and complete registration information</li>
                 <li>You are responsible for maintaining the security of your account</li>
@@ -87,9 +87,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>4. User Content and Conduct</CardTitle>
+              <CardTitle className="text-yellow-500">4. User Content and Conduct</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-sm text-white">
               <p>You agree not to:</p>
               <ul>
                 <li>Post content that is illegal, harmful, threatening, abusive, or discriminatory</li>
@@ -104,9 +104,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>5. Discord Integration</CardTitle>
+              <CardTitle className="text-blue-500">5. Discord Integration</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-sm text-white">
               <p>
                 Our service integrates with Discord through official APIs. By using our Discord features, you acknowledge that:
               </p>
@@ -121,9 +121,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>6. Virtual Currency and Purchases</CardTitle>
+              <CardTitle className="text-green-500">6. Virtual Currency and Purchases</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-sm text-white">
               <p>
                 Smart Serve uses a virtual currency system ("coins") for certain features:
               </p>
@@ -138,9 +138,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>7. Privacy and Data Collection</CardTitle>
+              <CardTitle className="text-red-500">7. Privacy and Data Collection</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 Your privacy is important to us. Please review our Privacy Policy to understand how we collect, 
                 use, and protect your information. By using our service, you consent to the collection and use 
@@ -151,9 +151,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>8. Intellectual Property</CardTitle>
+              <CardTitle className="text-yellow-500">8. Intellectual Property</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 The Smart Serve platform, including its design, features, and content, is owned by us and protected by copyright 
                 and other intellectual property laws. You may not copy, modify, or distribute our content without permission.
@@ -163,9 +163,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>9. Limitation of Liability</CardTitle>
+              <CardTitle className="text-red-500">9. Limitation of Liability</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 Smart Serve is provided "as is" without any warranties. We are not liable for any damages arising from 
                 your use of the service, including but not limited to direct, indirect, incidental, or consequential damages.
@@ -175,9 +175,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>10. Termination</CardTitle>
+              <CardTitle className="text-blue-500">10. Termination</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 We reserve the right to terminate or suspend your account at any time for violation of these terms. 
                 You may also terminate your account at any time by contacting our support team.
@@ -187,9 +187,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>11. Changes to Terms</CardTitle>
+              <CardTitle className="text-green-500">11. Changes to Terms</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting. 
                 Your continued use of the service after changes constitutes acceptance of the new terms.
@@ -199,9 +199,9 @@ export default function TermsOfService() {
 
           <Card>
             <CardHeader>
-              <CardTitle>12. Contact Information</CardTitle>
+              <CardTitle className="text-red-500">12. Contact Information</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 If you have any questions about these Terms of Service, please contact us through our Discord support server 
                 or use the contact form in our Help Center.

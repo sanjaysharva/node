@@ -47,7 +47,7 @@ export default function FairUsePolicy() {
       </section>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-white ">
-        <div className="space-y-8">
+        <div className="space-y-8 text-white">
           {/* Introduction */}
           <Card>
             <CardHeader>
@@ -56,7 +56,7 @@ export default function FairUsePolicy() {
                 Introduction
               </CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 This Fair Use Policy outlines the acceptable use of Axiom's services, including our
                 Discord server advertising platform, community features, and related services. This policy
@@ -77,8 +77,8 @@ export default function FairUsePolicy() {
                 Acceptable Use
               </CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
-              <h4>Server Advertising</h4>
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
+              <h4 className="text-green-500">Server Advertising</h4>
               <ul>
                 <li>Advertise legitimate Discord servers that comply with Discord's Terms of Service</li>
                 <li>Provide accurate and truthful information about your server</li>
@@ -87,7 +87,7 @@ export default function FairUsePolicy() {
                 <li>Respond to user inquiries and feedback in a timely manner</li>
               </ul>
 
-              <h4>Community Interaction</h4>
+              <h4 className="text-green-500">Community Interaction</h4>
               <ul>
                 <li>Engage respectfully with other users and communities</li>
                 <li>Provide constructive feedback and reviews</li>
@@ -96,7 +96,7 @@ export default function FairUsePolicy() {
                 <li>Respect intellectual property rights</li>
               </ul>
 
-              <h4>Platform Features</h4>
+              <h4 className="text-green-500">Platform Features</h4>
               <ul>
                 <li>Use quest and reward systems as intended</li>
                 <li>Participate in events and activities legitimately</li>
@@ -114,8 +114,8 @@ export default function FairUsePolicy() {
                 Prohibited Activities
               </CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
-              <h4>Spam and Abuse</h4>
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
+              <h4 className="text-red-500">Spam and Abuse</h4>
               <ul>
                 <li>Creating multiple accounts to circumvent restrictions or gain unfair advantages</li>
                 <li>Repeatedly posting the same server or content across multiple categories</li>
@@ -124,7 +124,7 @@ export default function FairUsePolicy() {
                 <li>Flooding our platform with excessive content submissions</li>
               </ul>
 
-              <h4>Fraudulent Content</h4>
+              <h4 className="text-red-500">Fraudulent Content</h4>
               <ul>
                 <li>Advertising servers that don't exist or are permanently inaccessible</li>
                 <li>Misrepresenting server content, member count, or activities</li>
@@ -133,7 +133,7 @@ export default function FairUsePolicy() {
                 <li>Creating fake reviews or manipulating rating systems</li>
               </ul>
 
-              <h4>Harmful Activities</h4>
+              <h4 className="text-red-500">Harmful Activities</h4>
               <ul>
                 <li>Advertising servers that promote illegal activities</li>
                 <li>Sharing malicious links, viruses, or harmful software</li>
@@ -142,7 +142,7 @@ export default function FairUsePolicy() {
                 <li>Violating Discord's Terms of Service or Community Guidelines</li>
               </ul>
 
-              <h4>Resource Abuse</h4>
+              <h4 className="text-red-500">Resource Abuse</h4>
               <ul>
                 <li>Excessive use of our API or services that impacts performance</li>
                 <li>Attempting to scrape or download large amounts of data</li>
@@ -155,10 +155,10 @@ export default function FairUsePolicy() {
           {/* Resource Limits */}
           <Card>
             <CardHeader>
-              <CardTitle>Resource Limits and Guidelines</CardTitle>
+              <CardTitle className="text-blue-500">Resource Limits and Guidelines</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
-              <h4>Server Listings</h4>
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
+              <h4 className="text-yellow-500">Server Listings</h4>
               <ul>
                 <li>Maximum of 3 active server listings per user account</li>
                 <li>Server bumping limited to once every 6 hours per server</li>
@@ -166,14 +166,14 @@ export default function FairUsePolicy() {
                 <li>Description length limited to 2000 characters</li>
               </ul>
 
-              <h4>API Usage</h4>
+              <h4 className="text-yellow-500">API Usage</h4>
               <ul>
                 <li>API requests limited to 1000 per hour per user</li>
                 <li>Bulk operations limited to 100 items per request</li>
                 <li>File uploads limited to 10MB per file</li>
               </ul>
 
-              <h4>Community Features</h4>
+              <h4 className="text-yellow-500">Community Features</h4>
               <ul>
                 <li>Maximum of 50 comments or reviews per day</li>
                 <li>Event submissions limited to 5 per month per user</li>
@@ -185,10 +185,10 @@ export default function FairUsePolicy() {
           {/* Monitoring and Enforcement */}
           <Card>
             <CardHeader>
-              <CardTitle>Monitoring and Enforcement</CardTitle>
+              <CardTitle className="text-green-500">Monitoring and Enforcement</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
-              <h4>Monitoring</h4>
+            <CardContent className="prose dark:prose-invert max-w-none text-sm text-white">
+              <h4 className="text-blue-500">Monitoring</h4>
               <p>
                 We actively monitor our platform for violations of this Fair Use Policy through:
               </p>
@@ -199,16 +199,16 @@ export default function FairUsePolicy() {
                 <li>Analysis of user behavior and resource usage</li>
               </ul>
 
-              <h4>Enforcement Actions</h4>
+              <h4 className="text-blue-500">Enforcement Actions</h4>
               <p>
                 Violations of this policy may result in the following actions:
               </p>
               <ul>
-                <li><strong>Warning:</strong> First-time minor violations may receive a warning</li>
-                <li><strong>Content Removal:</strong> Violating content will be removed from our platform</li>
-                <li><strong>Temporary Suspension:</strong> Account access may be temporarily restricted</li>
-                <li><strong>Permanent Ban:</strong> Severe or repeated violations may result in permanent account termination</li>
-                <li><strong>Legal Action:</strong> Illegal activities may be reported to appropriate authorities</li>
+                <li ><strong className="text-red-500">Warning:</strong> First-time minor violations may receive a warning</li>
+                <li ><strong className="text-red-500">Content Removal:</strong> Violating content will be removed from our platform</li>
+                <li><strong className="text-red-500">Temporary Suspension:</strong> Account access may be temporarily restricted</li>
+                <li ><strong className="text-red-500">Permanent Ban:</strong> Severe or repeated violations may result in permanent account termination</li>
+                <li ><strong className="text-red-500">Legal Action:</strong> Illegal activities may be reported to appropriate authorities</li>
               </ul>
             </CardContent>
           </Card>
@@ -216,9 +216,9 @@ export default function FairUsePolicy() {
           {/* Reporting Violations */}
           <Card>
             <CardHeader>
-              <CardTitle>Reporting Violations</CardTitle>
+              <CardTitle className="text-red-500">Reporting Violations</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 If you encounter content or behavior that violates this Fair Use Policy, please report it through:
               </p>
@@ -243,9 +243,9 @@ export default function FairUsePolicy() {
           {/* Appeals Process */}
           <Card>
             <CardHeader>
-              <CardTitle>Appeals Process</CardTitle>
+              <CardTitle className="text-yellow-500">Appeals Process</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-sm text-white">
               <p>
                 If you believe your account or content was unfairly penalized, you may appeal the decision:
               </p>
@@ -266,7 +266,7 @@ export default function FairUsePolicy() {
             <CardHeader>
               <CardTitle>Policy Updates</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-sm text-white">
               <p>
                 We may update this Fair Use Policy from time to time to reflect changes in our services,
                 legal requirements, or community needs. When we make changes:
@@ -285,7 +285,7 @@ export default function FairUsePolicy() {
             <CardHeader>
               <CardTitle>Contact Us</CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 If you have questions about this Fair Use Policy or need clarification on any aspect,
                 please contact us:
@@ -305,12 +305,12 @@ export default function FairUsePolicy() {
           {/* Bot Review Guidelines */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
+              <CardTitle className="flex items-center text-blue-500">
                 <Scale className="w-5 h-5 mr-2 text-blue-500" />
                 Bot Review Guidelines
               </CardTitle>
             </CardHeader>
-            <CardContent className="prose dark:prose-invert max-w-none">
+            <CardContent className="prose dark:prose-invert max-w-none text-white text-sm">
               <p>
                 Discord bots submitted to Axiom undergo a thorough review process (up to 2 days) to ensure quality and safety:
               </p>
@@ -326,7 +326,7 @@ export default function FairUsePolicy() {
               </ul>
               <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-4 mt-4">
                 <p className="text-blue-200">
-                  <strong>Review Process:</strong> Our team checks bot functionality, uptime, and compliance.
+                  <strong className="text-red-500">Review Process:</strong> Our team checks bot functionality, uptime, and compliance.
                   Approved bots are made available immediately. Declined submissions receive detailed feedback for improvement.
                 </p>
               </div>
