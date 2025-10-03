@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { loginWithDiscord } from "@/lib/auth";
 import Navbar from "@/components/navbar";
-import backgroundImage from "@assets/bg.jpg";
+import backgroundImage from "@assets/bg.gif";
 
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
