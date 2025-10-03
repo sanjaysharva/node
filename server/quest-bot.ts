@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, PermissionsBitField } from 'discord.js';
 import mysql from 'mysql2/promise';
 
