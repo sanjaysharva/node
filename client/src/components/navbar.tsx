@@ -11,13 +11,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { User, Server, Trophy, ShoppingCart, LogOut, Bot, Calendar, Plus, Users, Hash, Settings, Coins, ChevronDown, HelpCircle, Mail, Ticket, Twitter, Instagram, Youtube, Facebook, Search } from "lucide-react";
+import { User, Server, Trophy, ShoppingCart, LogOut, Bot, Calendar, Plus, Users, Hash, Settings, Coins, ChevronDown, HelpCircle, Mail, Ticket, Twitter, Instagram, Youtube, Facebook, Search, Menu, X } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [location, navigate] = useLocation();
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
   const [supportDropdownOpen, setSupportDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleLogin = () => {
     loginWithDiscord(false);
@@ -79,9 +82,10 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Navigation Links next to logo */}
-          <div className="flex absolute left-[250px] ml-12">
-            <div className="text-sm flex  space-x-8">
+          {/* Navigation Links - Desktop */}
+          {!isMobile && (
+            <div className="hidden lg:flex absolute left-[250px] ml-12">
+              <div className="text-sm flex space-x-8">
               <Link
                 href="/explore"
                 className={`flex items-center text-gray-400 hover:text-purple-400 transition-all duration-300 hover:scale-105 ${
@@ -283,9 +287,11 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+          )}
 
-          {/* Login/Profile Section */}
-          <div className="flex items-center gap-4">
+          {/* Login/Profile Section - Desktop only */}
+          {!isMobile && (
+            <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -402,8 +408,204 @@ export default function Navbar() {
               </Button>
             )}
           </div>
+          )}
+
+          {/* Mobile Menu Button - positioned at corner */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden ml-auto"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              data-testid="button-mobile-menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobile && mobileMenuOpen && (
+        <div className="lg:hidden border-t border-[#16213e] bg-card">
+          <div className="px-4 py-6 space-y-6">
+            {/* Mobile Navigation Links */}
+            <div className="space-y-4">
+              <Link
+                href="/explore"
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-colors ${
+                  location === "/explore" ? "text-purple-400" : ""
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+                data-testid="mobile-link-explore"
+              >
+                <Search className="w-4 h-4 mr-3" />
+                Explore
+              </Link>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-300">Services</h3>
+                <div className="pl-4 space-y-3">
+                  <Link href="/your-servers" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Server className="w-4 h-4 mr-3" />
+                    Advertise Servers
+                  </Link>
+                  <Link href="/your-bots" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Bot className="w-4 h-4 mr-3" />
+                    Advertise Bots
+                  </Link>
+                  <Link href="/events" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Calendar className="w-4 h-4 mr-3" />
+                    Advertise Event
+                  </Link>
+                  <Link href="/partnership" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Users className="w-4 h-4 mr-3" />
+                    Partnership Hub
+                  </Link>
+                  <Link href="/server-templates" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Hash className="w-4 h-4 mr-3" />
+                    Server Templates
+                  </Link>
+                </div>
+              </div>
+
+              <Link
+                href="/join-members"
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-colors ${
+                  location === "/join-members" ? "text-purple-400" : ""
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+                data-testid="mobile-link-join-members"
+              >
+                <Users className="w-4 h-4 mr-3" />
+                Join Member
+              </Link>
+
+              <Link
+                href="/store"
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-colors ${
+                  location === "/store" ? "text-purple-400" : ""
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+                data-testid="mobile-link-store"
+              >
+                <ShoppingCart className="w-4 h-4 mr-3" />
+                Store
+              </Link>
+
+              <Link
+                href="/jobs"
+                className={`flex items-center text-gray-400 hover:text-purple-400 transition-colors ${
+                  location === "/jobs" ? "text-purple-400" : ""
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+                data-testid="mobile-link-jobs"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="w-4 h-4 mr-3" viewBox="0 0 16 16">
+                  <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1.5A.5.5 0 0 0 1 4.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 16 4.5z"/>
+                </svg>
+                Job
+              </Link>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-300">Support</h3>
+                <div className="pl-4 space-y-3">
+                  <Link href="/blog" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Ticket className="w-4 h-4 mr-3" />
+                    Blog
+                  </Link>
+                  <Link href="/help" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <HelpCircle className="w-4 h-4 mr-3" />
+                    Help
+                  </Link>
+                  <Link href="/contact-us" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Mail className="w-4 h-4 mr-3" />
+                    Contact Us
+                  </Link>
+                  <Link href="/support-ticket" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                    <Ticket className="w-4 h-4 mr-3" />
+                    Support Ticket
+                  </Link>
+                </div>
+              </div>
+
+              {/* Mobile Login/Profile Section */}
+              <div className="border-t border-gray-600 pt-4 mt-4">
+                {isAuthenticated ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3 p-3 bg-secondary/20 rounded-lg">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage
+                          src={user?.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : undefined}
+                          alt="User Avatar"
+                        />
+                        <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-white">{user?.username}</p>
+                        <div className="flex items-center gap-1 text-xs text-yellow-500">
+                          <Coins className="w-3 h-3" />
+                          <span>{user?.coins || 0} coins</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Link href="/profile" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors p-2" onClick={() => setMobileMenuOpen(false)}>
+                        <User className="w-4 h-4 mr-3" />
+                        Profile
+                      </Link>
+                      <Link href="/your-events" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors p-2" onClick={() => setMobileMenuOpen(false)}>
+                        <Calendar className="w-4 h-4 mr-3" />
+                        Your Event
+                      </Link>
+                      <Link href="/your-servers" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors p-2" onClick={() => setMobileMenuOpen(false)}>
+                        <Server className="w-4 h-4 mr-3" />
+                        Your Servers
+                      </Link>
+                      <Link href="/your-bots" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors p-2" onClick={() => setMobileMenuOpen(false)}>
+                        <Bot className="w-4 h-4 mr-3" />
+                        Your Bot
+                      </Link>
+                      {user?.isAdmin && (
+                        <Link href="/admin" className="flex items-center text-gray-400 hover:text-purple-400 transition-colors p-2" onClick={() => setMobileMenuOpen(false)}>
+                          <Settings className="w-4 h-4 mr-3" />
+                          Admin Panel
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => {
+                          logout();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex items-center text-red-400 hover:text-red-300 transition-colors p-2 w-full text-left"
+                      >
+                        <LogOut className="w-4 h-4 mr-3" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    asChild
+                    className="w-full bg-primary hover:bg-primary/90 transition-all duration-300"
+                    onClick={() => setMobileMenuOpen(false)}
+                    data-testid="mobile-button-login"
+                  >
+                    <Link href="/login">
+                      <svg className="mr-2 w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                      </svg>
+                      Login with Discord
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
+
