@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/discord", (req, res) => {
-    const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
+    const clientId = process.env.DISCORD_CLIENT_ID || "1418600262938923220";
     const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
     const redirectUri = `${protocol}://${req.get('host')}/api/auth/discord/callback`;
     const scope = 'identify email guilds';
@@ -189,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     delete session.oauthTimestamp;
 
     try {
-      const clientId = process.env.DISCORD_CLIENT_ID || "1372226433191247983";
+      const clientId = process.env.DISCORD_CLIENT_ID || "1418600262938923220";
       const clientSecret = process.env.DISCORD_CLIENT_SECRET;
       const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
       const redirectUri = `${protocol}://${req.get('host')}/api/auth/discord/callback`;
