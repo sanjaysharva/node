@@ -4,7 +4,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { loginWithDiscord } from "@/lib/auth";
 import Navbar from "@/components/navbar";
-import backgroundImage from "@assets/bg.gif";
 
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
@@ -22,7 +21,7 @@ export default function Login() {
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: `url(${backgroundImage})` }}
+      style={{ backgroundImage: `url('/bg.gif')` }}
     >
       {/* Dark overlay to make background much darker */}
       <div className="absolute inset-0  bg-[#1d1d36]/80"></div>
