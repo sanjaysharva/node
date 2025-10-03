@@ -41,6 +41,8 @@ import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
 import YourBots from "@/pages/your-bots";
 import BotDetail from "@/pages/bot-detail";
+import LoadingPage from "@/components/loading-page";
+import OfflinePage from "@/components/offline-page";
 
 
 
