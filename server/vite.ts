@@ -45,6 +45,10 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
+      // Skip serving HTML for asset requests
+      if (url.match(/\.(js|ts|tsx|jsx|css|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
+        return next();
+      }
       const clientTemplate = path.resolve(
         import.meta.dirname,
         "..",
