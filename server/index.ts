@@ -33,7 +33,7 @@ declare global {
 
 // Set default Discord Client ID if not provided
 if (!process.env.DISCORD_CLIENT_ID) {
-  process.env.DISCORD_CLIENT_ID = "1372226433191247983";
+  process.env.DISCORD_CLIENT_ID = "1418600262938923220";
 }
 
 const app = express();
