@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user = await storage.getUserByDiscordId(discordUser.id);
 
       // Check if this is the admin user using username
-      const ADMIN_USERNAMES = ['aetherflux_002']; // Add more admin usernames here
+      const ADMIN_USERNAMES = ['aetherflux_002', 'axiom_2401']; // Add more admin usernames here
       const isAdminUser = ADMIN_USERNAMES.includes(discordUser.username);
 
       if (!user) {
