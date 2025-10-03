@@ -14,7 +14,7 @@ interface SEOHeadProps {
 export function SEOHead({ 
   title = "Axiom - Discord Server Directory",
   description = "Discover amazing Discord servers, bots, and communities. Join thousands of active servers and grow your community with Axiom.",
-  image = "/assets/axiom-ban.gif",
+  image = "/assets/MockoFun.gif",
   url,
   type = "website",
   keywords = []
