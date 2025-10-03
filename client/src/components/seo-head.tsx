@@ -14,13 +14,13 @@ interface SEOHeadProps {
 export function SEOHead({ 
   title = "Axiom - Discord Server Directory",
   description = "Discover amazing Discord servers, bots, and communities. Join thousands of active servers and grow your community with Axiom.",
-  image = "/assets/axiom-logo.png",
+  image = "/assets/axiom-ban.gif",
   url,
   type = "website",
   keywords = []
 }: SEOHeadProps) {
   const [location] = useLocation();
-  const currentUrl = url || `https://axiom-discord.replit.app${location}`;
+  const currentUrl = url || `https://axiomer.up.railway.app${location}`;
   const fullKeywords = ["discord", "servers", "bots", "community", "gaming", "directory", ...keywords].join(", ");
 
   React.useEffect(() => {
