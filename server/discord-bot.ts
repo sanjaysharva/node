@@ -688,8 +688,7 @@ async function handleBumpCommand(interaction: any) {
     // Check if server has bump enabled
     const serverData = await storage.getServerByDiscordId(guildId);
     if (!serverData || !serverData.bumpEnabled) {
-      await interaction.editReply({
-        content: 'const serverUrl = `https://axiomer.up.railway.app/your-servers`;
+      const serverUrl = `https://smartserve.repl.co/your-servers`;
       await interaction.editReply({
         content: `❌ Bump is not enabled for this server.\n\n**To enable bump:**\n1. Visit your server settings: ${serverUrl}\n2. Click the settings icon on your server card\n3. Toggle "Enable Bump System"\n\nOr use the command: \`/enablebump\` (Admin only)`'
       });
