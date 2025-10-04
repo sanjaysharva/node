@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Plus, Users, Star, ExternalLink, MessageCircle } from "lucide-react";
+import { Search, Plus, Users, Star, ExternalLink, MessageCircle, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
 
@@ -27,12 +28,13 @@ interface Partnership {
   featured: boolean;
   createdAt: string;
   ownerUsername: string;
+  ownerId: string;
 }
 
 export default function Partnership() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const { data: partnerships = [], isLoading } = useQuery({
     queryKey: ["/api/partnerships", searchQuery, selectedType],
@@ -87,8 +89,35 @@ export default function Partnership() {
         </div>
       </section>
       
+      {/* Permanent Add Button - Top Right */}
+      {isAuthenticated && (
+        <div className="sticky top-20 z-40 flex justify-end container mx-auto px-4 -mb-4">
+          <Button 
+            onClick={() => window.location.href = '/add-partnership'}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Partnership
+          </Button>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
+
+          {/* Add Partnership Button - Above List */}
+          {isAuthenticated && (
+            <div className="flex justify-end mb-4">
+              <Button 
+                onClick={() => window.location.href = '/add-partnership'}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Partnership
+              </Button>
+            </div>
+          )}
 
           {/* Search and Filters */}
           <div className="mb-8">
@@ -159,6 +188,15 @@ export default function Partnership() {
                   </CardHeader>
                   
                   <CardContent className="space-y-4">
+                    {partnership.ownerId && (
+                      <Link href={`/users/${partnership.ownerId}`}>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer" data-testid={`link-profile-${partnership.id}`}>
+                          <User className="w-4 h-4" />
+                          <span>View Poster's Profile</span>
+                        </div>
+                      </Link>
+                    )}
+
                     <p className="text-sm text-muted-foreground line-clamp-3">
                       {partnership.description}
                     </p>
@@ -199,6 +237,15 @@ export default function Partnership() {
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Details
                       </Button>
+                      {isAuthenticated && user?.id === partnership.ownerId && (
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          onClick={() => window.location.href = `/partnerships/edit/${partnership.id}`}
+                        >
+                          Edit
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

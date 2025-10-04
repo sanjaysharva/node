@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Plus, Copy, Eye, Download, Hash, Shield, Users, Star } from "lucide-react";
+import { Search, Plus, Copy, Eye, Download, Hash, Shield, Users, Star, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
@@ -24,6 +25,7 @@ interface ServerTemplate {
   downloads: number;
   rating: number;
   createdBy: string;
+  ownerId: string;
   verified: boolean;
   featured: boolean;
   createdAt: string;
@@ -50,7 +52,7 @@ export default function ServerTemplates() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [previewTemplate, setPreviewTemplate] = useState<ServerTemplate | null>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
   const { data: templates = [], isLoading } = useQuery({
@@ -116,8 +118,35 @@ export default function ServerTemplates() {
         </div>
       </section>
 
+      {/* Permanent Add Button - Top Right */}
+      {isAuthenticated && (
+        <div className="sticky top-20 z-40 flex justify-end container mx-auto px-4 -mb-4">
+          <Button 
+            onClick={() => window.location.href = '/add-template'}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Template
+          </Button>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
+
+          {/* Add Template Button - Above List */}
+          {isAuthenticated && (
+            <div className="flex justify-end mb-4">
+              <Button 
+                onClick={() => window.location.href = '/add-template'}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Template
+              </Button>
+            </div>
+          )}
 
           {/* Search and Filters */}
           <div className="mb-8">
@@ -218,6 +247,15 @@ export default function ServerTemplates() {
                   </CardHeader>
 
                   <CardContent className="space-y-4">
+                    {(template.ownerId || template.createdBy) && (
+                      <Link href={`/users/${template.ownerId || template.createdBy}`}>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer" data-testid={`link-profile-${template.id}`}>
+                          <User className="w-4 h-4" />
+                          <span>View Creator's Profile</span>
+                        </div>
+                      </Link>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4 text-blue-400" />
@@ -247,6 +285,15 @@ export default function ServerTemplates() {
                         <Copy className="w-4 h-4 mr-2" />
                         Copy Link
                       </Button>
+                      {isAuthenticated && user?.id === (template.ownerId || template.createdBy) && (
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          onClick={() => window.location.href = `/templates/edit/${template.id}`}
+                        >
+                          Edit
+                        </Button>
+                      )}
                     </div>
 
                     <div className="text-xs text-muted-foreground text-center">

@@ -1,13 +1,13 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, MapPin, Clock, DollarSign, Users, Briefcase } from "lucide-react";
+import { Search, Plus, MapPin, Clock, DollarSign, Users, Briefcase, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
 
@@ -35,7 +35,7 @@ interface Job {
 export default function Jobs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [, navigate] = useLocation();
 
   // Fetch jobs from database
@@ -103,6 +103,39 @@ export default function Jobs() {
         </div>
       </section>
       
+      {/* Permanent Add Button - Top Right */}
+      {isAuthenticated && (
+        <div className="sticky top-20 z-40 flex justify-end container mx-auto px-4 -mb-4">
+          <Button 
+            onClick={() => navigate('/add-job')}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Post Job
+          </Button>
+        </div>
+      )}
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Add Job Button - Above List */}
+          {isAuthenticated && (
+            <div className="flex justify-end mb-4">
+              <Button 
+                onClick={() => navigate('/add-job')}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Post Job
+              </Button>
+            </div>
+          )}
+          </div>
+        </div>
+      </section>
+      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
 
@@ -153,6 +186,15 @@ export default function Jobs() {
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
+                  {(job.ownerId || job.userId) && (
+                    <Link href={`/users/${job.ownerId || job.userId}`}>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer" data-testid={`link-profile-${job.id}`}>
+                        <User className="w-4 h-4" />
+                        <span>View Poster's Profile</span>
+                      </div>
+                    </Link>
+                  )}
+
                   <p className="text-sm text-muted-foreground line-clamp-3">
                     {job.description}
                   </p>
@@ -219,6 +261,15 @@ export default function Jobs() {
                     >
                       Details
                     </Button>
+                    {isAuthenticated && user?.id === (job.ownerId || job.userId) && (
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        onClick={() => navigate(`/jobs/edit/${job.id}`)}
+                      >
+                        Edit
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
