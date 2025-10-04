@@ -2470,6 +2470,242 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to validate template" });
     }
   });
+  // Jobs routes
+  app.get("/api/jobs", async (req, res) => {
+    try {
+      const { search, type, limit = "20", offset = "0" } = req.query;
+      const jobsList = await storage.getJobs({
+        search: search as string,
+        type: type as string,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+      });
+      res.json(jobsList);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      res.status(500).json({ message: "Failed to fetch jobs" });
+    }
+  });
+  app.get("/api/jobs/:id", async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error("Error fetching job:", error);
+      res.status(500).json({ message: "Failed to fetch job" });
+    }
+  });
+  app.post("/api/jobs", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertJobSchema.parse({
+        ...req.body,
+        ownerId: req.user!.id,
+      });
+      const job = await storage.createJob(validatedData);
+      console.log("Job created successfully:", job.id);
+      res.json({ success: true, job });
+    } catch (error) {
+      console.error("Job creation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(400).json({
+        message: error instanceof Error ? error.message : "Failed to create job"
+      });
+    }
+  });
+  app.patch("/api/jobs/:id", requireAuth, async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      if (job.ownerId !== req.user!.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to edit this job" });
+      }
+      const validatedData = insertJobSchema.partial().parse(req.body);
+      const updatedJob = await storage.updateJob(req.params.id, validatedData);
+      res.json({ success: true, job: updatedJob });
+    } catch (error) {
+      console.error("Job update error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update job" });
+    }
+  });
+  app.delete("/api/jobs/:id", requireAuth, async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      if (job.ownerId !== req.user!.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to delete this job" });
+      }
+      await storage.deleteJob(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Job deletion error:", error);
+      res.status(500).json({ message: "Failed to delete job" });
+    }
+  });
+  // Get template by ID
+  app.get("/api/templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      res.status(500).json({ message: "Failed to fetch template" });
+    }
+  });
+  app.patch("/api/templates/:id", requireAuth, async (req, res) => {
+    try {
+      const template = await storage.getTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      if (template.ownerId !== req.user!.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to edit this template" });
+      }
+      const validatedData = insertServerTemplateSchema.partial().parse(req.body);
+      const updatedTemplate = await storage.updateTemplate(req.params.id, validatedData);
+      res.json({ success: true, template: updatedTemplate });
+    } catch (error) {
+      console.error("Template update error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update template" });
+    }
+  });
+  app.delete("/api/templates/:id", requireAuth, async (req, res) => {
+    try {
+      const template = await storage.getTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      if (template.ownerId !== req.user!.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to delete this template" });
+      }
+      await storage.deleteTemplate(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Template deletion error:", error);
+      res.status(500).json({ message: "Failed to delete template" });
+    }
+  });
+  // Get partnership by ID
+  app.get("/api/partnerships/:id", async (req, res) => {
+    try {
+      const partnership = await storage.getPartnership(req.params.id);
+      if (!partnership) {
+        return res.status(404).json({ message: "Partnership not found" });
+      }
+      res.json(partnership);
+    } catch (error) {
+      console.error("Error fetching partnership:", error);
+      res.status(500).json({ message: "Failed to fetch partnership" });
+    }
+  });
+  app.patch("/api/partnerships/:id", requireAuth, async (req, res) => {
+    try {
+      const partnership = await storage.getPartnership(req.params.id);
+      if (!partnership) {
+        return res.status(404).json({ message: "Partnership not found" });
+      }
+      if (partnership.ownerId !== req.user!.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to edit this partnership" });
+      }
+      const validatedData = insertPartnershipSchema.partial().parse(req.body);
+      const updatedPartnership = await storage.updatePartnership(req.params.id, validatedData);
+      res.json({ success: true, partnership: updatedPartnership });
+    } catch (error) {
+      console.error("Partnership update error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update partnership" });
+    }
+  });
+  app.delete("/api/partnerships/:id", requireAuth, async (req, res) => {
+    try {
+      const partnership = await storage.getPartnership(req.params.id);
+      if (!partnership) {
+        return res.status(404).json({ message: "Partnership not found" });
+      }
+      if (partnership.ownerId !== req.user!.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to delete this partnership" });
+      }
+      await storage.deletePartnership(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Partnership deletion error:", error);
+      res.status(500).json({ message: "Failed to delete partnership" });
+    }
+  });
+  // User profile routes
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return public user data only
+      const publicUser = {
+        id: user.id,
+        username: user.username,
+        discriminator: user.discriminator,
+        avatar: user.avatar,
+        discordId: user.discordId,
+        coins: user.coins,
+        serversJoined: user.serversJoined,
+        inviteCount: user.inviteCount,
+        referralCount: user.referralCount,
+        createdAt: user.createdAt,
+      };
+      
+      res.json(publicUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  app.get("/api/users/:id/jobs", async (req, res) => {
+    try {
+      const jobs = await storage.getJobsByOwner(req.params.id);
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching user jobs:", error);
+      res.status(500).json({ message: "Failed to fetch user jobs" });
+    }
+  });
+  app.get("/api/users/:id/templates", async (req, res) => {
+    try {
+      const templates = await storage.getTemplatesByOwner(req.params.id);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching user templates:", error);
+      res.status(500).json({ message: "Failed to fetch user templates" });
+    }
+  });
+  app.get("/api/users/:id/partnerships", async (req, res) => {
+    try {
+      const partnerships = await storage.getPartnershipsByOwner(req.params.id);
+      res.json(partnerships);
+    } catch (error) {
+      console.error("Error fetching user partnerships:", error);
+      res.status(500).json({ message: "Failed to fetch user partnerships" });
+    }
+  });
 
   // User coins routes
   app.get("/api/user/coins", requireAuth, async (req, res) => {
