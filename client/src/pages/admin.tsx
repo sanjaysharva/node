@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Trash2, Plus, Edit, Timer, Upload, Image, Play, Pause, Eye, EyeOff, Zap
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest } from "@/lib/queryClient";
 import { insertSlideshowSchema, type Slideshow, insertFaqSchema, type Faq } from "@shared/schema";
 import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
+import { GoogleAdPreview } from "@/components/google-ad-preview";
+
 
 // Interface definitions
 interface Ad {
@@ -39,6 +41,7 @@ interface Ad {
   ctr?: number;
   conversions?: number;
   cost?: number;
+  position?: string;
 }
 
 interface BlogPost {
@@ -53,15 +56,6 @@ interface BlogPost {
   authorId: string;
   createdAt: string;
   updatedAt: string;
-}
-
-interface LiveChatMessage {
-  id: string;
-  userId: string;
-  username: string;
-  message: string;
-  timestamp: string;
-  status: 'read' | 'unread';
 }
 
 interface ServerAnalytics {
@@ -81,10 +75,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // State for live chat
-  const [liveChatMessages, setLiveChatMessages] = useState<LiveChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  
 
   // State for server management
   const [searchFilter, setSearchFilter] = useState("");
@@ -184,7 +175,13 @@ export default function AdminPage() {
   // Slideshow mutations
   const createSlideshowMutation = useMutation({
     mutationFn: async (slideshowData: any) => {
-      const response = await apiRequest("/api/slideshows", "POST", slideshowData);
+      const newSlideshow = { ...slideshowData };
+      // Validate image URL format
+      if (newSlideshow.imageUrl && !newSlideshow.imageUrl.match(/^https?:\/\/.+/i)) {
+        throw new Error("Please enter a valid URL starting with http:// or https://");
+      }
+
+      const response = await apiRequest('/api/slideshows', 'POST', newSlideshow);
       return response.json();
     },
     onSuccess: () => {
@@ -229,7 +226,7 @@ export default function AdminPage() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error", 
+        title: "Error",
         description: error.message || "Failed to update slideshow",
         variant: "destructive",
       });
@@ -414,6 +411,8 @@ export default function AdminPage() {
   // State for forms
   const [showForm, setShowForm] = useState(false);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
+  const [showSlideshowPreview, setShowSlideshowPreview] = useState(false);
+  const [previewSlideshow, setPreviewSlideshow] = useState<Slideshow | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -445,99 +444,54 @@ export default function AdminPage() {
     order: 0,
   });
 
-  // Google Ad Preview Component
-  const GoogleAdPreview = ({ ad }: { ad: any }) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 max-w-md">
-      <div className="flex items-start space-x-3">
-        {ad.imageUrl && (
-          <img src={ad.imageUrl} alt="Ad" className="w-16 h-16 object-cover rounded" />
-        )}
-        <div className="flex-1">
-          <div className="flex items-center space-x-1 mb-1">
-            <span className="text-xs text-gray-500">Ad</span>
-            <Globe className="w-3 h-3 text-gray-500" />
-          </div>
-          <h3 className="text-blue-600 text-sm font-medium hover:underline cursor-pointer">
-            {ad.title || "Advertisement Title"}
-          </h3>
-          <p className="text-gray-800 text-sm mt-1">
-            {ad.description || "Advertisement description goes here..."}
-          </p>
-          <div className="text-green-700 text-xs mt-1">
-            {ad.targetUrl || "example.com"}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Bot invite URL generator
+  const getBotInviteUrl = () => {
+    // Use the correct environment variable name for client-side
+    const botClientId = import.meta.env.VITE_DISCORD_CLIENT_ID || "1418600262938923220";
+    return `https://discord.com/oauth2/authorize?client_id=${botClientId}&permissions=8&scope=bot%20applications.commands`;
+  };
 
-  // Live Chat Component
-  const LiveChatPanel = () => (
-    <Card className="border border-border bg-card/50 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-foreground flex items-center">
-          <MessageCircle className="w-5 h-5 mr-2 text-blue-400" />
-          Live Chat Support
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Manage live chat conversations with users
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Chat List */}
-          <div className="space-y-2">
-            <h4 className="font-medium text-foreground mb-2">Active Conversations</h4>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {liveChatMessages.map((chat) => (
-                <div
-                  key={chat.id}
-                  className={`p-3 border border-border rounded-lg cursor-pointer transition-colors ${
-                    selectedChat === chat.id ? 'bg-primary/20 border-primary' : 'bg-card hover:bg-card/80'
-                  }`}
-                  onClick={() => setSelectedChat(chat.id)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-foreground">{chat.username}</p>
-                      <p className="text-sm text-muted-foreground truncate">{chat.message}</p>
-                    </div>
-                    <Badge
-                      variant={chat.status === 'read' ? 'default' : 'destructive'}
-                      className="text-xs"
-                    >
-                      {chat.status === 'read' ? 'Read' : 'Unread'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Chat Interface */}
-          <div className="border border-border rounded-lg p-4 bg-card">
-            <h4 className="font-medium text-foreground mb-4">Chat Response</h4>
-            <div className="space-y-4">
-              <Textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type your response..."
-                className="bg-background border-border text-foreground"
-                rows={4}
+  // Slideshow Preview Modal Component
+  const SlideshowPreviewModal = () => (
+    <Dialog open={showSlideshowPreview} onOpenChange={setShowSlideshowPreview}>
+      <DialogContent className="max-w-4xl bg-background border-border">
+        <DialogHeader>
+          <DialogTitle className="text-foreground">Slideshow Preview</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Preview how this slideshow will appear on the website
+          </DialogDescription>
+        </DialogHeader>
+        {previewSlideshow && (
+          <div className="space-y-4">
+            <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
+              <img
+                src={previewSlideshow.imageUrl}
+                alt={previewSlideshow.title}
+                className="w-full h-full object-cover"
               />
-              <div className="flex space-x-2">
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
-                  Send Response
-                </Button>
-                <Button size="sm" variant="outline" className="border-border text-muted-foreground">
-                  Mark Resolved
-                </Button>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                <h3 className="text-white text-xl font-bold">{previewSlideshow.title}</h3>
+                {previewSlideshow.linkUrl && (
+                  <p className="text-gray-300 text-sm">Links to: {previewSlideshow.linkUrl}</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <strong className="text-foreground">Display Order:</strong>
+                <span className="text-muted-foreground ml-2">{previewSlideshow.order}</span>
+              </div>
+              <div>
+                <strong className="text-foreground">Status:</strong>
+                <Badge variant={previewSlideshow.active ? "default" : "destructive"} className="ml-2">
+                  {previewSlideshow.active ? "Active" : "Inactive"}
+                </Badge>
               </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 
   // Server Analytics Component
@@ -808,6 +762,7 @@ export default function AdminPage() {
       </section>
 
       <div className="container mx-auto px-4 py-8">
+        <SlideshowPreviewModal />
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-9 bg-card/50 border border-border">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary">Overview</TabsTrigger>
@@ -1007,7 +962,41 @@ export default function AdminPage() {
                             </Select>
                           </div>
 
-                          <Button className="w-full bg-primary hover:bg-primary/90">
+                          <Button className="w-full bg-primary hover:bg-primary/90" onClick={async () => {
+                            try {
+                              const newGoogleAd = { ...formData };
+                              // Validate image URL format if provided
+                              if (newGoogleAd.imageUrl && !newGoogleAd.imageUrl.match(/^https?:\/\/.+/i)) {
+                                toast({
+                                  title: "Invalid Image URL",
+                                  description: "Please enter a valid URL starting with http:// or https://",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+
+                              await apiRequest('/api/ads', 'POST', newGoogleAd);
+                              refetchAds();
+                              setShowForm(false);
+                              setFormData({
+                                title: "",
+                                description: "",
+                                imageUrl: "",
+                                targetUrl: "",
+                                position: "header",
+                              });
+                              toast({
+                                title: "Success!",
+                                description: "Advertisement created successfully.",
+                              });
+                            } catch (error: any) {
+                              toast({
+                                title: "Error",
+                                description: error.message || "Failed to create advertisement",
+                                variant: "destructive",
+                              });
+                            }
+                          }}>
                             Create Advertisement
                           </Button>
                         </div>
@@ -1042,13 +1031,37 @@ export default function AdminPage() {
                           <p>Clicks: {(ad.clicks || 0).toLocaleString()}</p>
                         </div>
                         <div className="flex space-x-1">
-                          <Button size="sm" variant="outline" className="border-border text-muted-foreground">
+                          <Button size="sm" variant="outline" className="border-border text-muted-foreground" onClick={() => {
+                            setEditingAd(ad);
+                            setFormData({
+                              title: ad.title,
+                              description: ad.description,
+                              imageUrl: ad.imageUrl || "",
+                              targetUrl: ad.targetUrl,
+                              position: ad.position || "header",
+                            });
+                            setShowForm(true);
+                          }}>
                             <Edit className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="border-border text-muted-foreground">
+                          <Button size="sm" variant="outline" className="border-border text-muted-foreground" onClick={async () => {
+                            await apiRequest(`/api/ads/${ad.id}`, "PATCH", { isActive: !ad.isActive });
+                            refetchAds();
+                            toast({
+                              title: "Success!",
+                              description: `Advertisement ${ad.isActive ? 'paused' : 'resumed'} successfully.`,
+                            });
+                          }}>
                             {ad.isActive ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                           </Button>
-                          <Button size="sm" variant="outline" className="border-destructive text-destructive">
+                          <Button size="sm" variant="outline" className="border-destructive text-destructive" onClick={async () => {
+                            await apiRequest(`/api/ads/${ad.id}`, "DELETE");
+                            refetchAds();
+                            toast({
+                              title: "Success!",
+                              description: "Advertisement deleted successfully.",
+                            });
+                          }}>
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
@@ -1255,6 +1268,18 @@ export default function AdminPage() {
                               data-testid={`button-toggle-slideshow-${slideshow.id}`}
                             >
                               {slideshow.active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPreviewSlideshow(slideshow);
+                                setShowSlideshowPreview(true);
+                              }}
+                              className="border-border text-muted-foreground"
+                              data-testid={`button-preview-slideshow-${slideshow.id}`}
+                            >
+                              <Eye className="w-3 h-3" />
                             </Button>
                             <Button
                               size="sm"
@@ -1482,7 +1507,7 @@ export default function AdminPage() {
                               <span>{new Date(blog.createdAt).toLocaleDateString()}</span>
                             </div>
                           </div>
-                          <div className="flex space-x-2 ml-4">
+                          <div className="flex space-x-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -1539,21 +1564,36 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="support" className="space-y-6">
-            <LiveChatPanel />
-
             <Card className="border border-border bg-card/50 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center">
-                  <Bot className="w-5 h-5 mr-2 text-blue-400" />
-                  Discord Bot Assistance
+                  <HeartHandshake className="w-5 h-5 mr-2 text-blue-400" />
+                  Support Management
                 </CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Automated Discord bot responses and assistance
+                  Manage support tickets and user assistance
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-foreground mb-2">Support Overview</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Open Tickets:</span>
+                        <Badge className="bg-orange-600">{liveStats?.supportTickets || 0}</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Resolved Today:</span>
+                        <span className="text-foreground">12</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Avg Response:</span>
+                        <span className="text-foreground">2.3 hours</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
                     <h4 className="font-medium text-foreground mb-2">Bot Status</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between">
@@ -1574,13 +1614,13 @@ export default function AdminPage() {
                     <h4 className="font-medium text-foreground mb-2">Quick Actions</h4>
                     <div className="space-y-2">
                       <Button size="sm" variant="outline" className="w-full border-border text-muted-foreground">
-                        Restart Bot
+                        View Tickets
                       </Button>
                       <Button size="sm" variant="outline" className="w-full border-border text-muted-foreground">
-                        Update Commands
+                        Bot Logs
                       </Button>
                       <Button size="sm" variant="outline" className="w-full border-border text-muted-foreground">
-                        View Logs
+                        System Status
                       </Button>
                     </div>
                   </div>
@@ -1594,12 +1634,112 @@ export default function AdminPage() {
               <CardHeader>
                 <CardTitle className="text-foreground">Discord Bot Control Panel</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Manage Discord bot settings and monitor performance
+                  Manage Discord bot settings, monitor performance, and configure features
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <p className="text-muted-foreground">Bot control interface will be available here.</p>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-foreground">Bot Information</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Bot Status:</span>
+                          <Badge className="bg-green-600">Online</Badge>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Client ID:</span>
+                          <span className="text-foreground text-xs">{import.meta.env.VITE_DISCORD_CLIENT_ID || "1418600262938923220"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Servers:</span>
+                          <span className="text-foreground">{liveStats?.botServers || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Commands/Hour:</span>
+                          <span className="text-foreground">{liveStats?.botCommands || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-foreground">Bot Features</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="bg-green-500/20 text-green-400">Active</Badge>
+                          <span className="text-muted-foreground">Bump Commands</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="bg-green-500/20 text-green-400">Active</Badge>
+                          <span className="text-muted-foreground">Server Verification</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="bg-green-500/20 text-green-400">Active</Badge>
+                          <span className="text-muted-foreground">Member Tracking</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400">Beta</Badge>
+                          <span className="text-muted-foreground">Auto Moderation</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => window.open(getBotInviteUrl(), '_blank')}
+                          className="w-full bg-purple-600 hover:bg-purple-700"
+                        >
+                          <Bot className="w-4 h-4 mr-2" />
+                          Invite Bot
+                        </Button>
+                        <Button 
+                          onClick={() => navigator.clipboard.writeText(getBotInviteUrl())}
+                          variant="outline" 
+                          className="w-full border-border text-muted-foreground"
+                        >
+                          Copy Invite Link
+                        </Button>
+                        <Button 
+                          onClick={() => window.open(`https://discord.com/developers/applications/${import.meta.env.VITE_DISCORD_CLIENT_ID || "1418600262938923220"}`, '_blank')}
+                          variant="outline"
+                          className="w-full border-border text-muted-foreground"
+                        >
+                          Developer Portal
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Bot Commands & Settings</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="bg-card/30">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm">Bump System</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-sm text-muted-foreground">
+                          <p>• /bump - Bump your server</p>
+                          <p>• /setbumpchannel - Set bump channel</p>
+                          <p>• /removebumpchannel - Remove bump channel</p>
+                          <p>• Cooldown: 2 hours between bumps</p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-card/30">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm">Admin Commands</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-sm text-muted-foreground">
+                          <p>• /verify - Verify server ownership</p>
+                          <p>• /stats - View server statistics</p>
+                          <p>• /help - Display all commands</p>
+                          <p>• Requires: Admin permissions</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
