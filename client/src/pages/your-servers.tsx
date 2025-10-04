@@ -91,7 +91,7 @@ export default function YourServers() {
           botPresent: false,
           checkMethod: "http_error",
           errorDetails: errorData.message,
-          inviteUrl: `https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
+          inviteUrl: `https://discord.com/oauth2/authorize?client_id=1418600262938923220&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}`
         };
       }
       
@@ -110,7 +110,7 @@ export default function YourServers() {
       // Fallback: show modal to invite bot
       console.log(`❌ Fallback: showing invite modal for ${server.name}`);
       setSelectedServer(server);
-      setBotInviteUrl(`https://discord.com/oauth2/authorize?client_id=1372226433191247983&permissions=8&scope=bot%20applications.commands&guild_id=${server.discordId || server.id}`);
+      setBotInviteUrl(`https://discord.com/oauth2/authorize?client_id=1418600262938923220&permissions=8&scope=bot%20applications.commands&guild_id=${server.discordId || server.id}`);
       setShowBotModal(true);
     }
   };
@@ -376,7 +376,7 @@ export default function YourServers() {
             </div>
             <h3 className="text-2xl font-semibold mb-3 text-foreground">No servers found</h3>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              You don't have any servers listed on Smart Serve yet. Add your first server to get started!
+              You don't have any servers listed on Axiom yet. Add your first server to get started!
             </p>
             <Link href="/advertise-server">
               <Button 
@@ -407,10 +407,10 @@ export default function YourServers() {
             
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-foreground">
-                Smart Serve Bot Required
+                Axiom Bot Required
               </h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Our Smart Serve bot is not present in <span className="font-semibold text-purple-400">{selectedServer?.name}</span>. 
+                Our Axiom bot is not present in <span className="font-semibold text-purple-400">{selectedServer?.name}</span>. 
                 You must invite the bot first before you can advertise this server.
               </p>
               <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 mt-4">
@@ -506,29 +506,32 @@ export default function YourServers() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label htmlFor="bump-enabled" className="text-sm font-medium flex items-center gap-2">
-                        <Megaphone className="w-4 h-4 text-purple-400" />
-                        Enable Bump System
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Allow your server to be bumped to other servers using /bump command
-                      </p>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Bump Settings</h3>
+                  <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label htmlFor="bump-enabled" className="text-sm font-medium flex items-center gap-2">
+                          <Megaphone className="w-4 h-4 text-purple-400" />
+                          Enable Bump System
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Allow your server to be bumped to other servers using /bump command
+                        </p>
+                      </div>
+                      <Switch
+                        id="bump-enabled"
+                        checked={selectedServer.bumpEnabled || false}
+                        onCheckedChange={(checked) => {
+                          updateBumpSettings.mutate({
+                            serverId: selectedServer.id,
+                            bumpEnabled: checked
+                          });
+                        }}
+                        disabled={updateBumpSettings.isPending}
+                      />
                     </div>
-                    <Switch
-                      id="bump-enabled"
-                      checked={selectedServer.bumpEnabled || false}
-                      onCheckedChange={(checked) => {
-                        updateBumpSettings.mutate({
-                          serverId: selectedServer.id,
-                          bumpEnabled: checked
-                        });
-                      }}
-                      disabled={updateBumpSettings.isPending}
-                    />
                   </div>
                 </div>
 
