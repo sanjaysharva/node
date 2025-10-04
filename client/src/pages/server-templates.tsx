@@ -114,23 +114,20 @@ export default function ServerTemplates() {
                 Ready-to-use Discord server templates with pre-configured channels and roles
               </p>
             </div>
+            {isAuthenticated && (
+              <div className="mt-6">
+                <Button 
+                  onClick={() => navigate('/add-template')}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 text-lg"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Add Template
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </section>
-
-      {/* Permanent Add Button - Top Right */}
-      {isAuthenticated && (
-        <div className="sticky top-20 z-40 flex justify-end container mx-auto px-4 -mb-4">
-          <Button 
-            onClick={() => window.location.href = '/add-template'}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Template
-          </Button>
-        </div>
-      )}
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
@@ -139,11 +136,11 @@ export default function ServerTemplates() {
           {isAuthenticated && (
             <div className="flex justify-end mb-4">
               <Button 
-                onClick={() => window.location.href = '/add-template'}
+                onClick={() => window.location.href = '/edit-template'}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Template
+                Edit Template
               </Button>
             </div>
           )}
