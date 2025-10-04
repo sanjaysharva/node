@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Coins, Zap, Crown, ShoppingCart, ArrowRight } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { Link } from "wouter";
-import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
+import backgroundImage from "@assets/generated_images/b7f788e000ffb2854a98d937b8a46593.gif";
 
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 
