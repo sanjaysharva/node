@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, MapPin, Clock,Users, User } from "lucide-react";
+import { Search, Plus, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
