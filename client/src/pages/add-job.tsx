@@ -12,6 +12,7 @@ import { ArrowLeft, Plus, X, DollarSign, Users, Briefcase, ExternalLink } from "
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 interface JobNeededFormData {
   userId: string;
