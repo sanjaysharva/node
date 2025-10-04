@@ -2878,7 +2878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Support ticket API routes
+ // Support ticket API routes
   app.post("/api/support/tickets", async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -2886,10 +2886,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const ticketData = insertSupportTicketSchema.parse(req.body);
+
       const ticket = await storage.createSupportTicket({
         ...ticketData,
         userId: req.user.id
       });
+
+      // Send notification to Discord admin
+      const { discordBot } = await import('./discord-bot');
+      const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean);
+
+      for (const adminId of ADMIN_USER_IDS) {
+        try {
+          const adminUser = await discordBot.users.fetch(adminId.trim());
+          const { EmbedBuilder } = await import('discord.js');
+
+          const ticketEmbed = new EmbedBuilder()
+            .setTitle('🎫 New Support Ticket from Website')
+            .setColor('#FF6B6B')
+            .addFields(
+              { name: '🎫 Ticket ID:', value: ticket.ticketId, inline: true },
+              { name: '👤 User:', value: req.user.username, inline: true },
+              { name: '📋 Category:', value: ticketData.category, inline: true },
+              { name: '⚡ Priority:', value: ticketData.priority, inline: true },
+              { name: '📌 Subject:', value: ticketData.subject, inline: false },
+              { name: '📝 Description:', value: ticketData.description, inline: false }
+            )
+            .setTimestamp();
+
+          await adminUser.send({ embeds: [ticketEmbed] });
+        } catch (adminError) {
+          console.log(`Could not notify admin ${adminId} about support ticket`);
+        }
+      }
 
       res.status(201).json(ticket);
     } catch (error) {
@@ -2913,7 +2942,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Regular users can only see their own tickets, admins can see all
       const options = req.user.isAdmin ? { status, limit, offset } : { userId: req.user.id, status, limit, offset };
-      
       const tickets = await storage.getSupportTickets(options);
       res.json(tickets);
     } catch (error) {
@@ -2948,7 +2976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { discordBot } = await import('./discord-bot');
       
       if (discordBot && discordBot.isReady()) {
-        const ADMIN_CHANNEL_ID = "1234567890"; // Replace with actual admin channel ID
+        const ADMIN_CHANNEL_ID = "1416385341513793569"; // Replace with actual admin channel ID
         
         const embed = new (await import('discord.js')).EmbedBuilder()
           .setTitle('🤖 New Bot Submission')
