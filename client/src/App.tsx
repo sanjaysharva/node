@@ -49,6 +49,10 @@ import EditPartnership from "@/pages/edit-partnership";
 import EditTemplate from "@/pages/edit-template";
 import EditEvent from "@/pages/edit-event";
 import UserProfile from "@/pages/user-profile";
+import YourPartnerships from "@/pages/your-partnerships";
+import YourJobs from "@/pages/your-jobs";
+import YourTemplates from "@/pages/your-templates";
+import YourEvents from "@/pages/your-events";
 
 
 
@@ -72,6 +76,10 @@ function Router() {
       <Route path="/add-partnership" component={AddPartnership} />
       <Route path="/add-template" component={AddTemplate} />
       <Route path="/your-servers" component={YourServers} />
+      <Route path="/your-partnerships" component={YourPartnerships} />
+      <Route path="/your-jobs" component={YourJobs} />
+      <Route path="/your-templates" component={YourTemplates} />
+      <Route path="/your-events" component={YourEvents} />
       <Route path="/events" component={Events} />
       <Route path="/explore" component={Explore} />
       <Route path="/join-members" component={JoinMembers} />
