@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, X, DollarSign, Users, Briefcase, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { setLocation } from "wouter";
 
 interface JobNeededFormData {
   userId: string;
@@ -29,8 +29,7 @@ interface JobGivingFormData {
 
 export default function AddJob() {
   const { user, isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const { toast } = useToast(); ;
   const [activeTab, setActiveTab] = useState("job-needed");
 
   // Job Needed Form State
@@ -128,7 +127,7 @@ export default function AddJob() {
         description: ""
       });
       // Redirect to jobs page
-      navigate('/jobs');
+      setLocation('/jobs');
     },
     onError: () => {
       toast({
@@ -178,7 +177,7 @@ export default function AddJob() {
         currency: []
       });
       // Redirect to jobs page
-      navigate('/jobs');
+      setLocation('/jobs');
     },
     onError: () => {
       toast({
@@ -196,7 +195,7 @@ export default function AddJob() {
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
           <p className="text-muted-foreground mb-6">Please log in to create job postings.</p>
-          <Button onClick={() => navigate('/login')}>
+          <Button onClick={() => setLocation('/login')}>
             Login
           </Button>
         </div>
@@ -215,7 +214,7 @@ export default function AddJob() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/jobs")}
+              onClick={() => setLocation("/jobs")}
               className="mr-4"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
