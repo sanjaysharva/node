@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, X, DollarSign, Users, Briefcase, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { setLocation } from "wouter";
+import { useLocation } from "wouter";
 
 interface JobNeededFormData {
   userId: string;
@@ -29,7 +29,8 @@ interface JobGivingFormData {
 
 export default function AddJob() {
   const { user, isAuthenticated } = useAuth();
-  const { toast } = useToast(); ;
+  const { toast } = useToast();
+  const [location, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("job-needed");
 
   // Job Needed Form State
@@ -127,7 +128,7 @@ export default function AddJob() {
         description: ""
       });
       // Redirect to jobs page
-      setLocation('/jobs');
+      navigate('/jobs');
     },
     onError: () => {
       toast({
@@ -177,7 +178,7 @@ export default function AddJob() {
         currency: []
       });
       // Redirect to jobs page
-      setLocation('/jobs');
+      navigate('/jobs');
     },
     onError: () => {
       toast({
@@ -195,7 +196,7 @@ export default function AddJob() {
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
           <p className="text-muted-foreground mb-6">Please log in to create job postings.</p>
-          <Button onClick={() => setLocation('/login')}>
+          <Button onClick={() => navigate('/login')}>
             Login
           </Button>
         </div>
@@ -214,7 +215,7 @@ export default function AddJob() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setLocation("/jobs")}
+              onClick={() => navigate("/jobs")}
               className="mr-4"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -277,8 +278,8 @@ export default function AddJob() {
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
                         disabled={jobNeededData.skills.length >= 5}
                       />
-                      <Button 
-                        type="button" 
+                      <Button
+                        type="button"
                         onClick={addSkill}
                         disabled={!skillInput.trim() || jobNeededData.skills.length >= 5}
                         size="sm"
@@ -290,8 +291,8 @@ export default function AddJob() {
                       {jobNeededData.skills.map((skill, index) => (
                         <Badge key={index} variant="secondary" className="flex items-center gap-1">
                           {skill}
-                          <X 
-                            className="w-3 h-3 cursor-pointer" 
+                          <X
+                            className="w-3 h-3 cursor-pointer"
                             onClick={() => removeSkill(skill)}
                           />
                         </Badge>
@@ -328,7 +329,7 @@ export default function AddJob() {
                     />
                   </div>
 
-                  <Button 
+                  <Button
                     onClick={() => submitJobNeeded.mutate(jobNeededData)}
                     disabled={!jobNeededData.userId || jobNeededData.skills.length === 0 || !jobNeededData.description || submitJobNeeded.isPending}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
@@ -383,8 +384,8 @@ export default function AddJob() {
                         onChange={(e) => setCurrencyInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCurrency())}
                       />
-                      <Button 
-                        type="button" 
+                      <Button
+                        type="button"
                         onClick={addCurrency}
                         disabled={!currencyInput.trim()}
                         size="sm"
@@ -397,8 +398,8 @@ export default function AddJob() {
                         <Badge key={index} variant="secondary" className="flex items-center gap-1">
                           <DollarSign className="w-3 h-3" />
                           {currency}
-                          <X 
-                            className="w-3 h-3 cursor-pointer" 
+                          <X
+                            className="w-3 h-3 cursor-pointer"
                             onClick={() => removeCurrency(currency)}
                           />
                         </Badge>
@@ -418,7 +419,7 @@ export default function AddJob() {
                     />
                   </div>
 
-                  <Button 
+                  <Button
                     onClick={() => submitJobGiving.mutate(jobGivingData)}
                     disabled={!jobGivingData.userId || !jobGivingData.serverInviteLink || !jobGivingData.description || submitJobGiving.isPending}
                     className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
