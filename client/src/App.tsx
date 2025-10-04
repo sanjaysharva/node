@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth";
 import Home from "@/pages/home";
 import AddServer from "@/pages/add-server";
+import AddJob from "@/pages/add-job";
 import AddBot from "@/pages/add-bot";
 import AdminPage from "@/pages/admin";
 import Events from "@/pages/events";
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/advertise" component={Advertise} />
       <Route path="/advertise-server" component={AddServer} />
+      <Route path="/add-job" component={AddJob} />
       <Route path="/add-bot" component={AddBot} />
       <Route path="/add-server" component={AddServer} />
       <Route path="/add-event" component={AddEvent} />
