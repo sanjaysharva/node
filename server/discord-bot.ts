@@ -48,6 +48,14 @@ const commands = [
     ),
 
   new SlashCommandBuilder()
+    .setName('enablebump')
+    .setDescription('Enable bump system for this server (Admin only)'),
+
+  new SlashCommandBuilder()
+    .setName('disablebump')
+    .setDescription('Disable bump system for this server (Admin only)'),
+
+  new SlashCommandBuilder()
     .setName('support')
     .setDescription('Contact Smart Serve support team')
     .addStringOption(option =>
@@ -249,6 +257,12 @@ client.on('interactionCreate', async (interaction) => {
         break;
       case 'bumpchannel':
         await handleBumpChannelCommand(interaction);
+        break;
+      case 'enablebump':
+        await handleEnableBumpCommand(interaction);
+        break;
+      case 'disablebump':
+        await handleDisableBumpCommand(interaction);
         break;
       case 'support':
         await handleSupportCommand(interaction);
@@ -675,7 +689,9 @@ async function handleBumpCommand(interaction: any) {
     const serverData = await storage.getServerByDiscordId(guildId);
     if (!serverData || !serverData.bumpEnabled) {
       await interaction.editReply({
-        content: '❌ Bump is not enabled for this server. Server owners can enable it on the Smart Serve website.'
+        content: 'const serverUrl = `https://axiomer.up.railway.app/your-servers`;
+      await interaction.editReply({
+        content: `❌ Bump is not enabled for this server.\n\n**To enable bump:**\n1. Visit your server settings: ${serverUrl}\n2. Click the settings icon on your server card\n3. Toggle "Enable Bump System"\n\nOr use the command: \`/enablebump\` (Admin only)`'
       });
       return;
     }
@@ -707,7 +723,7 @@ async function handleBumpCommand(interaction: any) {
         { name: '🌐 Server', value: `[Join Now](https://discord.gg/${serverData.inviteCode})`, inline: true }
       )
       .setThumbnail(interaction.guild.iconURL() || null)
-      .setFooter({ text: 'Powered by Smart Serve', iconURL: client.user?.avatarURL() || undefined })
+      .setFooter({ text: 'Powered by Axiom', iconURL: client.user?.avatarURL() || undefined })
       .setTimestamp();
 
     // Send bump to all channels
@@ -744,7 +760,7 @@ async function handleBumpCommand(interaction: any) {
 async function handleBumpToolsCommand(interaction: any) {
   const embed = new EmbedBuilder()
     .setTitle('🛠️ Bump Tools')
-    .setDescription('Information about Smart Serve bump system')
+    .setDescription('Information about Axiom bump system')
     .setColor('#7C3AED')
     .addFields(
       { name: '📢 /bump', value: 'Bump your server to all bump channels (2 hour cooldown)', inline: false },
@@ -753,10 +769,88 @@ async function handleBumpToolsCommand(interaction: any) {
       { name: '📊 /bumpchannel info', value: 'View bump channel settings', inline: false },
       { name: '⚙️ /setbump', value: 'Get server management link', inline: false }
     )
-    .setFooter({ text: 'Powered by Smart Serve' })
+      .setFooter({ text: 'Powered by Axiom' })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
+  {
+  async function handleEnableBumpCommand(interaction: any) {
+  // Check if user has administrator permission
+  if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+    await interaction.reply({
+      content: '❌ You need **Administrator** permission to enable bump system.',
+      ephemeral: true
+    });
+    return;
+  }
+
+  try {
+    const guildId = interaction.guild.id;
+    const serverData = await storage.getServerByDiscordId(guildId);
+    
+    if (!serverData) {
+      await interaction.reply({
+        content: '❌ This server is not registered on Axiom. Please add your server first at https://axiomer.up.railway.app/add-server',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // Update bump enabled status
+    await storage.updateServerBumpStatus(guildId, true);
+
+    const embed = new EmbedBuilder()
+      .setTitle('✅ Bump System Enabled')
+      .setDescription('Bump system has been enabled for this server!')
+      .setColor('#00FF00')
+      .addFields(
+        { name: '📢 Available Commands', value: '`/bump` - Bump your server\n`/bumpchannel set` - Set bump channel\n`/bumptools` - View all bump commands', inline: false },
+        { name: '⏱️ Cooldown', value: '2 hours between bumps', inline: true },
+        { name: '🎯 How it works', value: 'Members can use /bump to promote this server across the network', inline: true }
+      )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Enable bump command error:', error);
+    await interaction.reply({
+      content: '❌ Failed to enable bump system. Please try again.',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleDisableBumpCommand(interaction: any) {
+  // Check if user has administrator permission
+  if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+    await interaction.reply({
+      content: '❌ You need **Administrator** permission to disable bump system.',
+      ephemeral: true
+    });
+    return;
+  }
+
+  try {
+    const guildId = interaction.guild.id;
+    await storage.updateServerBumpStatus(guildId, false);
+
+    const embed = new EmbedBuilder()
+      .setTitle('❌ Bump System Disabled')
+      .setDescription('Bump system has been disabled for this server.')
+      .setColor('#FF0000')
+      .addFields(
+        { name: 'ℹ️ Note', value: 'Members will no longer be able to use /bump command until it is re-enabled.', inline: false }
+      )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Disable bump command error:', error);
+    await interaction.reply({
+      content: '❌ Failed to disable bump system. Please try again.',
+      ephemeral: true
+    });
+  }
 }
 
 async function handleBumpChannelCommand(interaction: any) {
@@ -939,7 +1033,7 @@ async function handleSupportCommand(interaction: any) {
 
   try {
     // Create support ticket in database
-    await storage.createSupportTicket({
+    const ticket = await storage.createSupportTicket({
       discordUserId: userId,
       username: username,
       message: message,
@@ -957,14 +1051,15 @@ async function handleSupportCommand(interaction: any) {
     try {
       const dmEmbed = new EmbedBuilder()
         .setTitle('🎫 Support Ticket Created')
-        .setDescription('Thank you for contacting Smart Serve support!')
+        .setDescription('Thank you for contacting Axiom support!')
         .setColor('#00FF00')
         .addFields(
           { name: '📝 Your Message:', value: message, inline: false },
+         { name: '🎫 Ticket ID:', value: ticket.ticketId, inline: true },
           { name: '⏰ Response Time:', value: 'Our team typically responds within 24 hours', inline: false },
-          { name: '🔗 Need More Help?', value: `[Visit Help Center](https://smartserve.repl.co/help-center)`, inline: false }
+          { name: '🔗 Need More Help?', value: `[Visit Help Center](https://axiom.up.railway.app/help-center)`, inline: false }
         )
-        .setFooter({ text: 'Smart Serve Support Team' })
+        .setFooter({ text: 'Axiom Support Team' })
         .setTimestamp();
 
       await interaction.user.send({ embeds: [dmEmbed] });
@@ -972,20 +1067,20 @@ async function handleSupportCommand(interaction: any) {
       console.log(`Could not send DM confirmation to ${username}`);
     }
 
-    // Notify admin channel or specific admin users
-    const ADMIN_USER_IDS = ['123456789']; // Add actual admin Discord IDs here
-
+    // Notify admin - Use environment variable for admin ID
+    const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean);
     for (const adminId of ADMIN_USER_IDS) {
       try {
-        const adminUser = await client.users.fetch(adminId);
+        const adminUser = await client.users.fetch(adminId.trim());
         const adminEmbed = new EmbedBuilder()
           .setTitle('🆘 New Support Ticket')
           .setColor('#FF6B6B')
           .addFields(
+            { name: '🎫 Ticket ID:', value: ticket.ticketId, inline: true },
             { name: '👤 User:', value: `${username} (${userId})`, inline: true },
             { name: '🏠 Server:', value: guildName, inline: true },
             { name: '📝 Message:', value: message, inline: false },
-            { name: '⚡ Quick Actions:', value: `Reply: \`/dm ${userId} [message]\`\nClose: \`/close-ticket ${userId}\``, inline: false }
+            { name: '⚡ Reply:', value: `Send a DM starting with \`.${userId}\` followed by your message`, inline: false } inline: false }
           )
           .setTimestamp();
 
@@ -1003,6 +1098,101 @@ async function handleSupportCommand(interaction: any) {
     });
   }
 }
+
+// Handle direct messages to the bot
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages
+  if (message.author.bot) return;
+
+  // Only handle DMs
+  if (message.channel.type !== ChannelType.DM) return;
+
+  const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean).map(id => id.trim());
+
+  // Check if sender is admin and message starts with a dot (.)
+  if (ADMIN_USER_IDS.includes(message.author.id) && message.content.startsWith('.')) {
+    // Admin replying to a user
+    const parts = message.content.slice(1).trim().split(' ');
+    const targetUserId = parts[0];
+    const replyMessage = parts.slice(1).join(' ');
+
+    if (!targetUserId || !replyMessage) {
+      await message.reply('❌ Invalid format. Use: `.userId your message here`');
+      return;
+    }
+
+    try {
+      const targetUser = await client.users.fetch(targetUserId);
+      
+      const replyEmbed = new EmbedBuilder()
+        .setTitle('💬 Support Team Response')
+        .setDescription(replyMessage)
+        .setColor('#00FF00')
+        .setFooter({ text: 'Axiom Support Team', iconURL: client.user?.avatarURL() || undefined })
+        .setTimestamp();
+
+      await targetUser.send({ embeds: [replyEmbed] });
+      await message.reply(`✅ Message sent to ${targetUser.tag}`);
+      
+      // Log the response in database
+      await storage.addSupportTicketResponse(targetUserId, message.author.id, replyMessage);
+    } catch (error) {
+      await message.reply('❌ Failed to send message. User not found or DMs disabled.');
+      console.error('Error sending admin reply:', error);
+    }
+  } else {
+    // Regular user sending DM to bot
+    const userId = message.author.id;
+    const username = message.author.tag;
+    const userMessage = message.content;
+
+    // Send acknowledgment to user
+    const ackEmbed = new EmbedBuilder()
+      .setTitle('📬 Message Received')
+      .setDescription('Thank you for your message! Our support team has been notified and will respond shortly.')
+      .setColor('#7C3AED')
+      .addFields(
+        { name: '📝 Your Message:', value: userMessage, inline: false }
+      )
+      .setFooter({ text: 'Axiom Support' })
+      .setTimestamp();
+
+    await message.reply({ embeds: [ackEmbed] });
+
+    // Notify all admins
+    for (const adminId of ADMIN_USER_IDS) {
+      try {
+        const adminUser = await client.users.fetch(adminId.trim());
+        const adminNotifEmbed = new EmbedBuilder()
+          .setTitle('💬 New Direct Message')
+          .setColor('#FFD700')
+          .addFields(
+            { name: '👤 From:', value: `${username} (${userId})`, inline: true },
+            { name: '📝 Message:', value: userMessage, inline: false },
+            { name: '⚡ Reply:', value: `\`.${userId} your reply here\``, inline: false }
+          )
+          .setTimestamp();
+
+        await adminUser.send({ embeds: [adminNotifEmbed] });
+      } catch (adminError) {
+        console.log(`Could not notify admin ${adminId}`);
+      }
+    }
+
+    // Store the DM in database
+    try {
+      await storage.createSupportTicket({
+        discordUserId: userId,
+        username: username,
+        message: userMessage,
+        guildName: 'Direct Message',
+        status: 'open',
+      });
+    } catch (dbError) {
+      console.error('Failed to store DM in database:', dbError);
+    }
+  }
+});
 
 // Track invite usage when someone joins
 client.on('GuildMemberAdd', async (member) => {
@@ -1154,7 +1344,7 @@ client.on('guildMemberAdd', async (member) => {
           color: 0x00ff00,
           timestamp: new Date().toISOString(),
           footer: {
-            text: "Smart Serve - Quest System",
+            text: "Axiom - Quest System",
             icon_url: client.user?.displayAvatarURL()
           }
         }]
@@ -1233,7 +1423,7 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
             color: 0xff6b6b,
             timestamp: new Date().toISOString(),
             footer: {
-              text: "Smart Serve - Quest System",
+              text: "Axiom - Quest System",
               icon_url: client.user?.displayAvatarURL()
             }
           }]
@@ -1274,7 +1464,7 @@ client.on('guildMemberRemove', async (member) => {
             color: 0xff6b6b,
             timestamp: new Date().toISOString(),
             footer: {
-              text: "Smart Serve - Coin System",
+              text: "Axiom - Coin System",
               icon_url: client.user?.displayAvatarURL()
             }
           }]
