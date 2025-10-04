@@ -2210,52 +2210,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Support ticket routes
-  app.post("/api/support/ticket", requireAuth, async (req, res) => {
-    try {
-      const { message } = req.body;
-      const userId = req.user!.id;
-
-      if (!message || message.trim().length === 0) {
-        return res.status(400).json({ message: "Support message is required" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      const ticket = await storage.createSupportTicket({
-        userId: userId,
-        discordUserId: user.discordId,
-        username: user.username,
-        message: message.trim(),
-        status: 'open',
-      });
-
-      // Here you could add Discord DM integration
-      // The Discord bot will handle sending DMs to the user and admins
-
-      res.status(201).json({
-        message: "Support ticket created successfully",
-        ticketId: ticket.id
-      });
-    } catch (error) {
-      console.error("Error creating support ticket:", error);
-      res.status(500).json({ message: "Failed to create support ticket" });
-    }
-  });
-
-  app.get("/api/support/tickets", requireAdmin, async (req, res) => {
-    try {
-      const tickets = await storage.getSupportTickets();
-      res.json(tickets);
-    } catch (error) {
-      console.error("Error fetching support tickets:", error);
-      res.status(500).json({ message: "Failed to fetch support tickets" });
-    }
-  });
-
   // Blog routes
   app.get("/api/blog/posts", async (req, res) => {
     try {
