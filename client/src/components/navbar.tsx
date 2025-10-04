@@ -251,6 +251,10 @@ export default function Navbar() {
                     <Ticket className="w-4 h-4 mr-3" />
                     Support Ticket
                   </Link>
+                  <Link href="/about-us" className="flex items-center px-4 py-2 text-white hover:bg-gray-700 transition-colors" data-testid="link-support-ticket">
+                    <Ticket className="w-4 h-4 mr-3" />
+                    About Us
+                  </Link>
                   
                   
                   <div className="border-t border-gray-600 my-2"></div>
