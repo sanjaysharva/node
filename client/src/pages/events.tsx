@@ -20,6 +20,7 @@ export default function Events() {
   const [filterBy, setFilterBy] = useState("all");
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
 
   // Fetch slideshows for events page
   const { data: slideshows, isLoading: loadingSlideshows } = useQuery<Slideshow[]>({
