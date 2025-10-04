@@ -57,7 +57,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('support')
-    .setDescription('Contact Smart Serve support team')
+    .setDescription('Contact Axiom support team')
     .addStringOption(option =>
       option.setName('message')
         .setDescription('Your support message')
@@ -351,8 +351,8 @@ client.on('interactionCreate', async (interaction) => {
       }
       case 'addtemplate': {
         const link = interaction.options.getString('link', true);
-        if (!link.includes('smartserve.repl.co/template/')) {
-          await interaction.reply('Invalid template link! Please use a valid Smart Serve template link.');
+        if (!link.includes('axiomer.up.railway.app/template/')) {
+          await interaction.reply('Invalid template link! Please use a valid Axiom template link.');
           return;
         }
         const memberPerms = interaction.guild?.members.cache.get(interaction.user.id);
@@ -363,7 +363,7 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.deferReply();
         try {
           const templateId = link.split('/template/')[1].split('?')[0];
-          const response = await fetch(`https://smartserve.repl.co/api/templates/${templateId}`);
+          const response = await fetch(`https://axiomer.up.railway.app/api/templates/${templateId}`);
           if (!response.ok) {
             await interaction.editReply('Template not found!');
             return;
@@ -688,7 +688,7 @@ async function handleBumpCommand(interaction: any) {
     // Check if server has bump enabled
     const serverData = await storage.getServerByDiscordId(guildId);
     if (!serverData || !serverData.bumpEnabled) {
-      const serverUrl = `https://smartserve.repl.co/your-servers`;
+      const serverUrl = `https://axiomer.up.railway.app/your-servers`;
       await interaction.editReply({
         content: `❌ Bump is not enabled for this server.\n\n**To enable bump:**\n1. Visit your server settings: ${serverUrl}\n2. Click the settings icon on your server card\n3. Toggle "Enable Bump System"\n\nOr use the command: \`/enablebump\` (Admin only)`'
       });
@@ -933,7 +933,7 @@ async function handleAddTemplateCommand(interaction: any) {
     const guildId = interaction.guild.id;
 
     // Validate template link
-    const response = await fetch(`${process.env.APP_URL || 'https://smartserve.repl.co'}/api/templates/validate`, {
+    const response = await fetch(`${process.env.APP_URL || 'https://axiomer.up.railway.app'}/api/templates/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ templateLink, guildId }),
