@@ -152,7 +152,7 @@ export default function Events() {
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Edit Job
+                Edit Event
               </Button>
             </div>
           )}
