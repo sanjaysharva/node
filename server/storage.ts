@@ -1553,7 +1553,52 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.delete(jobs).where(eq(jobs.id, id));
     return (result.rowCount ?? 0) > 0;
   }
-
+  
+  async updateJob(id: string, job: Partial<InsertJob>): Promise<Job | undefined> {
+    const [updatedJob] = await this.db.update(jobs).set(job).where(eq(jobs.id, id)).returning();
+    return updatedJob || undefined;
+  }
+  async getJobsByOwner(ownerId: string): Promise<Job[]> {
+    return await this.db.select().from(jobs).where(eq(jobs.ownerId, ownerId)).orderBy(desc(jobs.createdAt));
+  }
+  // Template operations
+  async getTemplate(id: string): Promise<any | undefined> {
+    const [template] = await this.db.select().from(serverTemplates).where(eq(serverTemplates.id, id));
+    return template || undefined;
+  }
+  async updateTemplate(id: string, template: any): Promise<any | undefined> {
+    const [updatedTemplate] = await this.db.update(serverTemplates).set({
+      ...template,
+      updatedAt: new Date()
+    }).where(eq(serverTemplates.id, id)).returning();
+    return updatedTemplate || undefined;
+  }
+  async deleteTemplate(id: string): Promise<boolean> {
+    const result = await this.db.delete(serverTemplates).where(eq(serverTemplates.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+  async getTemplatesByOwner(ownerId: string): Promise<any[]> {
+    return await this.db.select().from(serverTemplates).where(eq(serverTemplates.ownerId, ownerId)).orderBy(desc(serverTemplates.createdAt));
+  }
+  // Partnership operations
+  async getPartnership(id: string): Promise<any | undefined> {
+    const [partnership] = await this.db.select().from(partnerships).where(eq(partnerships.id, id));
+    return partnership || undefined;
+  }
+  async updatePartnership(id: string, partnership: any): Promise<any | undefined> {
+    const [updatedPartnership] = await this.db.update(partnerships).set({
+      ...partnership,
+      updatedAt: new Date()
+    }).where(eq(partnerships.id, id)).returning();
+    return updatedPartnership || undefined;
+  }
+  async deletePartnership(id: string): Promise<boolean> {
+    const result = await this.db.delete(partnerships).where(eq(partnerships.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+  async getPartnershipsByOwner(ownerId: string): Promise<any[]> {
+    return await this.db.select().from(partnerships).where(eq(partnerships.ownerId, ownerId)).orderBy(desc(partnerships.createdAt));
+  }
   // Server boosting operations
   async boostServer(serverId: string, userId: string, boostType: '24hours' | '1month'): Promise<Server | undefined> {
     const boostDuration = boostType === '24hours' ? 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // 24 hours or 30 days in milliseconds
