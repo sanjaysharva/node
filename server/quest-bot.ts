@@ -335,7 +335,7 @@ async function handlePageCommand(message: any, args: string[]) {
   }
 
   const pageName = args[0].toLowerCase();
-  const baseUrl = process.env.APP_URL || 'https://smartserve.repl.co';
+  const baseUrl = process.env.APP_URL || 'https://axiomer.up.railway.app';
 
   try {
     // Fetch page information from website
