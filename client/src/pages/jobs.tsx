@@ -102,21 +102,6 @@ export default function Jobs() {
           </div>
         </div>
       </section>
-      
-      {/* Permanent Add Button - Top Right */}
-      {isAuthenticated && (
-        <div className="sticky top-20 z-40 flex justify-end container mx-auto px-4 -mb-4">
-          <Button 
-            onClick={() => navigate('/add-job')}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Post Job
-          </Button>
-        </div>
-      )}
-      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
 
@@ -124,11 +109,11 @@ export default function Jobs() {
           {isAuthenticated && (
             <div className="flex justify-end mb-4">
               <Button 
-                onClick={() => navigate('/add-job')}
+                onClick={() => navigate('/edit-job')}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Post Job
+                Edit Job
               </Button>
             </div>
           )}
