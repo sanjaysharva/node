@@ -44,6 +44,11 @@ import YourBots from "@/pages/your-bots";
 import BotDetail from "@/pages/bot-detail";
 import LoadingPage from "@/components/loading-page";
 import OfflinePage from "@/components/offline-page";
+import EditJob from "@/pages/edit-job";
+import EditPatnership from "@/pages/edit-patnership";
+import EditTemplate from "@/pages/edit-template";
+import EditEvent from "@/pages/edit-event";
+import UserProfile from "@/pages/user-profile";
 
 
 
@@ -59,6 +64,11 @@ function Router() {
       <Route path="/add-bot" component={AddBot} />
       <Route path="/add-server" component={AddServer} />
       <Route path="/add-event" component={AddEvent} />
+      <Route path="/users/:id" component={UserProfile} />
+      <Route path="/jobs/edit/:id" component={EditJob} />
+      <Route path="/templates/edit/:id" component={EditTemplate} />
+      <Route path="/partnerships/edit/:id" component={EditPartnership} />
+      <Route path="/events/edit/:id" component={EditEvent} />
       <Route path="/add-partnership" component={AddPartnership} />
       <Route path="/add-template" component={AddTemplate} />
       <Route path="/your-servers" component={YourServers} />
