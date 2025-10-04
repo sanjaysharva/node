@@ -107,7 +107,7 @@ export default function Partnership() {
           {isAuthenticated && (
             <div className="flex justify-end mb-4">
               <Button 
-                onClick={() => window.location.href = '/edit-partnership'}
+                onClick={() => window.location.href = '/partnerships/edit/:id'}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
