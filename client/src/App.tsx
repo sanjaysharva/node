@@ -44,9 +44,6 @@ import YourBots from "@/pages/your-bots";
 import BotDetail from "@/pages/bot-detail";
 import LoadingPage from "@/components/loading-page";
 import OfflinePage from "@/components/offline-page";
-import Anas from "@/pages/analytics";
-import Mod from "@/pages/moderation";
-import Navi from "@/pages/notification";
 
 
 
@@ -64,9 +61,6 @@ function Router() {
       <Route path="/add-event" component={AddEvent} />
       <Route path="/add-partnership" component={AddPartnership} />
       <Route path="/add-template" component={AddTemplate} />
-      <Route path="/ana" component={Anas} />
-      <Route path="/mod" component={Mod} />
-      <Route path="/navi" component={Navi} />
       <Route path="/your-servers" component={YourServers} />
       <Route path="/events" component={Events} />
       <Route path="/explore" component={Explore} />
