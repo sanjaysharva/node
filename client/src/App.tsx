@@ -45,7 +45,7 @@ import BotDetail from "@/pages/bot-detail";
 import LoadingPage from "@/components/loading-page";
 import OfflinePage from "@/components/offline-page";
 import EditJob from "@/pages/edit-job";
-import EditPatnership from "@/pages/edit-patnership";
+import EditPartnership from "@/pages/edit-partnership";
 import EditTemplate from "@/pages/edit-template";
 import EditEvent from "@/pages/edit-event";
 import UserProfile from "@/pages/user-profile";
