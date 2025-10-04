@@ -154,7 +154,17 @@ export interface IStorage {
   getJobs(options?: { search?: string; type?: string; limit?: number; offset?: number }): Promise<Job[]>;
   createJob(job: InsertJob): Promise<Job>;
   getJob(id: string): Promise<Job | undefined>;
+  updateJob(id: string, job: Partial<InsertJob>): Promise<Job | undefined>;
   deleteJob(id: string): Promise<boolean>;
+  getJobsByOwner(ownerId: string): Promise<Job[]>;
+  getTemplate(id: string): Promise<any | undefined>;
+  updateTemplate(id: string, template: any): Promise<any | undefined>;
+  deleteTemplate(id: string): Promise<boolean>;
+  getTemplatesByOwner(ownerId: string): Promise<any[]>;
+  getPartnership(id: string): Promise<any | undefined>;
+  updatePartnership(id: string, partnership: any): Promise<any | undefined>;
+  deletePartnership(id: string): Promise<boolean>;
+  getPartnershipsByOwner(ownerId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
