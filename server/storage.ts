@@ -82,6 +82,8 @@ export interface IStorage {
   getLastBump(guildId: string): Promise<Date | null>;
   updateLastBump(guildId: string): Promise<void>;
   updateServerBumpSettings(serverId: string, bumpEnabled: boolean): Promise<void>;
+  updateServerBumpStatus(serverId: string, bumpEnabled: boolean): Promise<void>;
+  updateServerBumpStatusByDiscordId(discordId: string, bumpEnabled: boolean): Promise<void>;
 
   // Server boosting operations
   boostServer(serverId: string, userId: string, boostType: '24hours' | '1month'): Promise<Server | undefined>;
@@ -923,6 +925,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(servers.id, serverId));
   }
 
+  async updateServerBumpStatus(serverId: string, bumpEnabled: boolean): Promise<void> {
+    await this.db.query(
+      'UPDATE servers SET bump_enabled = ? WHERE id = ?',
+      [bumpEnabled, serverId]
+    );
+  }
+
+  async updateServerBumpStatusByDiscordId(discordId: string, bumpEnabled: boolean): Promise<void> {
+    await this.db.query(
+      'UPDATE servers SET bump_enabled = ? WHERE discord_id = ?',
+      [bumpEnabled, discordId]
+    );
+  }
+
   // Comments
   async getCommentsForServer(serverId: string, options: { limit: number; offset: number }) {
     const result = await this.db
@@ -1481,6 +1497,24 @@ export class DatabaseStorage implements IStorage {
   async getSupportTicket(id: string): Promise<SupportTicket | undefined> {
     const [ticket] = await this.db.select().from(supportTickets).where(eq(supportTickets.id, id));
     return ticket || undefined;
+  }
+
+  async addSupportTicketResponse(userId: string, adminId: string, message: string): Promise<void> {
+    // Find open ticket for this user
+    const [ticket] = await this.db.select().from(supportTickets)
+      .where(eq(supportTickets.discordUserId, userId))
+      .orderBy(desc(supportTickets.createdAt))
+      .limit(1);
+
+    if (ticket) {
+      // Update ticket with response (you can extend this to store full conversation history)
+      await this.db.update(supportTickets)
+        .set({ 
+          status: 'responded',
+          updatedAt: new Date()
+        })
+        .where(eq(supportTickets.id, ticket.id));
+    }
   }
 
   async updateSupportTicket(id: string, ticketData: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> {
