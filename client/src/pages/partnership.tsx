@@ -85,23 +85,20 @@ export default function Partnership() {
                 Connect, collaborate, and grow your Discord community through meaningful partnerships
               </p>
             </div>
+            {isAuthenticated && (
+              <div className="mt-6">
+                <Button 
+                  onClick={() => navigate('/add-partnership')}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 text-lg"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Add Partnership
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </section>
-      
-      {/* Permanent Add Button - Top Right */}
-      {isAuthenticated && (
-        <div className="sticky top-20 z-40 flex justify-end container mx-auto px-4 -mb-4">
-          <Button 
-            onClick={() => window.location.href = '/add-partnership'}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Partnership
-          </Button>
-        </div>
-      )}
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
@@ -110,11 +107,11 @@ export default function Partnership() {
           {isAuthenticated && (
             <div className="flex justify-end mb-4">
               <Button 
-                onClick={() => window.location.href = '/add-partnership'}
+                onClick={() => window.location.href = '/edit-partnership'}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Partnership
+                Edit Partnership
               </Button>
             </div>
           )}
