@@ -92,7 +92,7 @@ export default function Jobs() {
               <div className="mt-6">
                 <Button 
                   onClick={() => navigate('/add-job')}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 text-lg"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 text-sm"
                 >
                   <Plus className="w-5 h-5 mr-2" />
                   Post Job
@@ -109,11 +109,11 @@ export default function Jobs() {
           {isAuthenticated && (
             <div className="flex justify-end mb-4">
               <Button 
-                onClick={() => navigate('/edit-job')}
+                onClick={() => navigate('/your-jobs')}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Edit Job
+                Your Job
               </Button>
             </div>
           )}
