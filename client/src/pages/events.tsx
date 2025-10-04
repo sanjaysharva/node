@@ -139,6 +139,23 @@ export default function Events() {
       </section>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Add Job Button - Above List */}
+          {isAuthenticated && (
+            <div className="flex justify-end mb-4">
+              <Button 
+                onClick={() => navigate('/edit-job')}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Edit Job
+              </Button>
+            </div>
+          )}
+          </div>
+        </div>
         {/* Search and Filter Controls */}
         <div className="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto mb-8">
           <div className="flex-1">
