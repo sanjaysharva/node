@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Plus, Copy, Eye, Download, Hash, Shield, Users, Star, User } from "lucide-react";
+import { Search, Plus, Copy, Eye, Download, Hash, Shield, Users, Star,} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import backgroundImage from "@assets/generated_images/mengo-fedorov-forest-snow-parallax.gif";
+import { MapPin, Clock, DollarSign, Briefcase, User } from "lucide-react";
 
 interface ServerTemplate {
   id: string;
@@ -136,11 +137,11 @@ export default function ServerTemplates() {
           {isAuthenticated && (
             <div className="flex justify-end mb-4">
               <Button 
-                onClick={() => window.location.href = '/edit-template'}
+                onClick={() => window.location.href = '/your-templates'}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Edit Template
+                Your Template
               </Button>
             </div>
           )}
