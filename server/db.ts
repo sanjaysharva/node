@@ -3,12 +3,12 @@ import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from "@shared/schema";
 
-// Parse the JDBC URL to get connection details
-const dbHost = process.env.DB_HOST || 'db2.sillydevelopment.co.uk';
+// Get database credentials from environment variables (Railway MySQL)
+const dbHost = process.env.DB_HOST;
 const dbPort = parseInt(process.env.DB_PORT || '3306');
-const dbUser = process.env.DB_USER || 'u77272_CezJ7ZJDoG';
-const dbPassword = process.env.DB_PASSWORD || '4R.u8LGwD10VjCh84af=k4Vh';
-const dbName = process.env.DB_NAME || 's77272_axiom';
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASSWORD;
+const dbName = process.env.DB_NAME;
 
 if (!dbHost || !dbUser || !dbPassword || !dbName) {
   throw new Error(
