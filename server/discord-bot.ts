@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder, ChannelType, PermissionsBitField, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder, ChannelType, PermissionsBitField, ButtonBuilder, ButtonStyle, ActionRowBuilder, Message } from 'discord.js';
 import { storage } from './storage';
 
 const client = new Client({
@@ -8,8 +8,6 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildInvites,
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
@@ -122,7 +120,6 @@ const commands = [
         .setRequired(false)
     ),
 
-
   new SlashCommandBuilder()
     .setName('poll')
     .setDescription('Create a poll')
@@ -180,7 +177,6 @@ const commands = [
         .setRequired(false)
     ),
 
-  // New slash command for bot review
   new SlashCommandBuilder()
     .setName('accept')
     .setDescription('Review and accept/decline a bot submission')
@@ -211,7 +207,7 @@ const commands = [
     ),
 ];
 
-client.once('clientReady', async () => {
+client.once('ready', async () => {
   console.log(`✅ Discord bot logged in as ${client.user?.tag}!`);
 
   // Register slash commands
@@ -472,7 +468,6 @@ client.on('interactionCreate', async (interaction) => {
           await interaction.reply('This command can only be used in a server!');
           return;
         }
-        // Ensure only admins can use this command
         const memberPerms = interaction.guild.members.cache.get(interaction.user.id);
         if (!memberPerms?.permissions.has(PermissionsBitField.Flags.Administrator)) {
           await interaction.reply({ content: '❌ You need Administrator permissions to use this command.', ephemeral: true });
@@ -480,9 +475,9 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         const botId = interaction.options.getString('bot_id', true);
-        const botOwnerId = interaction.options.getUser('user', true).id;
+        const botOwner = interaction.options.getUser('user', true);
         const botDescription = interaction.options.getString('description', true);
-        const reviewedById = interaction.options.getUser('reviewed_by', true).id;
+        const reviewer = interaction.options.getUser('reviewed_by', true);
         const isAccepted = interaction.options.getBoolean('decision', true);
 
         const bot = await storage.getBot(botId);
@@ -491,37 +486,34 @@ client.on('interactionCreate', async (interaction) => {
           return;
         }
 
-        if (bot.ownerId !== botOwnerId) {
+        if (bot.ownerId !== botOwner.id) {
           await interaction.reply({ content: '❌ The provided user is not the owner of this bot.', ephemeral: true });
           return;
         }
 
-        const reviewer = await storage.getUserByDiscordId(reviewedById);
-        if (!reviewer) {
+        const reviewerUser = await storage.getUserByDiscordId(reviewer.id);
+        if (!reviewerUser) {
           await interaction.reply({ content: '❌ Reviewer not found in the database.', ephemeral: true });
           return;
         }
 
         if (isAccepted) {
-          // Bot accepted
-          await storage.updateBotStatus(botId, 'accepted', reviewedById);
+          await storage.updateBotStatus(botId, 'accepted', reviewer.id);
 
-          // Send green embed message
           const embed = new EmbedBuilder()
             .setTitle('✅ Bot Accepted')
             .setDescription(`**${bot.name}** has been reviewed and accepted by **${interaction.user.tag}**.`)
             .addFields(
               { name: 'Bot ID', value: botId, inline: true },
-              { name: 'Owner', value: `<@${botOwnerId}>`, inline: true },
+              { name: 'Owner', value: `<@${botOwner.id}>`, inline: true },
               { name: 'Description', value: botDescription, inline: false },
-              { name: 'Reviewed By', value: `<@${reviewedById}>`, inline: true }
+              { name: 'Reviewed By', value: `<@${reviewer.id}>`, inline: true }
             )
             .setColor('#00FF00')
             .setTimestamp();
 
           await interaction.reply({ embeds: [embed] });
 
-          // Send bot profile with invite link
           const botProfileEmbed = new EmbedBuilder()
             .setTitle(`Bot Profile: ${bot.name}`)
             .setDescription(`${bot.description}\n\n**Commands:**\n\`\`\`\n${bot.commands.join('\n')}\n\`\`\`\n**Rating:** ${bot.rating || 'Not rated yet'}`)
@@ -531,33 +523,28 @@ client.on('interactionCreate', async (interaction) => {
             )
             .setFooter({ text: `Provided by ${bot.ownerUsername || 'Unknown'}` });
 
-          const owner = await client.users.fetch(botOwnerId);
           try {
-            await owner.send({ embeds: [botProfileEmbed] });
+            await botOwner.send({ embeds: [botProfileEmbed] });
           } catch (dmError) {
-            console.log(`Could not send bot profile DM to ${botOwnerId}`);
+            console.log(`Could not send bot profile DM to ${botOwner.id}`);
           }
-
         } else {
-          // Bot declined
-          await storage.updateBotStatus(botId, 'declined', reviewedById);
+          await storage.updateBotStatus(botId, 'declined', reviewer.id);
 
-          // Send red embed message
           const embed = new EmbedBuilder()
             .setTitle('❌ Bot Declined')
             .setDescription(`**${bot.name}** has been reviewed and declined by **${interaction.user.tag}**.`)
             .addFields(
               { name: 'Bot ID', value: botId, inline: true },
-              { name: 'Owner', value: `<@${botOwnerId}>`, inline: true },
+              { name: 'Owner', value: `<@${botOwner.id}>`, inline: true },
               { name: 'Description', value: botDescription, inline: false },
-              { name: 'Reviewed By', value: `<@${reviewedById}>`, inline: true }
+              { name: 'Reviewed By', value: `<@${reviewer.id}>`, inline: true }
             )
             .setColor('#FF0000')
             .setTimestamp();
 
           await interaction.reply({ embeds: [embed] });
 
-          // Send message to owner about decline and link to fair use page
           const declineEmbed = new EmbedBuilder()
             .setTitle('Bot Declined')
             .setDescription(`Your bot **${bot.name}** was declined. Please review our fair use policy for more information.`)
@@ -566,11 +553,10 @@ client.on('interactionCreate', async (interaction) => {
               { name: 'Link to Fair Use Policy', value: '[Fair Use Policy](https://yourwebsite.com/fair-use)' }
             );
 
-          const owner = await client.users.fetch(botOwnerId);
           try {
-            await owner.send({ embeds: [declineEmbed] });
+            await botOwner.send({ embeds: [declineEmbed] });
           } catch (dmError) {
-            console.log(`Could not send decline DM to ${botOwnerId}`);
+            console.log(`Could not send decline DM to ${botOwner.id}`);
           }
         }
         break;
@@ -584,11 +570,10 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-// Button interactions and reaction handling
+// Button interactions
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isButton()) return;
 
-  // Handle verification buttons
   if (interaction.customId.startsWith('verify_')) {
     const roleId = interaction.customId.split('_')[1];
     const role = interaction.guild?.roles.cache.get(roleId);
@@ -618,7 +603,7 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-// Handle reaction role events
+// Reaction role events
 client.on('messageReactionAdd', async (reaction, user) => {
   if (user.bot) return;
 
@@ -677,7 +662,6 @@ client.on('messageReactionRemove', async (reaction, user) => {
   }
 });
 
-
 async function handleBumpCommand(interaction: any) {
   await interaction.deferReply();
 
@@ -685,19 +669,17 @@ async function handleBumpCommand(interaction: any) {
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
 
-    // Check if server has bump enabled
     const serverData = await storage.getServerByDiscordId(guildId);
     if (!serverData || !serverData.bumpEnabled) {
       const serverUrl = `https://axiomer.up.railway.app/your-servers`;
       await interaction.editReply({
-        content: `❌ Bump is not enabled for this server.\n\n**To enable bump:**\n1. Visit your server settings: ${serverUrl}\n2. Click the settings icon on your server card\n3. Toggle "Enable Bump System"\n\nOr use the command: \`/enablebump\` (Admin only)`'
+        content: `❌ Bump is not enabled for this server.\n\n**To enable bump:**\n1. Visit your server settings: ${serverUrl}\n2. Click the settings icon on your server card\n3. Toggle "Enable Bump System"\n\nOr use the command: \`/enablebump\` (Admin only)`
       });
       return;
     }
 
-    // Check cooldown (2 hours between bumps)
     const lastBump = await storage.getLastBump(guildId);
-    const cooldownTime = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+    const cooldownTime = 2 * 60 * 60 * 1000;
 
     if (lastBump && Date.now() - lastBump.getTime() < cooldownTime) {
       const remainingTime = Math.ceil((cooldownTime - (Date.now() - lastBump.getTime())) / (60 * 1000));
@@ -707,12 +689,10 @@ async function handleBumpCommand(interaction: any) {
       return;
     }
 
-    // Get all bump channels from all servers
     const bumpChannels = await storage.getAllBumpChannels();
     let successCount = 0;
     let errorCount = 0;
 
-    // Create bump embed
     const bumpEmbed = new EmbedBuilder()
       .setTitle(`🚀 ${interaction.guild.name}`)
       .setDescription(serverData.description || 'Join our amazing Discord community!')
@@ -725,10 +705,9 @@ async function handleBumpCommand(interaction: any) {
       .setFooter({ text: 'Powered by Axiom', iconURL: client.user?.avatarURL() || undefined })
       .setTimestamp();
 
-    // Send bump to all channels
     for (const channelData of bumpChannels) {
       try {
-        if (channelData.guildId === guildId) continue; // Don't bump to own server
+        if (channelData.guildId === guildId) continue;
 
         const channel = await client.channels.fetch(channelData.channelId);
         if (channel && channel.type === ChannelType.GuildText) {
@@ -741,7 +720,6 @@ async function handleBumpCommand(interaction: any) {
       }
     }
 
-    // Update last bump time
     await storage.updateLastBump(guildId);
 
     await interaction.editReply({
@@ -768,13 +746,13 @@ async function handleBumpToolsCommand(interaction: any) {
       { name: '📊 /bumpchannel info', value: 'View bump channel settings', inline: false },
       { name: '⚙️ /setbump', value: 'Get server management link', inline: false }
     )
-      .setFooter({ text: 'Powered by Axiom' })
+    .setFooter({ text: 'Powered by Axiom' })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
-  {
-  async function handleEnableBumpCommand(interaction: any) {
-  // Check if user has administrator permission
+}
+
+async function handleEnableBumpCommand(interaction: any) {
   if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.reply({
       content: '❌ You need **Administrator** permission to enable bump system.',
@@ -786,7 +764,7 @@ async function handleBumpToolsCommand(interaction: any) {
   try {
     const guildId = interaction.guild.id;
     const serverData = await storage.getServerByDiscordId(guildId);
-    
+
     if (!serverData) {
       await interaction.reply({
         content: '❌ This server is not registered on Axiom. Please add your server first at https://axiomer.up.railway.app/add-server',
@@ -795,7 +773,6 @@ async function handleBumpToolsCommand(interaction: any) {
       return;
     }
 
-    // Update bump enabled status
     await storage.updateServerBumpStatus(guildId, true);
 
     const embed = new EmbedBuilder()
@@ -820,7 +797,6 @@ async function handleBumpToolsCommand(interaction: any) {
 }
 
 async function handleDisableBumpCommand(interaction: any) {
-  // Check if user has administrator permission
   if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.reply({
       content: '❌ You need **Administrator** permission to disable bump system.',
@@ -855,7 +831,6 @@ async function handleDisableBumpCommand(interaction: any) {
 async function handleBumpChannelCommand(interaction: any) {
   const subcommand = interaction.options.getSubcommand();
 
-  // Check if user has manage channels permission
   if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
     await interaction.reply({
       content: '❌ You need **Manage Channels** permission to use this command.',
@@ -917,7 +892,6 @@ async function handleBumpChannelCommand(interaction: any) {
 }
 
 async function handleAddTemplateCommand(interaction: any) {
-  // Check if user has administrator permission
   if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.reply({
       content: '❌ You need **Administrator** permission to apply server templates.',
@@ -932,7 +906,6 @@ async function handleAddTemplateCommand(interaction: any) {
     const templateLink = interaction.options.getString('link');
     const guildId = interaction.guild.id;
 
-    // Validate template link
     const response = await fetch(`${process.env.APP_URL || 'https://axiomer.up.railway.app'}/api/templates/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -948,7 +921,6 @@ async function handleAddTemplateCommand(interaction: any) {
 
     const templateData = await response.json();
 
-    // Confirmation embed
     const confirmEmbed = new EmbedBuilder()
       .setTitle('⚠️ Template Application Warning')
       .setDescription(`You are about to apply the template: **${templateData.name}**`)
@@ -962,7 +934,6 @@ async function handleAddTemplateCommand(interaction: any) {
 
     await interaction.editReply({ embeds: [confirmEmbed] });
 
-    // Store pending template application
     await storage.setPendingTemplate(guildId, {
       templateLink,
       templateData,
@@ -1031,7 +1002,6 @@ async function handleSupportCommand(interaction: any) {
   const guildName = interaction.guild?.name || 'Direct Message';
 
   try {
-    // Create support ticket in database
     const ticket = await storage.createSupportTicket({
       discordUserId: userId,
       username: username,
@@ -1040,13 +1010,11 @@ async function handleSupportCommand(interaction: any) {
       status: 'open',
     });
 
-    // Send confirmation to user
     await interaction.reply({
       content: '✅ Your support request has been submitted! Our team will respond via DM within 24 hours.',
       ephemeral: true
     });
 
-    // Send DM to user with ticket confirmation
     try {
       const dmEmbed = new EmbedBuilder()
         .setTitle('🎫 Support Ticket Created')
@@ -1054,7 +1022,7 @@ async function handleSupportCommand(interaction: any) {
         .setColor('#00FF00')
         .addFields(
           { name: '📝 Your Message:', value: message, inline: false },
-         { name: '🎫 Ticket ID:', value: ticket.ticketId, inline: true },
+          { name: '🎫 Ticket ID:', value: ticket.ticketId, inline: true },
           { name: '⏰ Response Time:', value: 'Our team typically responds within 24 hours', inline: false },
           { name: '🔗 Need More Help?', value: `[Visit Help Center](https://axiom.up.railway.app/help-center)`, inline: false }
         )
@@ -1066,7 +1034,6 @@ async function handleSupportCommand(interaction: any) {
       console.log(`Could not send DM confirmation to ${username}`);
     }
 
-    // Notify admin - Use environment variable for admin ID
     const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean);
     for (const adminId of ADMIN_USER_IDS) {
       try {
@@ -1079,7 +1046,7 @@ async function handleSupportCommand(interaction: any) {
             { name: '👤 User:', value: `${username} (${userId})`, inline: true },
             { name: '🏠 Server:', value: guildName, inline: true },
             { name: '📝 Message:', value: message, inline: false },
-            { name: '⚡ Reply:', value: `Send a DM starting with \`.${userId}\` followed by your message`, inline: false } inline: false }
+            { name: '⚡ Reply:', value: `Send a DM starting with \`.${userId}\` followed by your message`, inline: false }
           )
           .setTimestamp();
 
@@ -1098,19 +1065,21 @@ async function handleSupportCommand(interaction: any) {
   }
 }
 
-// Handle direct messages to the bot
-client.on('messageCreate', async (message) => {
-  // Ignore bot messages
-  if (message.author.bot) return;
+// Page information command handler
+async function handlePageCommand(message: Message, args: string[]) {
+  // This function is currently empty or not implemented.
+  // Add your page command logic here.
+}
 
-  // Only handle DMs
+
+// Handle direct messages
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
   if (message.channel.type !== ChannelType.DM) return;
 
   const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean).map(id => id.trim());
 
-  // Check if sender is admin and message starts with a dot (.)
   if (ADMIN_USER_IDS.includes(message.author.id) && message.content.startsWith('.')) {
-    // Admin replying to a user
     const parts = message.content.slice(1).trim().split(' ');
     const targetUserId = parts[0];
     const replyMessage = parts.slice(1).join(' ');
@@ -1122,7 +1091,7 @@ client.on('messageCreate', async (message) => {
 
     try {
       const targetUser = await client.users.fetch(targetUserId);
-      
+
       const replyEmbed = new EmbedBuilder()
         .setTitle('💬 Support Team Response')
         .setDescription(replyMessage)
@@ -1132,20 +1101,17 @@ client.on('messageCreate', async (message) => {
 
       await targetUser.send({ embeds: [replyEmbed] });
       await message.reply(`✅ Message sent to ${targetUser.tag}`);
-      
-      // Log the response in database
+
       await storage.addSupportTicketResponse(targetUserId, message.author.id, replyMessage);
     } catch (error) {
       await message.reply('❌ Failed to send message. User not found or DMs disabled.');
       console.error('Error sending admin reply:', error);
     }
   } else {
-    // Regular user sending DM to bot
     const userId = message.author.id;
     const username = message.author.tag;
     const userMessage = message.content;
 
-    // Send acknowledgment to user
     const ackEmbed = new EmbedBuilder()
       .setTitle('📬 Message Received')
       .setDescription('Thank you for your message! Our support team has been notified and will respond shortly.')
@@ -1158,7 +1124,6 @@ client.on('messageCreate', async (message) => {
 
     await message.reply({ embeds: [ackEmbed] });
 
-    // Notify all admins
     for (const adminId of ADMIN_USER_IDS) {
       try {
         const adminUser = await client.users.fetch(adminId.trim());
@@ -1178,7 +1143,6 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    // Store the DM in database
     try {
       await storage.createSupportTicket({
         discordUserId: userId,
@@ -1193,14 +1157,13 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// Track invite usage when someone joins
-client.on('GuildMemberAdd', async (member) => {
+// Single unified member join handler
+client.on('guildMemberAdd', async (member) => {
   try {
     const guild = member.guild;
     const cachedInvites = inviteCache.get(guild.id) || new Map();
     const newInvites = await guild.invites.fetch();
 
-    // Find which invite was used
     const usedInvite = newInvites.find((invite: any) => {
       const cachedUses = cachedInvites.get(invite.code) || 0;
       return (invite.uses || 0) > cachedUses;
@@ -1209,24 +1172,19 @@ client.on('GuildMemberAdd', async (member) => {
     if (usedInvite && usedInvite.inviter) {
       console.log(`${member.user.tag} joined using invite by ${usedInvite.inviter.tag}`);
 
-      // Award coins to the inviter and complete invite quest
       const inviterUser = await storage.getUserByDiscordId(usedInvite.inviter.id);
       if (inviterUser) {
-        const coinsToAward = 3; // 3 coins for successful invite (as per quest)
+        const coinsToAward = 3;
         const newBalance = (inviterUser.coins || 0) + coinsToAward;
-
-        // Update user data
         const updatedInviteCount = (inviterUser.inviteCount || 0) + 1;
+
         await Promise.all([
           storage.updateUserCoins(inviterUser.id, newBalance),
-          storage.updateUser(inviterUser.id, {
-            inviteCount: updatedInviteCount
-          })
+          storage.updateUser(inviterUser.id, { inviteCount: updatedInviteCount })
         ]);
 
         console.log(`Awarded ${coinsToAward} coins to ${usedInvite.inviter.tag} for inviting ${member.user.tag}. Total invites: ${updatedInviteCount}`);
 
-        // Send DM to the inviter
         try {
           await usedInvite.inviter.send(
             `🎉 You earned ${coinsToAward} coins for inviting ${member.user.tag} to ${guild.name}! Your balance is now ${newBalance} coins. Total invites: ${updatedInviteCount}`
@@ -1237,13 +1195,11 @@ client.on('GuildMemberAdd', async (member) => {
       }
     }
 
-    // Award welcome bonus and update quest progress for new member
     const newMemberUser = await storage.getUserByDiscordId(member.id);
     if (newMemberUser) {
-      const welcomeBonus = 2; // 2 coins welcome bonus
+      const welcomeBonus = 2;
       const newMemberBalance = (newMemberUser.coins || 0) + welcomeBonus;
 
-      // Update coins and servers joined count for quest progress
       await Promise.all([
         storage.updateUserCoins(newMemberUser.id, newMemberBalance),
         storage.updateUser(newMemberUser.id, {
@@ -1260,115 +1216,73 @@ client.on('GuildMemberAdd', async (member) => {
       }
     }
 
-    // Update cached invites
     inviteCache.set(guild.id, new Map(newInvites.map((invite: any) => [invite.code, invite.uses || 0])));
 
+    const MAIN_SERVER_ID = "1416385340922658838";
+    if (guild.id === MAIN_SERVER_ID && newMemberUser) {
+      let questData = {};
+      try {
+        questData = typeof newMemberUser.metadata === 'string' ? JSON.parse(newMemberUser.metadata) : (newMemberUser.metadata || {});
+      } catch (parseError) {
+        console.error('Error parsing user metadata:', parseError);
+        questData = {};
+      }
+      const completions = (questData as any).questCompletions || [];
+
+      if (!completions.some((c: any) => c.questId === "join-server")) {
+        const coinsEarned = 2;
+        const newCoins = (newMemberUser.coins || 0) + coinsEarned;
+        const newCompletion = {
+          questId: "join-server",
+          completedAt: new Date().toISOString(),
+          reward: coinsEarned
+        };
+
+        const newMetadata = {
+          ...questData,
+          questCompletions: [...completions, newCompletion]
+        };
+
+        await storage.updateUser(newMemberUser.id, {
+          coins: newCoins,
+          metadata: JSON.stringify(newMetadata)
+        });
+
+        console.log(`✅ User ${newMemberUser.discordId} completed join-server quest and earned ${coinsEarned} coins`);
+
+        try {
+          await member.send({
+            embeds: [{
+              title: "🎉 Welcome & Quest Completed!",
+              description: `Welcome to **${guild.name}**!\n\nYou've automatically completed the **Join Server** quest and earned **${coinsEarned} coins**!\n\nYour new balance: **${newCoins} coins**`,
+              color: 0x00ff00,
+              timestamp: new Date().toISOString(),
+              footer: {
+                text: "Axiom - Quest System",
+                icon_url: client.user?.displayAvatarURL()
+              }
+            }]
+          });
+        } catch (dmError) {
+          console.log(`Could not send welcome DM to ${member.user.tag}`);
+        }
+      }
+    }
   } catch (error) {
     console.error('Error tracking invite usage:', error);
   }
 });
 
-// Quest tracking for member join events
-client.on('guildMemberAdd', async (member) => {
-  // Only process joins for our main server
-  const MAIN_SERVER_ID = "1416385340922658838";
-  if (member.guild.id !== MAIN_SERVER_ID) return;
-
-  try {
-    // Find user by Discord ID
-    const user = await storage.getUserByDiscordId(member.user.id);
-
-    if (!user) {
-      console.log(`User ${member.user.tag} joined but not found in database`);
-      return;
-    }
-
-    // Parse metadata safely
-    let questData = {};
-    try {
-      questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
-    } catch (parseError) {
-      console.error('Error parsing user metadata:', parseError);
-      questData = {};
-    }
-    const completions = (questData as any).questCompletions || [];
-
-    // Check if join-server quest already completed
-    if (completions.some((c: any) => c.questId === "join-server")) {
-      console.log(`User ${member.user.tag} already completed join-server quest`);
-      return;
-    }
-
-    // Award coins for joining server
-    const coinsEarned = 2;
-    const newCoins = (user.coins || 0) + coinsEarned;
-    const newCompletion = {
-      questId: "join-server",
-      completedAt: new Date().toISOString(),
-      reward: coinsEarned
-    };
-
-    const newMetadata = {
-      ...questData,
-      questCompletions: [...completions, newCompletion]
-    };
-
-    await storage.updateUser(user.id, {
-      coins: newCoins,
-      metadata: JSON.stringify(newMetadata)
-    });
-
-    console.log(`✅ User ${user.discordId} completed join-server quest and earned ${coinsEarned} coins`);
-
-    // Send notification to quest bot channel if configured
-    try {
-      const { sendQuestNotification } = await import('./quest-bot');
-      await sendQuestNotification(MAIN_SERVER_ID, user.discordId, {
-        questId: "join-server",
-        questName: "Join Server",
-        reward: coinsEarned,
-        userTag: member.user.tag,
-        newBalance: newCoins
-      });
-    } catch (error) {
-      console.log('Quest notification system not available:', error.message);
-    }
-
-    // Send welcome DM with quest completion notification
-    try {
-      await member.send({
-        embeds: [{
-          title: "🎉 Welcome & Quest Completed!",
-          description: `Welcome to **${member.guild.name}**!\n\nYou've automatically completed the **Join Server** quest and earned **${coinsEarned} coins**!\n\nYour new balance: **${newCoins} coins**`,
-          color: 0x00ff00,
-          timestamp: new Date().toISOString(),
-          footer: {
-            text: "Axiom - Quest System",
-            icon_url: client.user?.displayAvatarURL()
-          }
-        }]
-      });
-    } catch (dmError) {
-      console.log(`Could not send welcome DM to ${member.user.tag}`);
-    }
-  } catch (error) {
-    console.error('Error handling member join for quest:', error);
-  }
-});
-
 // Handle server boost events
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
-  // Only process boosts for our main server
   const MAIN_SERVER_ID = "1416385340922658838";
   if (newMember.guild.id !== MAIN_SERVER_ID) return;
 
   try {
-    // Check if user started boosting
     const wasBoosting = oldMember.premiumSince !== null;
     const isBoosting = newMember.premiumSince !== null;
 
     if (!wasBoosting && isBoosting) {
-      // User started boosting
       const user = await storage.getUserByDiscordId(newMember.user.id);
 
       if (!user) {
@@ -1376,7 +1290,6 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
         return;
       }
 
-      // Parse metadata safely
       let questData = {};
       try {
         questData = typeof user.metadata === 'string' ? JSON.parse(user.metadata) : (user.metadata || {});
@@ -1386,13 +1299,11 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
       }
       const completions = (questData as any).questCompletions || [];
 
-      // Check if boost quest already completed
       if (completions.some((c: any) => c.questId === "boost-server")) {
         console.log(`User ${newMember.user.tag} already completed boost-server quest`);
         return;
       }
 
-      // Award coins for boosting server
       const coinsEarned = 50;
       const newCoins = (user.coins || 0) + coinsEarned;
       const newCompletion = {
@@ -1413,7 +1324,6 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 
       console.log(`✅ User ${user.discordId} completed boost-server quest and earned ${coinsEarned} coins`);
 
-      // Send thank you DM with quest completion notification
       try {
         await newMember.send({
           embeds: [{
@@ -1436,25 +1346,22 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
   }
 });
 
-// Guild member remove event (user leaves server)
+// Handle member leave
 client.on('guildMemberRemove', async (member) => {
   console.log(`Member left: ${member.user.username} from ${member.guild.name}`);
 
   try {
-    // Find the user in our database by Discord ID
     const user = await storage.getUserByDiscordId(member.user.id);
     if (!user) {
       console.log(`User ${member.user.username} not found in database`);
       return;
     }
 
-    // Handle server leave and potential coin deduction
     const result = await storage.handleServerLeave(user.id, member.guild.id);
 
     if (result && result.coinsDeducted > 0) {
       console.log(`User ${member.user.username} left ${member.guild.name} within 3 days. Deducted ${result.coinsDeducted} coins. New balance: ${result.newBalance}`);
 
-      // Send DM to user about coin deduction
       try {
         await member.user.send({
           embeds: [{
@@ -1479,16 +1386,14 @@ client.on('guildMemberRemove', async (member) => {
   }
 });
 
-
-// Update invite cache when new invites are created
-client.on('InviteCreate', async (invite) => {
+// Update invite cache
+client.on('inviteCreate', async (invite) => {
   const guildInvites = inviteCache.get(invite.guild?.id) || new Map();
   guildInvites.set(invite.code, invite.uses || 0);
   inviteCache.set(invite.guild?.id, guildInvites);
 });
 
-// Clean up deleted invites
-client.on('InviteDelete', async (invite) => {
+client.on('inviteDelete', async (invite) => {
   const guildInvites = inviteCache.get(invite.guild?.id) || new Map();
   guildInvites.delete(invite.code);
   inviteCache.set(invite.guild?.id, guildInvites);
