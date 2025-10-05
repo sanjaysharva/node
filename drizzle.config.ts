@@ -1,12 +1,13 @@
-
+import dotenv from "dotenv";
+dotenv.config();
 import { defineConfig } from "drizzle-kit";
 
 // Get database credentials from environment (Railway MySQL)
-const dbHost = process.env.DB_HOST;
-const dbPort = parseInt(process.env.DB_PORT || '3306');
-const dbUser = process.env.DB_USER;
-const dbPassword = process.env.DB_PASSWORD;
-const dbName = process.env.DB_NAME;
+const dbHost = process.env.MYSQLHOST;
+const dbPort = parseInt(process.env.MYSQLPORT || '3306');
+const dbUser = process.env.MYSQLUSER;
+const dbPassword = process.env.MYSQLPASSWORD;
+const dbName = process.env.MYSQLNAME;
 
 console.log('Drizzle config - Database credentials:', { host: dbHost, port: dbPort, user: dbUser, database: dbName });
 
