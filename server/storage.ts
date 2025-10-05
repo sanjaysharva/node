@@ -401,7 +401,22 @@ export class DatabaseStorage implements IStorage {
   // Ad operations
   async getAds(position?: string): Promise<Ad[]> {
     try {
-      let query = this.db.select().from(ads).where(eq(ads.isActive, true));
+      let query = this.db.select({
+        id: ads.id,
+        title: ads.title,
+        description: ads.description,
+        imageUrl: ads.imageUrl,
+        targetUrl: ads.targetUrl,
+        linkUrl: ads.linkUrl,
+        position: ads.position,
+        isActive: ads.isActive,
+        impressions: ads.impressions,
+        clicks: ads.clicks,
+        budget: ads.budget,
+        spent: ads.spent,
+        createdAt: ads.createdAt,
+        updatedAt: ads.updatedAt,
+      }).from(ads).where(eq(ads.isActive, true));
 
       if (position) {
         query = query.where(eq(ads.position, position));
@@ -422,7 +437,7 @@ export class DatabaseStorage implements IStorage {
 
   async createAd(insertAd: InsertAd): Promise<Ad> {
     try {
-      const [result] = await this.db.insert(ads).values({
+      const result = await this.db.insert(ads).values({
         ...insertAd,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -1466,12 +1481,15 @@ export class DatabaseStorage implements IStorage {
     // Generate unique ticket ID
     const ticketId = `TKT-${Date.now().toString().slice(-8)}`;
 
-    const [newTicket] = await this.db.insert(supportTickets).values({
+    const result = await this.db.insert(supportTickets).values({
       ...ticketData,
       ticketId,
       updatedAt: new Date()
-    }).returning();
-    return newTicket;
+    });
+    const [insertedTicket] = await this.db.select().from(supportTickets)
+      .where(eq(supportTickets.id, result.insertId))
+      .limit(1);
+    return insertedTicket;
   }
 
   async getSupportTickets(options?: { userId?: string; status?: string; limit?: number; offset?: number }): Promise<SupportTicket[]> {
@@ -1527,8 +1545,11 @@ export class DatabaseStorage implements IStorage {
 
   // Contact submission operations implementation
   async createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission> {
-    const [newSubmission] = await this.db.insert(contactSubmissions).values(submission).returning();
-    return newSubmission;
+    const result = await this.db.insert(contactSubmissions).values(submission);
+    const [insertedSubmission] = await this.db.select().from(contactSubmissions)
+      .where(eq(contactSubmissions.id, result.insertId))
+      .limit(1);
+    return insertedSubmission;
   }
 
   // Blog operations implementation
@@ -1587,19 +1608,22 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.delete(jobs).where(eq(jobs.id, id));
     return (result.rowCount ?? 0) > 0;
   }
-  
+
   async updateJob(id: string, job: Partial<InsertJob>): Promise<Job | undefined> {
     const [updatedJob] = await this.db.update(jobs).set(job).where(eq(jobs.id, id)).returning();
     return updatedJob || undefined;
   }
+
   async getJobsByOwner(ownerId: string): Promise<Job[]> {
     return await this.db.select().from(jobs).where(eq(jobs.ownerId, ownerId)).orderBy(desc(jobs.createdAt));
   }
+
   // Template operations
   async getTemplate(id: string): Promise<any | undefined> {
     const [template] = await this.db.select().from(serverTemplates).where(eq(serverTemplates.id, id));
     return template || undefined;
   }
+
   async updateTemplate(id: string, template: any): Promise<any | undefined> {
     const [updatedTemplate] = await this.db.update(serverTemplates).set({
       ...template,
@@ -1607,18 +1631,22 @@ export class DatabaseStorage implements IStorage {
     }).where(eq(serverTemplates.id, id)).returning();
     return updatedTemplate || undefined;
   }
+
   async deleteTemplate(id: string): Promise<boolean> {
     const result = await this.db.delete(serverTemplates).where(eq(serverTemplates.id, id));
     return (result.rowCount ?? 0) > 0;
   }
+
   async getTemplatesByOwner(ownerId: string): Promise<any[]> {
     return await this.db.select().from(serverTemplates).where(eq(serverTemplates.ownerId, ownerId)).orderBy(desc(serverTemplates.createdAt));
   }
+
   // Partnership operations
   async getPartnership(id: string): Promise<any | undefined> {
     const [partnership] = await this.db.select().from(partnerships).where(eq(partnerships.id, id));
     return partnership || undefined;
   }
+
   async updatePartnership(id: string, partnership: any): Promise<any | undefined> {
     const [updatedPartnership] = await this.db.update(partnerships).set({
       ...partnership,
@@ -1626,13 +1654,16 @@ export class DatabaseStorage implements IStorage {
     }).where(eq(partnerships.id, id)).returning();
     return updatedPartnership || undefined;
   }
+
   async deletePartnership(id: string): Promise<boolean> {
     const result = await this.db.delete(partnerships).where(eq(partnerships.id, id));
     return (result.rowCount ?? 0) > 0;
   }
+
   async getPartnershipsByOwner(ownerId: string): Promise<any[]> {
     return await this.db.select().from(partnerships).where(eq(partnerships.ownerId, ownerId)).orderBy(desc(partnerships.createdAt));
   }
+
   // Server boosting operations
   async boostServer(serverId: string, userId: string, boostType: '24hours' | '1month'): Promise<Server | undefined> {
     const boostDuration = boostType === '24hours' ? 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // 24 hours or 30 days in milliseconds
