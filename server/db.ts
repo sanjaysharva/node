@@ -9,7 +9,7 @@ const dbHost = process.env.MYSQLHOST;
 const dbPort = parseInt(process.env.MYSQLPORT || '3306');
 const dbUser = process.env.MYSQLUSER;
 const dbPassword = process.env.MYSQLPASSWORD;
-const dbName = process.env.MYSQLNAME;
+const dbName = process.env.MYSQLDATABSASE;
 
 if (!dbHost || !dbUser || !dbPassword || !dbName) {
   throw new Error(
