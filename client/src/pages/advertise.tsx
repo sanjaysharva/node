@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/navbar";
 import { Server, Bot, Building2, Star, Zap, TrendingUp, CheckCircle } from "lucide-react";
+import { useLocation, Link } from "wouter";
 
 export default function Advertise() {
+  const [, navigate] = useLocation();
   const advertisingOptions = [
     {
       id: "discord-server",
@@ -19,7 +21,7 @@ export default function Advertise() {
         "Community growth tools"
       ],
       gradient: "from-blue-500 to-cyan-400",
-      cost: "Starting from $9.99"
+      cost: "Starting from $0"
     },
     {
       id: "discord-bot",
@@ -35,7 +37,7 @@ export default function Advertise() {
         "Integration guides"
       ],
       gradient: "from-purple-500 to-pink-400",
-      cost: "Starting from $14.99"
+      cost: "Starting from $0"
     },
     {
       id: "business",
@@ -51,7 +53,7 @@ export default function Advertise() {
         "Custom branding options"
       ],
       gradient: "from-green-500 to-emerald-400",
-      cost: "Starting from $29.99"
+      cost: "Starting from $0"
     }
   ];
 
@@ -145,7 +147,8 @@ export default function Advertise() {
                   </div>
                   
                   <div className="pt-4">
-                    <Button 
+                    <Button
+                      onClick={() => navigate('/your-servers')}
                       className="w-full bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
                       data-testid={`button-learn-more-${option.id}`}
                     >
@@ -171,19 +174,21 @@ export default function Advertise() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
+                    onClick={() => navigate('/contact-us')}
                     size="lg" 
                     className="bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/50"
                     data-testid="button-contact-sales"
                   >
                     Contact Sales Team
                   </Button>
-                  <Button 
+                  <Button
+                    onClick={() => navigate('/support-ticket')}
                     size="lg" 
                     variant="outline" 
                     className="border-primary text-primary hover:bg-primary/10 transition-all duration-300 hover:scale-105"
                     data-testid="button-get-quote"
                   >
-                    Get Free Quote
+                    Get Ideas
                   </Button>
                 </div>
               </div>
