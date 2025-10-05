@@ -5,11 +5,11 @@ import mysql from 'mysql2/promise';
 import * as schema from "@shared/schema";
 
 // Get database credentials from environment variables (Railway MySQL)
-const dbHost = process.env.DB_HOST;
+const dbHost = process.env.DB_HOST || 'mysql.railway.internal';
 const dbPort = parseInt(process.env.DB_PORT || '3306');
-const dbUser = process.env.DB_USER;
-const dbPassword = process.env.DM_PASSWORD;
-const dbName = process.env.DB_DATABSASE;
+const dbUser = process.env.DB_USER || 'root';
+const dbPassword = process.env.DM_PASSWORD || 'qJZsyZmXvSNUxeYjsrZIKTIyAuvFMCMk';
+const dbName = process.env.DB_DATABSASE || 'railway';
 
 if (!dbHost || !dbUser || !dbPassword || !dbName) {
   throw new Error(
