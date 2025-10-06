@@ -2890,10 +2890,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Request body is empty" });
       }
       const ticketData = insertSupportTicketSchema.parse(req.body);
+      // Get full user data for Discord ID
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
       const ticket = await storage.createSupportTicket({
         ...ticketData,
-        userId: req.user.id
+        userId: req.user.id,
+        discordUserId: user.discordId,
+        username: user.username
       });
 
       // Send notification to Discord admin
