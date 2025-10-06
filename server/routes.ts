@@ -2885,6 +2885,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      // Validate request body
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({ message: "Request body is empty" });
+      }
       const ticketData = insertSupportTicketSchema.parse(req.body);
 
       const ticket = await storage.createSupportTicket({
@@ -2894,7 +2898,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send notification to Discord admin
       const { discordBot } = await import('./discord-bot');
-      const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean);
+      const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '1416329813496430705').split(',').filter(Boolean);
 
       for (const adminId of ADMIN_USER_IDS) {
         try {
