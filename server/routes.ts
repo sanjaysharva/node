@@ -2900,9 +2900,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { discordBot } = await import('./discord-bot');
       const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '1416329813496430705').split(',').filter(Boolean);
 
+      console.log(`Attempting to notify ${ADMIN_USER_IDS.length} admin(s) about support ticket ${ticket.ticketId}`);
+
       for (const adminId of ADMIN_USER_IDS) {
+        const trimmedAdminId = adminId.trim();
+        console.log(`Notifying admin: ${trimmedAdminId}`);
+        
         try {
-          const adminUser = await discordBot.users.fetch(adminId.trim());
+          // Check if bot is ready
+          if (!discordBot || !discordBot.isReady()) {
+            console.error('Discord bot is not ready or connected');
+            continue;
+          }
+
+          const adminUser = await discordBot.users.fetch(trimmedAdminId);
+          console.log(`✅ Successfully fetched admin user: ${adminUser.tag}`);
+          
           const { EmbedBuilder } = await import('discord.js');
 
           const ticketEmbed = new EmbedBuilder()
@@ -2914,13 +2927,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               { name: '📋 Category:', value: ticketData.category, inline: true },
               { name: '⚡ Priority:', value: ticketData.priority, inline: true },
               { name: '📌 Subject:', value: ticketData.subject, inline: false },
-              { name: '📝 Description:', value: ticketData.description, inline: false }
+              { name: '📝 Description:', value: ticketData.description.substring(0, 1000), inline: false }
             )
             .setTimestamp();
 
           await adminUser.send({ embeds: [ticketEmbed] });
-        } catch (adminError) {
-          console.log(`Could not notify admin ${adminId} about support ticket`);
+          console.log(`✅ Successfully sent support ticket notification to admin ${trimmedAdminId}`);
+        } catch (adminError: any) {
+          console.error(`❌ Failed to notify admin ${trimmedAdminId}:`, {
+            error: adminError.message,
+            code: adminError.code,
+            stack: adminError.stack
+          });
+          
+          // Log specific Discord API errors
+          if (adminError.code === 50007) {
+            console.error(`❌ Cannot send DM to admin ${trimmedAdminId}: User has DMs disabled or bot doesn't share a server with them`);
+          } else if (adminError.code === 10013) {
+            console.error(`❌ Invalid admin user ID: ${trimmedAdminId}`);
+          }
         }
       }
 
