@@ -275,12 +275,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createServer(insertServer: InsertServer): Promise<Server> {
-    const [server] = await this.db.insert(servers).values(insertServer).returning();
+    const serverId = crypto.randomUUID();
+    await this.db.insert(servers).values({
+      ...insertServer,
+      id: serverId,
+    });
+    
+    const [server] = await this.db.select().from(servers)
+      .where(eq(servers.id, serverId))
+      .limit(1);
+    
+    if (!server) {
+      throw new Error("Failed to create server");
+    }
+    
     return server;
   }
 
   async updateServer(id: string, server: Partial<InsertServer>): Promise<Server | undefined> {
-    const [updatedServer] = await this.db.update(servers).set({ ...server, updatedAt: new Date() }).where(eq(servers.id, id)).returning();
+    await this.db.update(servers).set({ ...server, updatedAt: new Date() }).where(eq(servers.id, id));
+    
+    const [updatedServer] = await this.db.select().from(servers)
+      .where(eq(servers.id, id))
+      .limit(1);
+    
     return updatedServer || undefined;
   }
 
@@ -340,21 +358,36 @@ export class DatabaseStorage implements IStorage {
 
   async createBot(insertBot: InsertBot): Promise<Bot> {
     // Set bots as unverified by default (pending review)
+    const botId = crypto.randomUUID();
     const botData = {
       ...insertBot,
+      id: botId,
       verified: false,
       featured: null, // null means pending, false means declined
     };
-    const [bot] = await this.db.insert(bots).values(botData).returning();
+    await this.db.insert(bots).values(botData);
+    
+    const [bot] = await this.db.select().from(bots)
+      .where(eq(bots.id, botId))
+      .limit(1);
+    
+    if (!bot) {
+      throw new Error("Failed to create bot");
+    }
+    
     return bot;
   }
 
   async updateBot(id: string, updates: Partial<InsertBot>): Promise<Bot | null> {
-    const [updatedBot] = await this.db
+    await this.db
       .update(bots)
       .set({ ...updates, updatedAt: new Date() })
+      .where(eq(bots.id, id));
+    
+    const [updatedBot] = await this.db.select().from(bots)
       .where(eq(bots.id, id))
-      .returning();
+      .limit(1);
+    
     return updatedBot || null;
   }
 
@@ -492,7 +525,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createServerJoin(join: InsertServerJoin): Promise<ServerJoin> {
-    const [serverJoin] = await this.db.insert(serverJoins).values(join).returning();
+    const joinId = crypto.randomUUID();
+    await this.db.insert(serverJoins).values({
+      ...join,
+      id: joinId,
+    });
+    
+    const [serverJoin] = await this.db.select().from(serverJoins)
+      .where(eq(serverJoins.id, joinId))
+      .limit(1);
+    
+    if (!serverJoin) {
+      throw new Error("Failed to create server join");
+    }
+    
     return serverJoin;
   }
 
@@ -785,7 +831,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
-    const [event] = await this.db.insert(events).values(insertEvent).returning();
+    const eventId = crypto.randomUUID();
+    await this.db.insert(events).values({
+      ...insertEvent,
+      id: eventId,
+    });
+    
+    const [event] = await this.db.select().from(events)
+      .where(eq(events.id, eventId))
+      .limit(1);
+    
+    if (!event) {
+      throw new Error("Failed to create event");
+    }
+    
     return event;
   }
 
@@ -1448,18 +1507,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createFaq(faq: InsertFaq): Promise<Faq> {
-    const [newFaq] = await this.db.insert(faqs).values({
+    const faqId = crypto.randomUUID();
+    await this.db.insert(faqs).values({
       ...faq,
+      id: faqId,
       updatedAt: new Date()
-    }).returning();
+    });
+    
+    const [newFaq] = await this.db.select().from(faqs)
+      .where(eq(faqs.id, faqId))
+      .limit(1);
+    
+    if (!newFaq) {
+      throw new Error("Failed to create FAQ");
+    }
+    
     return newFaq;
   }
 
   async updateFaq(id: string, faq: Partial<InsertFaq>): Promise<Faq | undefined> {
-    const [updatedFaq] = await this.db.update(faqs).set({
+    await this.db.update(faqs).set({
       ...faq,
       updatedAt: new Date()
-    }).where(eq(faqs.id, id)).returning();
+    }).where(eq(faqs.id, id));
+    
+    const [updatedFaq] = await this.db.select().from(faqs)
+      .where(eq(faqs.id, id))
+      .limit(1);
+    
     return updatedFaq || undefined;
   }
 
@@ -1478,18 +1553,22 @@ export class DatabaseStorage implements IStorage {
 
   // Support ticket operations implementation
   async createSupportTicket(ticketData: InsertSupportTicket & { userId: string }): Promise<SupportTicket> {
-    // Generate unique ticket ID
-    const ticketId = `TKT-${Date.now().toString().slice(-8)}`;
-
+    const ticketId = `TICKET-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
     const result = await this.db.insert(supportTickets).values({
       ...ticketData,
       ticketId,
-      updatedAt: new Date()
     });
-    const [insertedTicket] = await this.db.select().from(supportTickets)
-      .where(eq(supportTickets.id, result.insertId))
+
+    // MySQL doesn't support returning, so we need to query the inserted record
+    const [ticket] = await this.db.select().from(supportTickets)
+      .where(eq(supportTickets.ticketId, ticketId))
       .limit(1);
-    return insertedTicket;
+
+    if (!ticket) {
+      throw new Error("Failed to create support ticket");
+    }
+
+    return ticket;
   }
 
   async getSupportTickets(options?: { userId?: string; status?: string; limit?: number; offset?: number }): Promise<SupportTicket[]> {
@@ -1545,10 +1624,21 @@ export class DatabaseStorage implements IStorage {
 
   // Contact submission operations implementation
   async createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission> {
-    const result = await this.db.insert(contactSubmissions).values(submission);
+    // Generate a UUID for the submission since MySQL doesn't auto-generate in the same way
+    const submissionId = crypto.randomUUID();
+    await this.db.insert(contactSubmissions).values({
+      ...submission,
+      id: submissionId,
+    });
+    
     const [insertedSubmission] = await this.db.select().from(contactSubmissions)
-      .where(eq(contactSubmissions.id, result.insertId))
+      .where(eq(contactSubmissions.id, submissionId))
       .limit(1);
+    
+    if (!insertedSubmission) {
+      throw new Error("Failed to create contact submission");
+    }
+    
     return insertedSubmission;
   }
 
@@ -1595,7 +1685,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createJob(job: InsertJob): Promise<Job> {
-    const [newJob] = await this.db.insert(jobs).values(job).returning();
+    const jobId = crypto.randomUUID();
+    await this.db.insert(jobs).values({
+      ...job,
+      id: jobId,
+    });
+    
+    const [newJob] = await this.db.select().from(jobs)
+      .where(eq(jobs.id, jobId))
+      .limit(1);
+    
+    if (!newJob) {
+      throw new Error("Failed to create job");
+    }
+    
     return newJob;
   }
 
