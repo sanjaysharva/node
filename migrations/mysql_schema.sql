@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS `ads` (
 -- Support tickets table
 CREATE TABLE IF NOT EXISTS `support_tickets` (
   `id` varchar(36) PRIMARY KEY DEFAULT (UUID()),
-  `ticket_id` varchar(20) NOT NULL UNIQUE,
+  `ticket_id` varchar(30) NOT NULL UNIQUE,
   `user_id` varchar(36) NOT NULL,
   `discord_user_id` varchar(32),
   `subject` text NOT NULL,
