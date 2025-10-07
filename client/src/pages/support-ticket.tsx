@@ -280,7 +280,7 @@ export default function SupportTicket() {
                 <div className="text-sm text-gray-400 space-y-1">
                   <p>Username: {user?.username}</p>
                   <p>User ID: {user?.id}</p>
-                  <p><p>Discord ID: {user?.discordId}</p>
+                  <p>Discord ID: {user?.discordId}</p>
                   <p>Database ID: {user?.id}</p>
                   <p className="text-xs text-gray-500 mt-2">This information will be included with your ticket</p>
                 </div>
