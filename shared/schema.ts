@@ -363,7 +363,7 @@ export type Faq = typeof faqs.$inferSelect;
 // Support tickets table
 export const supportTickets = mysqlTable("support_tickets", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
-  ticketId: varchar("ticket_id", { length: 20 }).notNull().unique(),
+  ticketId: varchar("ticket_id", { length: 50 }).notNull().unique(),
   userId: varchar("user_id", { length: 36 }).notNull(),
   subject: text("subject").notNull(),
   category: varchar("category", { length: 100 }).notNull(),
