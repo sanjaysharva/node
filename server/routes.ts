@@ -2989,19 +2989,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contact submission API route
   app.post("/api/contact", async (req, res) => {
     try {
-      const submissionData = insertContactSubmissionSchema.parse(req.body);
-      const submission = await storage.createContactSubmission(submissionData);
+      const submission = await storage.createContactSubmission(req.body);
 
-      res.status(201).json({
-        id: submission.id,
-        message: "Your message has been submitted successfully. We will get back to you soon!"
-      });
-    } catch (error) {
-      console.error("Error creating contact submission:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      // Notify admins via Discord
+      const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean);
+      const { discordBot } = await import('./discord-bot');
+
+      for (const adminId of ADMIN_USER_IDS) {
+        try {
+          const adminUser = await discordBot.users.fetch(adminId.trim());
+
+          const contactEmbed = {
+            title: '📬 New Contact Form Submission',
+            description: 'A new contact form has been submitted and requires your attention.',
+            color: 0x7C3AED,
+            fields: [
+              { name: '👤 Name', value: `${submission.firstName} ${submission.lastName}`, inline: true },
+              { name: '📧 Email', value: submission.email, inline: true },
+              { name: '📱 Phone', value: submission.phone || 'Not provided', inline: true },
+              { name: '🌍 Country', value: submission.country || 'Not provided', inline: true },
+              { name: '📋 Reason', value: submission.reason, inline: true },
+              { name: '✉️ Message', value: submission.description.length > 1024 ? submission.description.substring(0, 1021) + '...' : submission.description, inline: false },
+              { name: '💬 Respond', value: `Email: ${submission.email}`, inline: false }
+            ],
+            footer: { 
+              text: `Submission ID: ${submission.id} • Axiom Contact System`,
+              icon_url: discordBot.user?.avatarURL() || undefined
+            },
+            timestamp: new Date().toISOString()
+          };
+
+          const sentMessage = await adminUser.send({ embeds: [contactEmbed] });
+          await sentMessage.react('✅');
+        } catch (error) {
+          console.error(`Failed to notify admin ${adminId}:`, error);
+        }
       }
-      res.status(500).json({ message: "Failed to submit contact form" });
+
+      res.json(submission);
+    } catch (error) {
+      console.error('Error creating contact submission:', error);
+      res.status(500).json({ 
+        error: 'Failed to submit contact form',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
