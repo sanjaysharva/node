@@ -113,7 +113,7 @@ export default function SupportTicket() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-12">
           <Card className="bg-gradient-to-br from-green-900/20 to-blue-900/20 border-green-800/30">
