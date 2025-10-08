@@ -95,7 +95,7 @@ export default function SupportTicket() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#0f0f14]">
+      <div className="min-h-screen bg-gray-950">
         <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
           <Card className="w-full max-w-md bg-gray-900 border-gray-800">
@@ -113,7 +113,7 @@ export default function SupportTicket() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-[#0f0f14]">
+      <div className="min-h-screen bg-gray-950">
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-12">
           <Card className="bg-gradient-to-br from-green-900/20 to-blue-900/20 border-green-800/30">
