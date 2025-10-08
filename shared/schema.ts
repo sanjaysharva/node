@@ -411,4 +411,4 @@ export const insertContactSubmissionSchema = createInsertSchema(contactSubmissio
   createdAt: true 
 });
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
-export type ContactSubmission = typeof contactSubmissions.$inferSelect;a
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
