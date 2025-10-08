@@ -1,4 +1,4 @@
-import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, faqs, supportTickets, contactSubmissions, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes, jobs, type Job, type InsertJob, type Faq, type InsertFaq, type SupportTicket, type InsertSupportTicket, type ContactSubmission, type InsertContactSubmission } from "@shared/schema";
+import { users, servers, bots, ads, serverJoins, slideshows, events, bumpChannels, reviews, partnerships, serverTemplates, templateProcesses, faqs, supportTickets, contactSubmissions, userRatings, userReports, profileShareLinks, type User, type InsertUser, type Server, type InsertServer, type Bot, type InsertBot, type Ad, type InsertAd, type ServerJoin, type InsertServerJoin, type Slideshow, type InsertSlideshow, type Event, type InsertEvent, type BumpChannel, type InsertBumpChannel, comments, commentLikes, votes, jobs, type Job, type InsertJob, type Faq, type InsertFaq, type SupportTicket, type InsertSupportTicket, type ContactSubmission, type InsertContactSubmission, type UserRating, type InsertUserRating, type UserReport, type InsertUserReport, type ProfileShareLink, type InsertProfileShareLink } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, like, sql, isNull, count, asc } from 'drizzle-orm';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
@@ -121,13 +121,33 @@ export interface IStorage {
   toggleFaqActive(id: string, isActive: boolean): Promise<Faq | undefined>;
 
   // Support ticket operations
-  createSupportTicket(ticketData: InsertSupportTicket & { userId: string }): Promise<SupportTicket>;
+  createSupportTicket(ticketData: InsertSupportTicket & { userId: string; discordUserId?: string; username?: string }): Promise<SupportTicket>;
   getSupportTickets(options?: { userId?: string; status?: string; limit?: number; offset?: number }): Promise<SupportTicket[]>;
+  getSupportTicketByTicketId(ticketId: string): Promise<SupportTicket | undefined>;
+  getSupportTicketsByUserId(userId: string): Promise<SupportTicket[]>;
+  updateSupportTicketStatus(ticketId: string, status: string): Promise<SupportTicket | undefined>;
   getSupportTicket(id: string): Promise<SupportTicket | undefined>;
   updateSupportTicket(id: string, ticketData: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined>;
 
   // Contact submission operations
   createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission>;
+
+  // User rating operations
+  rateUser(rating: InsertUserRating): Promise<UserRating>;
+  getUserRatings(userId: string): Promise<UserRating[]>;
+  getUserRating(ratedUserId: string, raterUserId: string): Promise<UserRating | undefined>;
+  updateUserAverageRating(userId: string): Promise<void>;
+
+  // User report operations
+  reportUser(report: InsertUserReport): Promise<UserReport>;
+  getUserReports(options?: { reportedUserId?: string; reporterUserId?: string; status?: string }): Promise<UserReport[]>;
+
+  // Profile share link operations
+  createProfileShareLink(userId: string): Promise<ProfileShareLink>;
+  getProfileShareLink(userId: string): Promise<ProfileShareLink | undefined>;
+  getProfileByShareCode(shareCode: string): Promise<User | undefined>;
+  incrementShareLinkClicks(shareCode: string): Promise<void>;
+  incrementProfileViews(userId: string): Promise<void>;
 
   // Blog operations
   getBlogPosts(options?: { limit?: number; offset?: number; featured?: boolean }): Promise<any[]>;
@@ -1601,6 +1621,33 @@ export class DatabaseStorage implements IStorage {
 
   async getSupportTicket(id: string): Promise<SupportTicket | undefined> {
     const [ticket] = await this.db.select().from(supportTickets).where(eq(supportTickets.id, id));
+    return ticket || undefined;
+  }
+
+  async getSupportTicketByTicketId(ticketId: string): Promise<SupportTicket | undefined> {
+    const [ticket] = await this.db.select().from(supportTickets)
+      .where(eq(supportTickets.ticketId, ticketId))
+      .limit(1);
+    return ticket || undefined;
+  }
+
+  async getSupportTicketsByUserId(userId: string): Promise<SupportTicket[]> {
+    const tickets = await this.db.select().from(supportTickets)
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.createdAt));
+    return tickets;
+  }
+
+  async updateSupportTicketStatus(ticketId: string, status: string): Promise<SupportTicket | undefined> {
+    await this.db.update(supportTickets)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(supportTickets.ticketId, ticketId));
+
+    // Get the updated ticket since MySQL doesn't support returning
+    const [ticket] = await this.db.select().from(supportTickets)
+      .where(eq(supportTickets.ticketId, ticketId))
+      .limit(1);
+
     return ticket || undefined;
   }
 
