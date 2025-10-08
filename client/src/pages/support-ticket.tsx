@@ -95,7 +95,7 @@ export default function SupportTicket() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-[#0f0f14]">
         <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
           <Card className="w-full max-w-md bg-gray-900 border-gray-800">
