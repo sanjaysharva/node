@@ -10,11 +10,19 @@ const client = new Client({
     GatewayIntentBits.GuildInvites,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
   ],
+  partials: [],
 });
 
 // Store invite usage data
 const inviteCache = new Map();
+
+// Store admin's focused tickets: Map<adminDiscordId, ticketId>
+const adminFocusedTickets = new Map<string, string>();
+
+// Get admin Discord IDs from environment
+const ADMIN_DISCORD_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean).map(id => id.trim());
 
 // Slash commands
 const commands = [
@@ -1515,6 +1523,322 @@ client.on('inviteDelete', async (invite) => {
   const guildInvites = inviteCache.get(invite.guild?.id) || new Map();
   guildInvites.delete(invite.code);
   inviteCache.set(invite.guild?.id, guildInvites);
+});
+
+// Handle Direct Messages for ticket system
+client.on(Events.MessageCreate, async (message: Message) => {
+  // Ignore bot messages
+  if (message.author.bot) return;
+  
+  // Only handle DMs
+  if (message.channel.type !== ChannelType.DM) return;
+
+  const authorId = message.author.id;
+  const messageContent = message.content.trim();
+  const isAdmin = ADMIN_DISCORD_IDS.includes(authorId);
+
+  try {
+    // ============ ADMIN COMMANDS ============
+    if (isAdmin) {
+      // Command: .ticketid open - Open and focus on a ticket
+      if (messageContent.match(/^\.([A-Z0-9-]+)\s+open$/i)) {
+        const ticketIdMatch = messageContent.match(/^\.([A-Z0-9-]+)\s+open$/i);
+        const ticketId = ticketIdMatch![1].toUpperCase();
+        
+        // Verify ticket exists and update status
+        const ticket = await storage.getSupportTicketByTicketId(ticketId);
+        if (!ticket) {
+          await message.react('❌');
+          await message.reply(`❌ Ticket \`${ticketId}\` not found.`);
+          return;
+        }
+
+        // Update ticket status to open
+        await storage.updateSupportTicketStatus(ticketId, 'open');
+        
+        // Focus on this ticket
+        adminFocusedTickets.set(authorId, ticketId);
+        
+        const embed = new EmbedBuilder()
+          .setTitle('🎫 Ticket Opened')
+          .setDescription(`You are now focused on ticket \`${ticketId}\``)
+          .setColor(0x7C3AED)
+          .addFields(
+            { name: '👤 User', value: ticket.username || 'Unknown', inline: true },
+            { name: '🆔 Discord ID', value: ticket.discordUserId || 'N/A', inline: true },
+            { name: '📋 Category', value: ticket.category, inline: true },
+            { name: '📌 Subject', value: ticket.subject, inline: false },
+            { name: '📝 Description', value: ticket.description.length > 1024 ? ticket.description.substring(0, 1021) + '...' : ticket.description, inline: false },
+            { name: '💬 Reply', value: 'Use `.msg <your message>` to reply to this user', inline: false }
+          )
+          .setFooter({ text: 'Axiom Support System', iconURL: client.user?.avatarURL() || undefined })
+          .setTimestamp();
+
+        await message.react('✅');
+        await message.reply({ embeds: [embed] });
+        
+        // Notify user that ticket is now open
+        if (ticket.discordUserId) {
+          try {
+            const user = await client.users.fetch(ticket.discordUserId);
+            const userEmbed = new EmbedBuilder()
+              .setTitle('🎫 Support Ticket Opened')
+              .setDescription('An admin is now reviewing your ticket. You can now send messages and we will respond shortly.')
+              .setColor(0x7C3AED)
+              .addFields(
+                { name: '📋 Ticket ID', value: `\`${ticketId}\``, inline: true },
+                { name: '💬 How to Message', value: 'Simply send your message here in DM - no commands needed!', inline: false }
+              )
+              .setFooter({ text: 'Axiom Support • We\'re here to help!', iconURL: client.user?.avatarURL() || undefined })
+              .setTimestamp();
+            
+            await user.send({ embeds: [userEmbed] });
+          } catch (err) {
+            console.error('Could not notify user about ticket opening:', err);
+          }
+        }
+        return;
+      }
+
+      // Command: .ticketid close - Close a ticket
+      if (messageContent.match(/^\.([A-Z0-9-]+)\s+close$/i)) {
+        const ticketIdMatch = messageContent.match(/^\.([A-Z0-9-]+)\s+close$/i);
+        const ticketId = ticketIdMatch![1].toUpperCase();
+        
+        // Verify ticket exists and update status
+        const ticket = await storage.getSupportTicketByTicketId(ticketId);
+        if (!ticket) {
+          await message.react('❌');
+          await message.reply(`❌ Ticket \`${ticketId}\` not found.`);
+          return;
+        }
+
+        // Update ticket status to closed
+        await storage.updateSupportTicketStatus(ticketId, 'closed');
+        
+        // Remove from focused tickets if it was focused
+        if (adminFocusedTickets.get(authorId) === ticketId) {
+          adminFocusedTickets.delete(authorId);
+        }
+        
+        const embed = new EmbedBuilder()
+          .setTitle('🔒 Ticket Closed')
+          .setDescription(`Ticket \`${ticketId}\` has been closed successfully.`)
+          .setColor(0x7C3AED)
+          .addFields(
+            { name: '👤 User', value: ticket.username || 'Unknown', inline: true },
+            { name: '📋 Category', value: ticket.category, inline: true }
+          )
+          .setFooter({ text: 'Axiom Support System', iconURL: client.user?.avatarURL() || undefined })
+          .setTimestamp();
+
+        await message.react('✅');
+        await message.reply({ embeds: [embed] });
+        
+        // Notify user that ticket is closed
+        if (ticket.discordUserId) {
+          try {
+            const user = await client.users.fetch(ticket.discordUserId);
+            const userEmbed = new EmbedBuilder()
+              .setTitle('🔒 Support Ticket Closed')
+              .setDescription('Your support ticket has been resolved and closed. Thank you for contacting Axiom Support!')
+              .setColor(0x7C3AED)
+              .addFields(
+                { name: '📋 Ticket ID', value: `\`${ticketId}\``, inline: true },
+                { name: '💡 Need More Help?', value: 'Feel free to create a new ticket anytime at our [Help Center](https://axiomer.up.railway.app/help-center)', inline: false }
+              )
+              .setFooter({ text: 'Axiom Support • Thank you for your patience', iconURL: client.user?.avatarURL() || undefined })
+              .setTimestamp();
+            
+            await user.send({ embeds: [userEmbed] });
+          } catch (err) {
+            console.error('Could not notify user about ticket closing:', err);
+          }
+        }
+        return;
+      }
+
+      // Command: .msg <message> - Send message to user in focused ticket
+      if (messageContent.startsWith('.msg ')) {
+        const focusedTicketId = adminFocusedTickets.get(authorId);
+        
+        if (!focusedTicketId) {
+          await message.react('❌');
+          await message.reply('❌ You don\'t have any focused ticket. Use `.ticketid open` to focus on a ticket first.');
+          return;
+        }
+
+        const ticket = await storage.getSupportTicketByTicketId(focusedTicketId);
+        if (!ticket || !ticket.discordUserId) {
+          await message.react('❌');
+          await message.reply('❌ Could not find user for this ticket.');
+          return;
+        }
+
+        const adminMessage = messageContent.substring(5).trim();
+        if (!adminMessage) {
+          await message.react('❌');
+          await message.reply('❌ Please provide a message. Usage: `.msg <your message>`');
+          return;
+        }
+
+        try {
+          const user = await client.users.fetch(ticket.discordUserId);
+          
+          const userEmbed = new EmbedBuilder()
+            .setTitle('💬 Message from Axiom Support')
+            .setDescription(adminMessage)
+            .setColor(0x7C3AED)
+            .addFields(
+              { name: '📋 Ticket ID', value: `\`${focusedTicketId}\``, inline: true },
+              { name: '💬 Reply', value: 'Simply send your message here - no commands needed!', inline: false }
+            )
+            .setFooter({ text: 'Axiom Support Team', iconURL: client.user?.avatarURL() || undefined })
+            .setTimestamp();
+          
+          await user.send({ embeds: [userEmbed] });
+          await message.react('✅');
+          
+          console.log(`✅ Admin ${message.author.tag} sent message to user in ticket ${focusedTicketId}`);
+        } catch (err) {
+          await message.react('❌');
+          await message.reply('❌ Failed to send message to user. They may have DMs disabled or left the server.');
+          console.error('Failed to send admin message to user:', err);
+        }
+        return;
+      }
+    }
+
+    // ============ USER MESSAGES (Auto-detect ticket by Discord ID) ============
+    if (!isAdmin) {
+      // Find user's open ticket
+      const user = await storage.getUserByDiscordId(authorId);
+      
+      if (!user) {
+        const embed = new EmbedBuilder()
+          .setTitle('👋 Welcome to Axiom Support')
+          .setDescription('You need to create an account first to use our support system.')
+          .setColor(0x7C3AED)
+          .addFields(
+            { name: '🌐 Get Started', value: '[Visit our website](https://axiomer.up.railway.app) to create an account', inline: false },
+            { name: '📚 Help Center', value: '[Browse our resources](https://axiomer.up.railway.app/help-center) for instant answers', inline: false }
+          )
+          .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
+          .setTimestamp();
+        
+        await message.reply({ embeds: [embed] });
+        return;
+      }
+
+      // Get user's most recent open ticket
+      const userTickets = await storage.getSupportTicketsByUserId(user.id);
+      const openTicket = userTickets.find(t => t.status === 'open');
+      
+      if (!openTicket) {
+        const closedTicket = userTickets.find(t => t.status === 'closed');
+        
+        if (closedTicket) {
+          // User has a closed ticket
+          const embed = new EmbedBuilder()
+            .setTitle('🔒 Ticket Closed')
+            .setDescription('Your previous ticket has been closed. You cannot send messages to a closed ticket.')
+            .setColor(0x7C3AED)
+            .addFields(
+              { name: '📋 Closed Ticket', value: `\`${closedTicket.ticketId}\``, inline: true },
+              { name: '💡 Need More Help?', value: '[Create a new ticket](https://axiomer.up.railway.app/help-center) on our website', inline: false }
+            )
+            .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
+            .setTimestamp();
+          
+          await message.reply({ embeds: [embed] });
+        } else {
+          // User has pending ticket (not opened yet by admin)
+          const pendingTicket = userTickets.find(t => t.status === 'pending');
+          
+          if (pendingTicket) {
+            const embed = new EmbedBuilder()
+              .setTitle('⏳ Please Wait')
+              .setDescription('Your support ticket is in queue. An admin will review it soon and open your ticket.')
+              .setColor(0x7C3AED)
+              .addFields(
+                { name: '📋 Ticket ID', value: `\`${pendingTicket.ticketId}\``, inline: true },
+                { name: '⏰ Status', value: 'Waiting for admin response', inline: true },
+                { name: '💡 What happens next?', value: 'Once an admin opens your ticket, you\'ll be notified and can send messages freely.', inline: false }
+              )
+              .setFooter({ text: 'Axiom Support • Thank you for your patience', iconURL: client.user?.avatarURL() || undefined })
+              .setTimestamp();
+            
+            await message.reply({ embeds: [embed] });
+          } else {
+            // No ticket at all
+            const embed = new EmbedBuilder()
+              .setTitle('📬 No Active Ticket')
+              .setDescription('You don\'t have any active support tickets.')
+              .setColor(0x7C3AED)
+              .addFields(
+                { name: '💡 Get Help', value: '[Create a support ticket](https://axiomer.up.railway.app/help-center) on our website', inline: false }
+              )
+              .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
+              .setTimestamp();
+            
+            await message.reply({ embeds: [embed] });
+          }
+        }
+        return;
+      }
+
+      // User has an open ticket - forward message to admins
+      try {
+        for (const adminId of ADMIN_DISCORD_IDS) {
+          try {
+            const admin = await client.users.fetch(adminId);
+            
+            const adminEmbed = new EmbedBuilder()
+              .setTitle('💬 New Message from User')
+              .setDescription(messageContent.length > 2048 ? messageContent.substring(0, 2045) + '...' : messageContent)
+              .setColor(0x7C3AED)
+              .addFields(
+                { name: '🎫 Ticket ID', value: `\`${openTicket.ticketId}\``, inline: true },
+                { name: '👤 User', value: `${message.author.tag}`, inline: true },
+                { name: '🆔 Discord ID', value: `\`${authorId}\``, inline: true },
+                { name: '💬 Quick Reply', value: `Focus on ticket: \`.${openTicket.ticketId} open\`\nThen reply: \`.msg <your message>\``, inline: false }
+              )
+              .setFooter({ text: `Ticket: ${openTicket.ticketId} • Axiom Support`, iconURL: client.user?.avatarURL() || undefined })
+              .setTimestamp();
+            
+            await admin.send({ embeds: [adminEmbed] });
+          } catch (err) {
+            console.error(`Failed to notify admin ${adminId}:`, err);
+          }
+        }
+
+        // Confirm message received to user
+        await message.react('✅');
+        
+        const confirmEmbed = new EmbedBuilder()
+          .setTitle('✅ Message Sent')
+          .setDescription('Your message has been delivered to our support team. We\'ll respond shortly!')
+          .setColor(0x7C3AED)
+          .addFields(
+            { name: '📋 Ticket ID', value: `\`${openTicket.ticketId}\``, inline: true }
+          )
+          .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
+          .setTimestamp();
+        
+        await message.reply({ embeds: [confirmEmbed] });
+        
+        console.log(`✅ User ${message.author.tag} sent message for ticket ${openTicket.ticketId}`);
+      } catch (err) {
+        await message.react('❌');
+        console.error('Failed to forward user message to admins:', err);
+      }
+      return;
+    }
+
+  } catch (error) {
+    console.error('Error handling DM message:', error);
+    await message.react('❌');
+  }
 });
 
 export async function startDiscordBot() {
