@@ -997,7 +997,7 @@ async function handleTemplateProcessCommand(interaction: any) {
 
 async function handleSupportCommand(interaction: any) {
   const message = interaction.options.getString('message');
-  const userId = interaction.user.id;
+  const discordUserId = interaction.user.id;
   const username = interaction.user.username;
   const guildName = interaction.guild?.name || 'Direct Message';
 
@@ -1007,7 +1007,7 @@ async function handleSupportCommand(interaction: any) {
     if (!user) {
       await interaction.reply({
         content: '❌ Please login to the website first: https://axiomer.up.railway.app',
-        ephemeral: true
+        flags: 64
       });
       return;
     }
@@ -1022,7 +1022,7 @@ async function handleSupportCommand(interaction: any) {
 
     await interaction.reply({
       content: '✅ Your support request has been submitted! Our team will respond via DM within 24 hours.',
-      ephemeral: true
+      flags: 64
     });
 
     try {
@@ -1073,7 +1073,7 @@ async function handleSupportCommand(interaction: any) {
     console.error('Support command error:', error);
     await interaction.reply({
       content: '❌ Failed to submit support request. Please try again later.',
-      ephemeral: true
+      flags: 64
     });
   }
 }
