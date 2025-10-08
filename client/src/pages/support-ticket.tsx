@@ -279,9 +279,7 @@ export default function SupportTicket() {
                 <h4 className="text-white font-medium mb-2">Your Information</h4>
                 <div className="text-sm text-gray-400 space-y-1">
                   <p>Username: {user?.username}</p>
-                  <p>User ID: {user?.id}</p>
                   <p>Discord ID: {user?.discordId}</p>
-                  <p>Database ID: {user?.id}</p>
                   <p className="text-xs text-gray-500 mt-2">This information will be included with your ticket</p>
                 </div>
               </div>
