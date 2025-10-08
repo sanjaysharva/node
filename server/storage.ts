@@ -184,7 +184,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await this.db.insert(users).values(insertUser);
+    // Generate 10-digit numeric ID
+    const userId = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+    const result = await this.db.insert(users).values({
+      ...insertUser,
+      id: userId
+    });
     // Get the created user by Discord ID since MySQL doesn't support returning
     const [user] = await this.db.select().from(users).where(eq(users.discordId, insertUser.discordId));
     return user;
@@ -1552,11 +1557,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Support ticket operations implementation
-  async createSupportTicket(ticketData: InsertSupportTicket & { userId: string }): Promise<SupportTicket> {
+  async createSupportTicket(ticketData: InsertSupportTicket & { userId: string; discordUserId?: string; username?: string }): Promise<SupportTicket> {
     const ticketId = `TICKET-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
     const result = await this.db.insert(supportTickets).values({
       ...ticketData,
       ticketId,
+      userId: ticketData.userId,
+      discordUserId: ticketData.discordUserId || null,
+      username: ticketData.username || null,
     });
 
     // MySQL doesn't support returning, so we need to query the inserted record
