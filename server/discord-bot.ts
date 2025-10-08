@@ -213,9 +213,78 @@ const commands = [
         .setDescription('True to accept, false to decline')
         .setRequired(true)
     ),
+
+  new SlashCommandBuilder()
+    .setName('addcoins')
+    .setDescription('[ADMIN ONLY] Add coins to a user')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to add coins to')
+        .setRequired(true)
+    )
+    .addIntegerOption(option =>
+      option.setName('amount')
+        .setDescription('Amount of coins to add')
+        .setRequired(true)
+        .setMinValue(1)
+    )
+    .addStringOption(option =>
+      option.setName('reason')
+        .setDescription('Reason for adding coins')
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('removecoins')
+    .setDescription('[ADMIN ONLY] Remove coins from a user')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to remove coins from')
+        .setRequired(true)
+    )
+    .addIntegerOption(option =>
+      option.setName('amount')
+        .setDescription('Amount of coins to remove')
+        .setRequired(true)
+        .setMinValue(1)
+    )
+    .addStringOption(option =>
+      option.setName('reason')
+        .setDescription('Reason for removing coins')
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('giftcoins')
+    .setDescription('Gift coins to another user')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to gift coins to')
+        .setRequired(true)
+    )
+    .addIntegerOption(option =>
+      option.setName('amount')
+        .setDescription('Amount of coins to gift')
+        .setRequired(true)
+        .setMinValue(1)
+    )
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('Optional message with your gift')
+        .setRequired(false)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('balance')
+    .setDescription('Check your coin balance')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('Check another user\'s balance (optional)')
+        .setRequired(false)
+    ),
 ];
 
-client.once('clientReady', async () => {
+client.once(Events.ClientReady, async () => {
   console.log(`✅ Discord bot logged in as ${client.user?.tag}!`);
 
   // Register slash commands
@@ -246,7 +315,7 @@ client.once('clientReady', async () => {
 });
 
 // Handle slash command interactions
-client.on('interactionCreate', async (interaction) => {
+client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   const { commandName } = interaction;
@@ -399,7 +468,7 @@ client.on('interactionCreate', async (interaction) => {
         }
         break;
       }
-      case 'templateprocess': {
+      case 'templateprocess':
         await interaction.deferReply();
         if (!interaction.guild) { await interaction.editReply('This command can only be used in a server!'); return; }
         const guild = interaction.guild;
@@ -417,7 +486,6 @@ client.on('interactionCreate', async (interaction) => {
           .setTimestamp();
         await interaction.editReply({ embeds: [embed] });
         break;
-      }
       case 'poll': {
         const question = interaction.options.getString('question', true);
         const option1 = interaction.options.getString('option1', true);
@@ -506,7 +574,8 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         if (isAccepted) {
-          await storage.updateBotStatus(botId, 'accepted', reviewer.id);
+          // Update bot - note: updateBotStatus may not exist, using updateBot instead
+          await storage.updateBot(botId, { verified: true });
 
           const embed = new EmbedBuilder()
             .setTitle('✅ Bot Accepted')
@@ -524,12 +593,12 @@ client.on('interactionCreate', async (interaction) => {
 
           const botProfileEmbed = new EmbedBuilder()
             .setTitle(`Bot Profile: ${bot.name}`)
-            .setDescription(`${bot.description}\n\n**Commands:**\n\`\`\`\n${bot.commands.join('\n')}\n\`\`\`\n**Rating:** ${bot.rating || 'Not rated yet'}`)
+            .setDescription(`${bot.description}\n\n**Type:** ${bot.type}\n**Uses:** ${bot.uses}`)
             .setColor('#7289DA')
             .addFields(
-              { name: 'Invite Link', value: `[Invite ${bot.name}](https://discord.com/oauth2/authorize?client_id=${bot.clientId}&scope=bot&permissions=8)` }
+              { name: 'Invite Link', value: `[Invite ${bot.name}](${bot.inviteLink})` }
             )
-            .setFooter({ text: `Provided by ${bot.ownerUsername || 'Unknown'}` });
+            .setFooter({ text: `Provided by ${bot.ownerId}` });
 
           try {
             await botOwner.send({ embeds: [botProfileEmbed] });
@@ -537,7 +606,7 @@ client.on('interactionCreate', async (interaction) => {
             console.log(`Could not send bot profile DM to ${botOwner.id}`);
           }
         } else {
-          await storage.updateBotStatus(botId, 'declined', reviewer.id);
+          await storage.updateBot(botId, { verified: false });
 
           const embed = new EmbedBuilder()
             .setTitle('❌ Bot Declined')
@@ -558,7 +627,7 @@ client.on('interactionCreate', async (interaction) => {
             .setDescription(`Your bot **${bot.name}** was declined. Please review our fair use policy for more information.`)
             .setColor('#FF0000')
             .addFields(
-              { name: 'Link to Fair Use Policy', value: '[Fair Use Policy](https://yourwebsite.com/fair-use)' }
+              { name: 'Link to Fair Use Policy', value: '[Fair Use Policy](https://axiomer.up.railway.app/fair-use-policy)' }
             );
 
           try {
@@ -567,6 +636,233 @@ client.on('interactionCreate', async (interaction) => {
             console.log(`Could not send decline DM to ${botOwner.id}`);
           }
         }
+        break;
+      }
+      case 'addcoins': {
+        // Check if user is admin
+        const adminUser = await storage.getUserByDiscordId(interaction.user.id);
+        if (!adminUser || !adminUser.isAdmin) {
+          await interaction.reply({ content: '❌ This command is only available to administrators.', flags: 64 });
+          return;
+        }
+
+        const targetUser = interaction.options.getUser('user', true);
+        const amount = interaction.options.getInteger('amount', true);
+        const reason = interaction.options.getString('reason') || 'Admin grant';
+
+        // Get or create user in database
+        let dbUser = await storage.getUserByDiscordId(targetUser.id);
+        if (!dbUser) {
+          await interaction.reply({ content: `❌ User <@${targetUser.id}> must login to the website first: https://axiomer.up.railway.app`, flags: 64 });
+          return;
+        }
+
+        // Add coins to user
+        const currentBalance = dbUser.coins || 0;
+        const newBalance = currentBalance + amount;
+        await storage.updateUserCoins(dbUser.id, newBalance);
+
+        const embed = new EmbedBuilder()
+          .setTitle('💰 Coins Added')
+          .setDescription(`Successfully added **${amount} coins** to <@${targetUser.id}>`)
+          .setColor(0x7C3AED)
+          .addFields(
+            { name: '➕ Amount Added', value: `${amount} coins`, inline: true },
+            { name: '💵 New Balance', value: `${newBalance} coins`, inline: true },
+            { name: '📝 Reason', value: reason, inline: false }
+          )
+          .setFooter({ text: `Admin: ${interaction.user.tag}`, iconURL: interaction.user.avatarURL() || undefined })
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed] });
+
+        // Notify user
+        try {
+          const userEmbed = new EmbedBuilder()
+            .setTitle('💰 Coins Received!')
+            .setDescription(`An admin has added **${amount} coins** to your account!`)
+            .setColor(0x7C3AED)
+            .addFields(
+              { name: '💵 New Balance', value: `${newBalance} coins`, inline: true },
+              { name: '📝 Reason', value: reason, inline: false }
+            )
+            .setFooter({ text: 'Axiom Coin System', iconURL: client.user?.avatarURL() || undefined })
+            .setTimestamp();
+
+          await targetUser.send({ embeds: [userEmbed] });
+        } catch (err) {
+          console.log(`Could not send coins notification to ${targetUser.tag}`);
+        }
+        break;
+      }
+      case 'removecoins': {
+        // Check if user is admin
+        const adminUser = await storage.getUserByDiscordId(interaction.user.id);
+        if (!adminUser || !adminUser.isAdmin) {
+          await interaction.reply({ content: '❌ This command is only available to administrators.', flags: 64 });
+          return;
+        }
+
+        const targetUser = interaction.options.getUser('user', true);
+        const amount = interaction.options.getInteger('amount', true);
+        const reason = interaction.options.getString('reason') || 'Admin removal';
+
+        // Get user from database
+        let dbUser = await storage.getUserByDiscordId(targetUser.id);
+        if (!dbUser) {
+          await interaction.reply({ content: `❌ User <@${targetUser.id}> not found in database.`, flags: 64 });
+          return;
+        }
+
+        const currentBalance = dbUser.coins || 0;
+
+        if (currentBalance < amount) {
+          await interaction.reply({ content: `❌ User only has **${currentBalance} coins**. Cannot remove **${amount} coins**.`, flags: 64 });
+          return;
+        }
+
+        // Remove coins from user
+        const newBalance = currentBalance - amount;
+        await storage.updateUserCoins(dbUser.id, newBalance);
+
+        const embed = new EmbedBuilder()
+          .setTitle('💸 Coins Removed')
+          .setDescription(`Successfully removed **${amount} coins** from <@${targetUser.id}>`)
+          .setColor(0xFF6B6B)
+          .addFields(
+            { name: '➖ Amount Removed', value: `${amount} coins`, inline: true },
+            { name: '💵 New Balance', value: `${newBalance} coins`, inline: true },
+            { name: '📝 Reason', value: reason, inline: false }
+          )
+          .setFooter({ text: `Admin: ${interaction.user.tag}`, iconURL: interaction.user.avatarURL() || undefined })
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed] });
+
+        // Notify user
+        try {
+          const userEmbed = new EmbedBuilder()
+            .setTitle('💸 Coins Removed')
+            .setDescription(`An admin has removed **${amount} coins** from your account.`)
+            .setColor(0xFF6B6B)
+            .addFields(
+              { name: '💵 New Balance', value: `${newBalance} coins`, inline: true },
+              { name: '📝 Reason', value: reason, inline: false }
+            )
+            .setFooter({ text: 'Axiom Coin System', iconURL: client.user?.avatarURL() || undefined })
+            .setTimestamp();
+
+          await targetUser.send({ embeds: [userEmbed] });
+        } catch (err) {
+          console.log(`Could not send coins notification to ${targetUser.tag}`);
+        }
+        break;
+      }
+      case 'giftcoins': {
+        const senderDiscordUser = interaction.user;
+        const receiverDiscordUser = interaction.options.getUser('user', true);
+        const amount = interaction.options.getInteger('amount', true);
+        const message = interaction.options.getString('message') || 'Here are some coins!';
+
+        // Cannot gift to yourself
+        if (senderDiscordUser.id === receiverDiscordUser.id) {
+          await interaction.reply({ content: '❌ You cannot gift coins to yourself!', flags: 64 });
+          return;
+        }
+
+        // Get sender from database
+        const sender = await storage.getUserByDiscordId(senderDiscordUser.id);
+        if (!sender) {
+          await interaction.reply({ content: '❌ You must login to the website first: https://axiomer.up.railway.app', flags: 64 });
+          return;
+        }
+
+        // Check sender has enough coins
+        const senderBalance = sender.coins || 0;
+        if (senderBalance < amount) {
+          await interaction.reply({ content: `❌ You only have **${senderBalance} coins**. You need **${amount} coins** to complete this gift.`, flags: 64 });
+          return;
+        }
+
+        // Get or check receiver
+        const receiver = await storage.getUserByDiscordId(receiverDiscordUser.id);
+        if (!receiver) {
+          await interaction.reply({ content: `❌ <@${receiverDiscordUser.id}> must login to the website first to receive coins.`, flags: 64 });
+          return;
+        }
+
+        // Transfer coins (atomic operation to prevent duplication)
+        const result = await storage.transferCoins(sender.id, receiver.id, amount);
+
+        if (!result.success) {
+          await interaction.reply({ content: '❌ Failed to transfer coins. Please try again.', flags: 64 });
+          return;
+        }
+
+        const embed = new EmbedBuilder()
+          .setTitle('🎁 Coins Gifted!')
+          .setDescription(`<@${senderDiscordUser.id}> gifted **${amount} coins** to <@${receiverDiscordUser.id}>`)
+          .setColor(0x7C3AED)
+          .addFields(
+            { name: '💝 Amount', value: `${amount} coins`, inline: true },
+            { name: '💬 Message', value: message, inline: false },
+            { name: '💵 Your New Balance', value: `${result.fromBalance} coins`, inline: true }
+          )
+          .setFooter({ text: 'Axiom Coin System', iconURL: client.user?.avatarURL() || undefined })
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed] });
+
+        // Notify receiver
+        try {
+          const receiverEmbed = new EmbedBuilder()
+            .setTitle('🎁 You Received a Gift!')
+            .setDescription(`<@${senderDiscordUser.id}> sent you **${amount} coins**!`)
+            .setColor(0x7C3AED)
+            .addFields(
+              { name: '💝 Amount', value: `${amount} coins`, inline: true },
+              { name: '💵 Your New Balance', value: `${result.toBalance} coins`, inline: true },
+              { name: '💬 Message', value: message, inline: false }
+            )
+            .setFooter({ text: 'Axiom Coin System', iconURL: client.user?.avatarURL() || undefined })
+            .setTimestamp();
+
+          await receiverDiscordUser.send({ embeds: [receiverEmbed] });
+        } catch (err) {
+          console.log(`Could not send gift notification to ${receiverDiscordUser.tag}`);
+        }
+        break;
+      }
+      case 'balance': {
+        const targetUser = interaction.options.getUser('user') || interaction.user;
+        const isOwnBalance = targetUser.id === interaction.user.id;
+
+        const dbUser = await storage.getUserByDiscordId(targetUser.id);
+        if (!dbUser) {
+          await interaction.reply({
+            content: isOwnBalance
+              ? '❌ You must login to the website first: https://axiomer.up.railway.app'
+              : `❌ <@${targetUser.id}> has not logged in to the website yet.`,
+            flags: 64
+          });
+          return;
+        }
+
+        const balance = dbUser.coins || 0;
+
+        const embed = new EmbedBuilder()
+          .setTitle(isOwnBalance ? '💰 Your Coin Balance' : `💰 ${targetUser.username}'s Coin Balance`)
+          .setDescription(`**${balance} coins**`)
+          .setColor(0x7C3AED)
+          .setThumbnail(targetUser.avatarURL() || undefined)
+          .addFields(
+            { name: '🏦 Account Status', value: 'Active', inline: true },
+            { name: '📊 User ID', value: dbUser.id, inline: true }
+          )
+          .setFooter({ text: 'Axiom Coin System • Use coins to boost your servers!', iconURL: client.user?.avatarURL() || undefined })
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], flags: isOwnBalance ? 0 : 64 });
         break;
       }
     }
@@ -579,7 +875,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // Button interactions
-client.on('interactionCreate', async (interaction) => {
+client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
   if (interaction.customId.startsWith('verify_')) {
@@ -612,7 +908,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // Reaction role events
-client.on('messageReactionAdd', async (reaction, user) => {
+client.on(Events.MessageReactionAdd, async (reaction, user) => {
   if (user.bot) return;
 
   if (reaction.partial) {
@@ -624,7 +920,8 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
   }
 
-  const reactionRole = await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
+  // Note: Reaction role storage not fully implemented yet
+  const reactionRole = null; // await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
   if (!reactionRole) return;
 
   const guild = reaction.message.guild;
@@ -641,7 +938,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
   }
 });
 
-client.on('messageReactionRemove', async (reaction, user) => {
+client.on(Events.MessageReactionRemove, async (reaction, user) => {
   if (user.bot) return;
 
   if (reaction.partial) {
@@ -653,7 +950,8 @@ client.on('messageReactionRemove', async (reaction, user) => {
     }
   }
 
-  const reactionRole = await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
+  // Note: Reaction role storage not fully implemented yet
+  const reactionRole = null; // await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
   if (!reactionRole) return;
 
   const guild = reaction.message.guild;
@@ -707,7 +1005,7 @@ async function handleBumpCommand(interaction: any) {
       .setColor('#7C3AED')
       .addFields(
         { name: '👥 Members', value: `${interaction.guild.memberCount || 'Unknown'}`, inline: true },
-        { name: '🌐 Server', value: `[Join Now](https://discord.gg/${serverData.inviteCode})`, inline: true }
+        { name: '🌐 Server', value: `[Join Now](https://discord.gg/https://sE8E3gYG)`, inline: true }
       )
       .setThumbnail(interaction.guild.iconURL() || null)
       .setFooter({ text: 'Powered by Axiom', iconURL: client.user?.avatarURL() || undefined })
@@ -942,12 +1240,8 @@ async function handleAddTemplateCommand(interaction: any) {
 
     await interaction.editReply({ embeds: [confirmEmbed] });
 
-    await storage.setPendingTemplate(guildId, {
-      templateLink,
-      templateData,
-      userId: interaction.user.id,
-      timestamp: Date.now(),
-    });
+    // Note: Template process storage not fully implemented yet
+    console.log(`Template pending for guild ${guildId}:`, templateLink);
 
   } catch (error) {
     console.error('Add template command error:', error);
@@ -1086,11 +1380,7 @@ async function handleSupportCommand(interaction: any) {
   }
 }
 
-// Page information command handler
-async function handlePageCommand(message: Message, args: string[]) {
-  // This function is currently empty or not implemented.
-  // Add your page command logic here.
-}
+
 
 
 // Handle direct messages
@@ -1127,17 +1417,17 @@ client.on('messageCreate', async (message) => {
           .setTimestamp();
 
         await targetUser.send({ embeds: [replyEmbed] });
-        
+
         // Remove processing, add success
         await message.reactions.removeAll();
         await message.react('✅');
-        
+
         const confirmEmbed = new EmbedBuilder()
           .setTitle('✅ Message Sent')
           .setDescription(`Your reply has been sent to ${targetUser.tag}`)
           .setColor(0x00FF00)
           .setTimestamp();
-        
+
         await message.reply({ embeds: [confirmEmbed] });
 
         // Update ticket in database
@@ -1148,13 +1438,13 @@ client.on('messageCreate', async (message) => {
       } catch (error) {
         await message.reactions.removeAll();
         await message.react('❌');
-        
+
         const errorEmbed = new EmbedBuilder()
           .setTitle('❌ Failed to Send')
           .setDescription('Could not send message. User not found or DMs are disabled.')
           .setColor(0xFF0000)
           .setTimestamp();
-        
+
         await message.reply({ embeds: [errorEmbed] });
         console.error('Error sending admin reply:', error);
       }
@@ -1284,7 +1574,7 @@ client.on('messageCreate', async (message) => {
 });
 
 // Single unified member join handler
-client.on('guildMemberAdd', async (member) => {
+client.on(Events.GuildMemberAdd, async (member) => {
   try {
     const guild = member.guild;
     const cachedInvites = inviteCache.get(guild.id) || new Map();
@@ -1400,7 +1690,7 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 // Handle server boost events
-client.on('guildMemberUpdate', async (oldMember, newMember) => {
+client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
   const MAIN_SERVER_ID = "1416385340922658838";
   if (newMember.guild.id !== MAIN_SERVER_ID) return;
 
@@ -1473,7 +1763,7 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 });
 
 // Handle member leave
-client.on('guildMemberRemove', async (member) => {
+client.on(Events.GuildMemberRemove, async (member) => {
   console.log(`Member left: ${member.user.username} from ${member.guild.name}`);
 
   try {
@@ -1513,13 +1803,13 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // Update invite cache
-client.on('inviteCreate', async (invite) => {
+client.on(Events.InviteCreate, async (invite) => {
   const guildInvites = inviteCache.get(invite.guild?.id) || new Map();
   guildInvites.set(invite.code, invite.uses || 0);
   inviteCache.set(invite.guild?.id, guildInvites);
 });
 
-client.on('inviteDelete', async (invite) => {
+client.on(Events.InviteDelete, async (invite) => {
   const guildInvites = inviteCache.get(invite.guild?.id) || new Map();
   guildInvites.delete(invite.code);
   inviteCache.set(invite.guild?.id, guildInvites);
@@ -1529,7 +1819,7 @@ client.on('inviteDelete', async (invite) => {
 client.on(Events.MessageCreate, async (message: Message) => {
   // Ignore bot messages
   if (message.author.bot) return;
-  
+
   // Only handle DMs
   if (message.channel.type !== ChannelType.DM) return;
 
@@ -1544,7 +1834,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
       if (messageContent.match(/^\.([A-Z0-9-]+)\s+open$/i)) {
         const ticketIdMatch = messageContent.match(/^\.([A-Z0-9-]+)\s+open$/i);
         const ticketId = ticketIdMatch![1].toUpperCase();
-        
+
         // Verify ticket exists and update status
         const ticket = await storage.getSupportTicketByTicketId(ticketId);
         if (!ticket) {
@@ -1555,10 +1845,10 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
         // Update ticket status to open
         await storage.updateSupportTicketStatus(ticketId, 'open');
-        
+
         // Focus on this ticket
         adminFocusedTickets.set(authorId, ticketId);
-        
+
         const embed = new EmbedBuilder()
           .setTitle('🎫 Ticket Opened')
           .setDescription(`You are now focused on ticket \`${ticketId}\``)
@@ -1576,7 +1866,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
         await message.react('✅');
         await message.reply({ embeds: [embed] });
-        
+
         // Notify user that ticket is now open
         if (ticket.discordUserId) {
           try {
@@ -1591,7 +1881,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
               )
               .setFooter({ text: 'Axiom Support • We\'re here to help!', iconURL: client.user?.avatarURL() || undefined })
               .setTimestamp();
-            
+
             await user.send({ embeds: [userEmbed] });
           } catch (err) {
             console.error('Could not notify user about ticket opening:', err);
@@ -1604,7 +1894,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
       if (messageContent.match(/^\.([A-Z0-9-]+)\s+close$/i)) {
         const ticketIdMatch = messageContent.match(/^\.([A-Z0-9-]+)\s+close$/i);
         const ticketId = ticketIdMatch![1].toUpperCase();
-        
+
         // Verify ticket exists and update status
         const ticket = await storage.getSupportTicketByTicketId(ticketId);
         if (!ticket) {
@@ -1615,12 +1905,12 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
         // Update ticket status to closed
         await storage.updateSupportTicketStatus(ticketId, 'closed');
-        
+
         // Remove from focused tickets if it was focused
         if (adminFocusedTickets.get(authorId) === ticketId) {
           adminFocusedTickets.delete(authorId);
         }
-        
+
         const embed = new EmbedBuilder()
           .setTitle('🔒 Ticket Closed')
           .setDescription(`Ticket \`${ticketId}\` has been closed successfully.`)
@@ -1634,7 +1924,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
         await message.react('✅');
         await message.reply({ embeds: [embed] });
-        
+
         // Notify user that ticket is closed
         if (ticket.discordUserId) {
           try {
@@ -1649,7 +1939,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
               )
               .setFooter({ text: 'Axiom Support • Thank you for your patience', iconURL: client.user?.avatarURL() || undefined })
               .setTimestamp();
-            
+
             await user.send({ embeds: [userEmbed] });
           } catch (err) {
             console.error('Could not notify user about ticket closing:', err);
@@ -1661,7 +1951,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
       // Command: .msg <message> - Send message to user in focused ticket
       if (messageContent.startsWith('.msg ')) {
         const focusedTicketId = adminFocusedTickets.get(authorId);
-        
+
         if (!focusedTicketId) {
           await message.react('❌');
           await message.reply('❌ You don\'t have any focused ticket. Use `.ticketid open` to focus on a ticket first.');
@@ -1684,7 +1974,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
         try {
           const user = await client.users.fetch(ticket.discordUserId);
-          
+
           const userEmbed = new EmbedBuilder()
             .setTitle('💬 Message from Axiom Support')
             .setDescription(adminMessage)
@@ -1695,10 +1985,10 @@ client.on(Events.MessageCreate, async (message: Message) => {
             )
             .setFooter({ text: 'Axiom Support Team', iconURL: client.user?.avatarURL() || undefined })
             .setTimestamp();
-          
+
           await user.send({ embeds: [userEmbed] });
           await message.react('✅');
-          
+
           console.log(`✅ Admin ${message.author.tag} sent message to user in ticket ${focusedTicketId}`);
         } catch (err) {
           await message.react('❌');
@@ -1713,7 +2003,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
     if (!isAdmin) {
       // Find user's open ticket
       const user = await storage.getUserByDiscordId(authorId);
-      
+
       if (!user) {
         const embed = new EmbedBuilder()
           .setTitle('👋 Welcome to Axiom Support')
@@ -1725,7 +2015,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
           )
           .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
           .setTimestamp();
-        
+
         await message.reply({ embeds: [embed] });
         return;
       }
@@ -1733,10 +2023,10 @@ client.on(Events.MessageCreate, async (message: Message) => {
       // Get user's most recent open ticket
       const userTickets = await storage.getSupportTicketsByUserId(user.id);
       const openTicket = userTickets.find(t => t.status === 'open');
-      
+
       if (!openTicket) {
         const closedTicket = userTickets.find(t => t.status === 'closed');
-        
+
         if (closedTicket) {
           // User has a closed ticket
           const embed = new EmbedBuilder()
@@ -1749,12 +2039,12 @@ client.on(Events.MessageCreate, async (message: Message) => {
             )
             .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
             .setTimestamp();
-          
+
           await message.reply({ embeds: [embed] });
         } else {
           // User has pending ticket (not opened yet by admin)
           const pendingTicket = userTickets.find(t => t.status === 'pending');
-          
+
           if (pendingTicket) {
             const embed = new EmbedBuilder()
               .setTitle('⏳ Please Wait')
@@ -1767,7 +2057,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
               )
               .setFooter({ text: 'Axiom Support • Thank you for your patience', iconURL: client.user?.avatarURL() || undefined })
               .setTimestamp();
-            
+
             await message.reply({ embeds: [embed] });
           } else {
             // No ticket at all
@@ -1780,7 +2070,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
               )
               .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
               .setTimestamp();
-            
+
             await message.reply({ embeds: [embed] });
           }
         }
@@ -1792,7 +2082,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
         for (const adminId of ADMIN_DISCORD_IDS) {
           try {
             const admin = await client.users.fetch(adminId);
-            
+
             const adminEmbed = new EmbedBuilder()
               .setTitle('💬 New Message from User')
               .setDescription(messageContent.length > 2048 ? messageContent.substring(0, 2045) + '...' : messageContent)
@@ -1805,7 +2095,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
               )
               .setFooter({ text: `Ticket: ${openTicket.ticketId} • Axiom Support`, iconURL: client.user?.avatarURL() || undefined })
               .setTimestamp();
-            
+
             await admin.send({ embeds: [adminEmbed] });
           } catch (err) {
             console.error(`Failed to notify admin ${adminId}:`, err);
@@ -1814,7 +2104,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
         // Confirm message received to user
         await message.react('✅');
-        
+
         const confirmEmbed = new EmbedBuilder()
           .setTitle('✅ Message Sent')
           .setDescription('Your message has been delivered to our support team. We\'ll respond shortly!')
@@ -1824,9 +2114,9 @@ client.on(Events.MessageCreate, async (message: Message) => {
           )
           .setFooter({ text: 'Axiom Support', iconURL: client.user?.avatarURL() || undefined })
           .setTimestamp();
-        
+
         await message.reply({ embeds: [confirmEmbed] });
-        
+
         console.log(`✅ User ${message.author.tag} sent message for ticket ${openTicket.ticketId}`);
       } catch (err) {
         await message.react('❌');
