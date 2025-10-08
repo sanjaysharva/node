@@ -21,6 +21,23 @@ export const users = mysqlTable("users", {
   questsClaimed: json("quests_claimed").default([]),
   lastLoginDate: timestamp("last_login_date"),
   metadata: text("metadata"),
+  // Profile fields
+  bio: text("bio"),
+  location: varchar("location", { length: 255 }),
+  websiteUrl: varchar("website_url", { length: 500 }),
+  // Social links
+  githubUrl: varchar("github_url", { length: 500 }),
+  youtubeUrl: varchar("youtube_url", { length: 500 }),
+  instagramUrl: varchar("instagram_url", { length: 500 }),
+  tiktokUrl: varchar("tiktok_url", { length: 500 }),
+  twitterUrl: varchar("twitter_url", { length: 500 }),
+  linkedinUrl: varchar("linkedin_url", { length: 500 }),
+  twitchUrl: varchar("twitch_url", { length: 500 }),
+  discordServerUrl: varchar("discord_server_url", { length: 500 }),
+  // Profile stats
+  profileViews: int("profile_views").default(0),
+  totalRating: decimal("total_rating", { precision: 3, scale: 2 }).default("0.00"),
+  ratingCount: int("rating_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -310,7 +327,7 @@ export type InsertSlideshow = typeof slideshows.$inferInsert;
 export type ServerJoin = typeof serverJoins.$inferSelect;
 export type InsertServerJoin = typeof serverJoins.$inferInsert;
 export type BumpChannel = typeof bumpChannels.$inferSelect;
-export type InsertBumpChannel = typeof bumpChannels.$inferInsert;
+export type InsertBumpChannel = typeof bumpChannels.$insertBumpChannel;
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = typeof reviews.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
@@ -377,16 +394,16 @@ export const supportTickets = mysqlTable("support_tickets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ 
-  id: true, 
-  ticketId: true, 
-  userId: true, 
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({
+  id: true,
+  ticketId: true,
+  userId: true,
   discordUserId: true,
   username: true,
-  status: true, 
-  assignedTo: true, 
-  createdAt: true, 
-  updatedAt: true 
+  status: true,
+  assignedTo: true,
+  createdAt: true,
+  updatedAt: true
 });
 export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
 export type SupportTicket = typeof supportTickets.$inferSelect;
@@ -405,10 +422,75 @@ export const contactSubmissions = mysqlTable("contact_submissions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({ 
-  id: true, 
-  status: true, 
-  createdAt: true 
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({
+  id: true,
+  status: true,
+  createdAt: true
 });
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+
+// User ratings table
+export const userRatings = mysqlTable("user_ratings", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  ratedUserId: varchar("rated_user_id", { length: 10 }).notNull(), // User being rated
+  raterUserId: varchar("rater_user_id", { length: 10 }).notNull(), // User who rates
+  rating: int("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserRatingSchema = createInsertSchema(userRatings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertUserRating = z.infer<typeof insertUserRatingSchema>;
+export type UserRating = typeof userRatings.$inferSelect;
+
+// User reports table
+export const userReports = mysqlTable("user_reports", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  reportedUserId: varchar("reported_user_id", { length: 10 }).notNull(), // User being reported
+  reporterUserId: varchar("reporter_user_id", { length: 10 }).notNull(), // User who reports
+  reason: varchar("reason", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, reviewed, resolved
+  reviewedBy: varchar("reviewed_by", { length: 10 }),
+  reviewNotes: text("review_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserReportSchema = createInsertSchema(userReports).omit({
+  id: true,
+  status: true,
+  reviewedBy: true,
+  reviewNotes: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertUserReport = z.infer<typeof insertUserReportSchema>;
+export type UserReport = typeof userReports.$inferSelect;
+
+// Profile share links table
+export const profileShareLinks = mysqlTable("profile_share_links", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  userId: varchar("user_id", { length: 10 }).notNull().unique(),
+  shareCode: varchar("share_code", { length: 20 }).notNull().unique(), // Unique shareable code
+  clicks: int("clicks").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertProfileShareLinkSchema = createInsertSchema(profileShareLinks).omit({
+  id: true,
+  clicks: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertProfileShareLink = z.infer<typeof insertProfileShareLinkSchema>;
+export type ProfileShareLink = typeof profileShareLinks.$inferSelect;
