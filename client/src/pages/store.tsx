@@ -2,6 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Footer from "@/components/footer";
 import { Separator } from "@/components/ui/separator";
 import { Coins, Zap, Crown, ShoppingCart, ArrowRight } from "lucide-react";
 import Navbar from "@/components/navbar";
@@ -256,54 +257,7 @@ export default function Store() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <i className="fab fa-discord text-2xl text-primary"></i>
-                <span className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Smart Serve</span>
-              </div>
-              <p className="text-muted-foreground">
-                Smart communities, smarter connections. Discover the best Discord servers and bots for your community.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Browse</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Discord Servers</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Discord Bots</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Popular</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Community</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Discord Server</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">GitHub</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Smart Serve. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
