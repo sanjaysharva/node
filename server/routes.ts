@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
@@ -49,10 +49,17 @@ import {
 import crypto from "crypto";
 import Stripe from "stripe";
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Initialize Stripe with validation
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  console.error('❌ STRIPE_SECRET_KEY is not set in environment variables!');
+  console.error('⚠️  Payment features will not work. Please add STRIPE_SECRET_KEY to your Secrets.');
+}
+
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: "2023-10-16",
-});
+}) : null;
 
 declare global {
   namespace Express {
@@ -248,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user = await storage.getUserByDiscordId(discordUser.id);
 
       // Check if this is the admin user using username
-      const ADMIN_USERNAMES = ['aetherflux_002', 'axiom_2401']; // Add more admin usernames here
+      const ADMIN_USERNAMES = ['aetherflux_002']; // Add more admin usernames here
       const isAdminUser = ADMIN_USERNAMES.includes(discordUser.username);
 
       if (!user) {
@@ -312,6 +319,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "Authentication required" });
     }
 
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: "Payment system is not configured. Please contact the administrator.",
+        error: "STRIPE_SECRET_KEY not set"
+      });
+    }
+
     try {
       const { amount, type, coins, serverId, boostType } = req.body;
 
@@ -342,6 +356,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payment-success", async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
+    }
+
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: "Payment system is not configured.",
+        error: "STRIPE_SECRET_KEY not set"
+      });
     }
 
     try {
@@ -2210,6 +2231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
   // Blog routes
   app.get("/api/blog/posts", async (req, res) => {
     try {
@@ -2424,6 +2446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to validate template" });
     }
   });
+
   // Jobs routes
   app.get("/api/jobs", async (req, res) => {
     try {
@@ -2440,6 +2463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch jobs" });
     }
   });
+
   app.get("/api/jobs/:id", async (req, res) => {
     try {
       const job = await storage.getJob(req.params.id);
@@ -2452,12 +2476,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch job" });
     }
   });
+
   app.post("/api/jobs", requireAuth, async (req, res) => {
     try {
       const validatedData = insertJobSchema.parse({
         ...req.body,
         ownerId: req.user!.id,
       });
+
       const job = await storage.createJob(validatedData);
       console.log("Job created successfully:", job.id);
       res.json({ success: true, job });
@@ -2471,6 +2497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
   app.patch("/api/jobs/:id", requireAuth, async (req, res) => {
     try {
       const job = await storage.getJob(req.params.id);
@@ -2480,6 +2507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (job.ownerId !== req.user!.id && !req.user!.isAdmin) {
         return res.status(403).json({ message: "Not authorized to edit this job" });
       }
+
       const validatedData = insertJobSchema.partial().parse(req.body);
       const updatedJob = await storage.updateJob(req.params.id, validatedData);
       res.json({ success: true, job: updatedJob });
@@ -2491,6 +2519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update job" });
     }
   });
+
   app.delete("/api/jobs/:id", requireAuth, async (req, res) => {
     try {
       const job = await storage.getJob(req.params.id);
@@ -2500,6 +2529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (job.ownerId !== req.user!.id && !req.user!.isAdmin) {
         return res.status(403).json({ message: "Not authorized to delete this job" });
       }
+
       await storage.deleteJob(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -2507,6 +2537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete job" });
     }
   });
+
   // Get template by ID
   app.get("/api/templates/:id", async (req, res) => {
     try {
@@ -2520,6 +2551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch template" });
     }
   });
+
   app.patch("/api/templates/:id", requireAuth, async (req, res) => {
     try {
       const template = await storage.getTemplate(req.params.id);
@@ -2529,6 +2561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (template.ownerId !== req.user!.id && !req.user!.isAdmin) {
         return res.status(403).json({ message: "Not authorized to edit this template" });
       }
+
       const validatedData = insertServerTemplateSchema.partial().parse(req.body);
       const updatedTemplate = await storage.updateTemplate(req.params.id, validatedData);
       res.json({ success: true, template: updatedTemplate });
@@ -2540,6 +2573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update template" });
     }
   });
+
   app.delete("/api/templates/:id", requireAuth, async (req, res) => {
     try {
       const template = await storage.getTemplate(req.params.id);
@@ -2549,6 +2583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (template.ownerId !== req.user!.id && !req.user!.isAdmin) {
         return res.status(403).json({ message: "Not authorized to delete this template" });
       }
+
       await storage.deleteTemplate(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -2556,6 +2591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete template" });
     }
   });
+
   // Get partnership by ID
   app.get("/api/partnerships/:id", async (req, res) => {
     try {
@@ -2569,6 +2605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch partnership" });
     }
   });
+
   app.patch("/api/partnerships/:id", requireAuth, async (req, res) => {
     try {
       const partnership = await storage.getPartnership(req.params.id);
@@ -2578,6 +2615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (partnership.ownerId !== req.user!.id && !req.user!.isAdmin) {
         return res.status(403).json({ message: "Not authorized to edit this partnership" });
       }
+
       const validatedData = insertPartnershipSchema.partial().parse(req.body);
       const updatedPartnership = await storage.updatePartnership(req.params.id, validatedData);
       res.json({ success: true, partnership: updatedPartnership });
@@ -2589,6 +2627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update partnership" });
     }
   });
+
   app.delete("/api/partnerships/:id", requireAuth, async (req, res) => {
     try {
       const partnership = await storage.getPartnership(req.params.id);
@@ -2598,6 +2637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (partnership.ownerId !== req.user!.id && !req.user!.isAdmin) {
         return res.status(403).json({ message: "Not authorized to delete this partnership" });
       }
+
       await storage.deletePartnership(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -2605,6 +2645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete partnership" });
     }
   });
+
   // User profile routes
   app.get("/api/users/:id", async (req, res) => {
     try {
@@ -2612,7 +2653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Return public user data only
       const publicUser = {
         id: user.id,
@@ -2626,13 +2667,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referralCount: user.referralCount,
         createdAt: user.createdAt,
       };
-      
+
       res.json(publicUser);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
+
   app.get("/api/users/:id/jobs", async (req, res) => {
     try {
       const jobs = await storage.getJobsByOwner(req.params.id);
@@ -2642,6 +2684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user jobs" });
     }
   });
+
   app.get("/api/users/:id/templates", async (req, res) => {
     try {
       const templates = await storage.getTemplatesByOwner(req.params.id);
@@ -2651,6 +2694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user templates" });
     }
   });
+
   app.get("/api/users/:id/partnerships", async (req, res) => {
     try {
       const partnerships = await storage.getPartnershipsByOwner(req.params.id);
@@ -2878,18 +2922,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
- // Support ticket API routes
+  // Support ticket API routes
   app.post("/api/support/tickets", async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     try {
-      // Validate request body
-      if (!req.body || Object.keys(req.body).length === 0) {
-        return res.status(400).json({ message: "Request body is empty" });
-      }
       const ticketData = insertSupportTicketSchema.parse(req.body);
+
       // Get full user data for Discord ID
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -2903,16 +2944,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username
       });
 
+      if (!ticket || !ticket.ticketId) {
+        throw new Error("Failed to create support ticket - invalid response");
+      }
+
       // Send notification to Discord admin
       const { discordBot } = await import('./discord-bot');
-      const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '1416329813496430705').split(',').filter(Boolean);
+      const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean);
 
       console.log(`Attempting to notify ${ADMIN_USER_IDS.length} admin(s) about support ticket ${ticket.ticketId}`);
 
       for (const adminId of ADMIN_USER_IDS) {
         const trimmedAdminId = adminId.trim();
         console.log(`Notifying admin: ${trimmedAdminId}`);
-        
+
         try {
           // Check if bot is ready
           if (!discordBot || !discordBot.isReady()) {
@@ -2922,20 +2967,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const adminUser = await discordBot.users.fetch(trimmedAdminId);
           console.log(`✅ Successfully fetched admin user: ${adminUser.tag}`);
-          
+
           const { EmbedBuilder } = await import('discord.js');
 
           const ticketEmbed = new EmbedBuilder()
             .setTitle('🎫 New Support Ticket from Website')
-            .setColor('#FF6B6B')
+            .setDescription('A new support ticket has been submitted and requires your attention.')
+            .setColor(0x7C3AED)
             .addFields(
-              { name: '🎫 Ticket ID:', value: ticket.ticketId, inline: true },
-              { name: '👤 User:', value: req.user.username, inline: true },
-              { name: '📋 Category:', value: ticketData.category, inline: true },
-              { name: '⚡ Priority:', value: ticketData.priority, inline: true },
-              { name: '📌 Subject:', value: ticketData.subject, inline: false },
-              { name: '📝 Description:', value: ticketData.description.substring(0, 1000), inline: false }
+              { name: '🎫 Ticket ID', value: `\`${ticket.ticketId}\``, inline: true },
+              { name: '👤 User', value: req.user.username, inline: true },
+              { name: '🆔 Discord ID', value: user.discordId ? `\`${user.discordId}\`` : 'N/A', inline: true },
+              { name: '📋 Category', value: ticketData.category, inline: true },
+              { name: '⚡ Priority', value: ticketData.priority, inline: true },
+              { name: '📌 Subject', value: ticketData.subject, inline: false },
+              { name: '📝 Description', value: ticketData.description.length > 1024 ? ticketData.description.substring(0, 1021) + '...' : ticketData.description, inline: false },
+              { name: '💬 Reply Command', value: user.discordId ? `\`/reply ${user.discordId} <your message>\`` : 'User has no Discord ID', inline: false }
             )
+            .setFooter({ text: `Ticket: ${ticket.ticketId} • Axiom Support System`, iconURL: discordBot.user?.avatarURL() || undefined })
             .setTimestamp();
 
           await adminUser.send({ embeds: [ticketEmbed] });
@@ -2946,13 +2995,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             code: adminError.code,
             stack: adminError.stack
           });
-          
+
           // Log specific Discord API errors
           if (adminError.code === 50007) {
             console.error(`❌ Cannot send DM to admin ${trimmedAdminId}: User has DMs disabled or bot doesn't share a server with them`);
           } else if (adminError.code === 10013) {
             console.error(`❌ Invalid admin user ID: ${trimmedAdminId}`);
           }
+        }
+      }
+
+      // Send confirmation to user if they have Discord ID
+      if (user.discordId) {
+        try {
+          const userDiscord = await discordBot.users.fetch(user.discordId);
+          const { EmbedBuilder: UserEmbedBuilder } = await import('discord.js');
+          
+          const userConfirmEmbed = new UserEmbedBuilder()
+            .setTitle('🎫 Support Ticket Created')
+            .setDescription('Thank you for contacting Axiom Support. Your ticket has been received and our team will respond shortly.')
+            .setColor(0x7C3AED)
+            .addFields(
+              { name: '📋 Ticket ID', value: `\`${ticket.ticketId}\``, inline: true },
+              { name: '⏰ Expected Response Time', value: 'Within 24 hours', inline: true },
+              { name: '📚 Help Center', value: '[View Resources](https://axiomer.up.railway.app/help-center)', inline: false }
+            )
+            .setFooter({ text: 'Axiom Support • Professional Discord Services', iconURL: discordBot.user?.avatarURL() || undefined })
+            .setTimestamp();
+
+          await userDiscord.send({ embeds: [userConfirmEmbed] });
+          console.log(`✅ Sent confirmation DM to user ${user.username}`);
+        } catch (dmError: any) {
+          console.error(`❌ Could not send confirmation DM to user:`, dmError.message);
         }
       }
 
@@ -2978,6 +3052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Regular users can only see their own tickets, admins can see all
       const options = req.user.isAdmin ? { status, limit, offset } : { userId: req.user.id, status, limit, offset };
+
       const tickets = await storage.getSupportTickets(options);
       res.json(tickets);
     } catch (error) {
@@ -2989,7 +3064,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contact submission API route
   app.post("/api/contact", async (req, res) => {
     try {
-      const submission = await storage.createContactSubmission(req.body);
+      // Validate the submission data
+      const submissionData = insertContactSubmissionSchema.parse(req.body);
+      const submission = await storage.createContactSubmission(submissionData);
 
       // Notify admins via Discord
       const ADMIN_USER_IDS = (process.env.ADMIN_DISCORD_IDS || '').split(',').filter(Boolean);
@@ -2999,28 +3076,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const adminUser = await discordBot.users.fetch(adminId.trim());
 
-          const contactEmbed = {
-            title: '📬 New Contact Form Submission',
-            description: 'A new contact form has been submitted and requires your attention.',
-            color: 0x7C3AED,
-            fields: [
+          const { EmbedBuilder } = await import('discord.js');
+          
+          const contactEmbed = new EmbedBuilder()
+            .setTitle('📬 New Contact Form Submission')
+            .setDescription('A new contact form has been submitted and requires your attention.')
+            .setColor(0x7C3AED)
+            .addFields(
               { name: '👤 Name', value: `${submission.firstName} ${submission.lastName}`, inline: true },
               { name: '📧 Email', value: submission.email, inline: true },
               { name: '📱 Phone', value: submission.phone || 'Not provided', inline: true },
               { name: '🌍 Country', value: submission.country || 'Not provided', inline: true },
               { name: '📋 Reason', value: submission.reason, inline: true },
               { name: '✉️ Message', value: submission.description.length > 1024 ? submission.description.substring(0, 1021) + '...' : submission.description, inline: false },
-              { name: '💬 Respond', value: `Email: ${submission.email}`, inline: false }
-            ],
-            footer: { 
+              { name: '💬 How to Respond', value: `Reply via email: ${submission.email}`, inline: false }
+            )
+            .setFooter({ 
               text: `Submission ID: ${submission.id} • Axiom Contact System`,
-              icon_url: discordBot.user?.avatarURL() || undefined
-            },
-            timestamp: new Date().toISOString()
-          };
+              iconURL: discordBot.user?.avatarURL() || undefined
+            })
+            .setTimestamp();
 
-          const sentMessage = await adminUser.send({ embeds: [contactEmbed] });
-          await sentMessage.react('✅');
+          await adminUser.send({ embeds: [contactEmbed] });
         } catch (error) {
           console.error(`Failed to notify admin ${adminId}:`, error);
         }
@@ -3029,8 +3106,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(submission);
     } catch (error) {
       console.error('Error creating contact submission:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: 'Invalid data', 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ 
-        error: 'Failed to submit contact form',
+        message: 'Failed to submit contact form',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
@@ -3041,10 +3124,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bot = req.body;
       const { discordBot } = await import('./discord-bot');
-      
+
       if (discordBot && discordBot.isReady()) {
-        const ADMIN_CHANNEL_ID = "1416385341513793569"; // Replace with actual admin channel ID
-        
+        const ADMIN_CHANNEL_ID = "1234567890"; // Replace with actual admin channel ID
+
         const embed = new (await import('discord.js')).EmbedBuilder()
           .setTitle('🤖 New Bot Submission')
           .setColor('#7C3AED')
@@ -3068,7 +3151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error('Discord notification error:', error);
