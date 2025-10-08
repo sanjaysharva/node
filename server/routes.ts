@@ -26,7 +26,10 @@ import {
   insertJobSchema,
   insertFaqSchema,
   insertSupportTicketSchema,
-  insertContactSubmissionSchema
+  insertContactSubmissionSchema,
+  userRatings,
+  userReports,
+  profileShareLinks
 } from "@shared/schema";
 import { z } from "zod";
 import {
@@ -1600,6 +1603,216 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ];
 
     res.json(quests);
+  });
+
+  // User profile routes - enhanced
+  app.patch("/api/users/:id/profile", requireAuth, async (req, res) => {
+    try {
+      if (req.user!.id !== req.params.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "You can only edit your own profile" });
+      }
+
+      const updates = req.body;
+      const allowedFields = [
+        "bio", "location", "websiteUrl", "githubUrl", "youtubeUrl", 
+        "instagramUrl", "tiktokUrl", "twitterUrl", "linkedinUrl", 
+        "twitchUrl", "discordServerUrl"
+      ];
+
+      const filteredUpdates = Object.keys(updates)
+        .filter(key => allowedFields.includes(key))
+        .reduce((obj: any, key) => {
+          obj[key] = updates[key];
+          return obj;
+        }, {});
+
+      await db.update(users)
+        .set(filteredUpdates)
+        .where(eq(users.id, req.params.id));
+
+      const updatedUser = await storage.getUser(req.params.id);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Get or create profile share link
+  app.get("/api/users/:id/share-link", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      let shareLink = await db.query.profileShareLinks.findFirst({
+        where: eq(profileShareLinks.userId, id),
+      });
+
+      if (!shareLink) {
+        // Generate unique share code
+        const shareCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        
+        const [newLink] = await db.insert(profileShareLinks).values({
+          userId: id,
+          shareCode,
+        });
+
+        shareLink = await db.query.profileShareLinks.findFirst({
+          where: eq(profileShareLinks.userId, id),
+        });
+      }
+
+      res.json(shareLink);
+    } catch (error) {
+      console.error("Error fetching share link:", error);
+      res.status(500).json({ message: "Failed to fetch share link" });
+    }
+  });
+
+  // Profile share link redirect
+  app.get("/api/share/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+
+      const shareLink = await db.query.profileShareLinks.findFirst({
+        where: eq(profileShareLinks.shareCode, code),
+      });
+
+      if (!shareLink || !shareLink.isActive) {
+        return res.status(404).json({ message: "Share link not found" });
+      }
+
+      // Increment clicks
+      await db.update(profileShareLinks)
+        .set({ clicks: shareLink.clicks + 1 })
+        .where(eq(profileShareLinks.id, shareLink.id));
+
+      // Increment profile views
+      await db.update(users)
+        .set({ profileViews: drizzleSql`${users.profileViews} + 1` })
+        .where(eq(users.id, shareLink.userId));
+
+      res.json({ userId: shareLink.userId });
+    } catch (error) {
+      console.error("Error processing share link:", error);
+      res.status(500).json({ message: "Failed to process share link" });
+    }
+  });
+
+  // Rate user
+  app.post("/api/users/:id/rate", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { rating, comment } = req.body;
+      const raterId = req.user!.id;
+
+      if (raterId === id) {
+        return res.status(400).json({ message: "You cannot rate yourself" });
+      }
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+
+      // Check if user already rated
+      const existingRating = await db.query.userRatings.findFirst({
+        where: and(
+          eq(userRatings.ratedUserId, id),
+          eq(userRatings.raterUserId, raterId)
+        ),
+      });
+
+      if (existingRating) {
+        // Update existing rating
+        await db.update(userRatings)
+          .set({ rating, comment, updatedAt: new Date() })
+          .where(eq(userRatings.id, existingRating.id));
+      } else {
+        // Create new rating
+        await db.insert(userRatings).values({
+          ratedUserId: id,
+          raterUserId: raterId,
+          rating,
+          comment,
+        });
+      }
+
+      // Update user's average rating
+      const allRatings = await db.query.userRatings.findMany({
+        where: eq(userRatings.ratedUserId, id),
+      });
+
+      const totalRating = allRatings.reduce((sum, r) => sum + r.rating, 0);
+      const avgRating = totalRating / allRatings.length;
+
+      await db.update(users)
+        .set({
+          totalRating: avgRating.toFixed(2),
+          ratingCount: allRatings.length,
+        })
+        .where(eq(users.id, id));
+
+      res.json({ message: "Rating submitted successfully" });
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      res.status(500).json({ message: "Failed to submit rating" });
+    }
+  });
+
+  // Get user ratings
+  app.get("/api/users/:id/ratings", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const ratings = await db.query.userRatings.findMany({
+        where: eq(userRatings.ratedUserId, id),
+      });
+
+      // Fetch rater info for each rating
+      const ratingsWithUsers = await Promise.all(
+        ratings.map(async (rating) => {
+          const rater = await storage.getUser(rating.raterUserId);
+          return {
+            ...rating,
+            raterUsername: rater?.username,
+            raterAvatar: rater?.avatar ? `https://cdn.discordapp.com/avatars/${rater.discordId}/${rater.avatar}.png` : undefined,
+          };
+        })
+      );
+
+      res.json(ratingsWithUsers);
+    } catch (error) {
+      console.error("Error fetching ratings:", error);
+      res.status(500).json({ message: "Failed to fetch ratings" });
+    }
+  });
+
+  // Report user
+  app.post("/api/users/:id/report", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason, description } = req.body;
+      const reporterId = req.user!.id;
+
+      if (reporterId === id) {
+        return res.status(400).json({ message: "You cannot report yourself" });
+      }
+
+      if (!reason || !description) {
+        return res.status(400).json({ message: "Reason and description are required" });
+      }
+
+      await db.insert(userReports).values({
+        reportedUserId: id,
+        reporterUserId: reporterId,
+        reason,
+        description,
+      });
+
+      res.json({ message: "Report submitted successfully" });
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      res.status(500).json({ message: "Failed to submit report" });
+    }
   });
 
   // Get user's quest progress and completions
