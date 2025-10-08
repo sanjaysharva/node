@@ -371,7 +371,7 @@ export const supportTickets = mysqlTable("support_tickets", {
   category: varchar("category", { length: 100 }).notNull(),
   priority: varchar("priority", { length: 50 }).notNull().default("medium"),
   description: text("description").notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("open"),
+  status: varchar("status", { length: 50 }).notNull().default("pending"),
   assignedTo: varchar("assigned_to", { length: 10 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
