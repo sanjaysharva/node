@@ -235,10 +235,6 @@ export default function Navbar() {
 
                 {supportDropdownOpen && (
                 <div className="absolute top-full mt-2 w-56 bg-card rounded-lg shadow-lg border border-card text-sm py-2 z-50 right-0">
-                  <Link href="/blog" className="flex items-center px-4 py-2 text-white hover:bg-gray-700 transition-colors" data-testid="link-support-ticket">
-                    <Ticket className="w-4 h-4 mr-3" />
-                    Blog
-                  </Link>
                   <Link href="/help" className="flex items-center px-4 py-2 text-white hover:bg-gray-700 transition-colors" data-testid="link-help">
                     <HelpCircle className="w-4 h-4 mr-3" />
                     Help
