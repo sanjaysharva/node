@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createId } from "@paralleldrive/cuid2";
 
 export const users = mysqlTable("users", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  id: varchar("id", { length: 10 }).primaryKey(),
   discordId: varchar("discord_id", { length: 32 }).notNull().unique(),
   username: text("username").notNull(),
   discriminator: varchar("discriminator", { length: 4 }),
@@ -41,7 +41,7 @@ export const servers = mysqlTable("servers", {
   featured: boolean("featured").default(false),
   nsfw: boolean("nsfw").default(false),
   premium: boolean("premium").default(false),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  ownerId: varchar("owner_id", { length: 10 }).notNull(),
   ownerUsername: text("owner_username"),
   totalVotes: int("total_votes").default(0),
   totalReviews: int("total_reviews").default(0),
@@ -73,7 +73,7 @@ export const bots = mysqlTable("bots", {
   shardCount: int("shard_count").default(0),
   verified: boolean("verified").default(false),
   featured: boolean("featured").default(false),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  ownerId: varchar("owner_id", { length: 10 }).notNull(),
   prefix: text("prefix"),
   iconUrl: text("icon_url"),
   uses: text("uses").notNull(),
@@ -97,7 +97,7 @@ export const events = mysqlTable("events", {
   tags: json("tags").default([]),
   featured: boolean("featured").default(false),
   approved: boolean("approved").default(false),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  ownerId: varchar("owner_id", { length: 10 }).notNull(),
   serverId: varchar("server_id", { length: 36 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -128,14 +128,14 @@ export const slideshows = mysqlTable("slideshows", {
   linkUrl: varchar("link_url", { length: 255 }),
   isActive: boolean("is_active").default(true),
   order: int("order").default(0),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  ownerId: varchar("owner_id", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const serverJoins = mysqlTable("server_joins", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
   targetServerId: varchar("target_server_id", { length: 32 }).notNull(),
   memberCount: int("member_count").notNull(),
   price: int("price").notNull(),
@@ -148,7 +148,7 @@ export const bumpChannels = mysqlTable("bump_channels", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   serverId: varchar("server_id", { length: 32 }).notNull(),
   channelId: varchar("channel_id", { length: 32 }).notNull(),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
   lastBumpAt: timestamp("last_bump_at"),
   bumpCount: int("bump_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -157,7 +157,7 @@ export const bumpChannels = mysqlTable("bump_channels", {
 export const reviews = mysqlTable("reviews", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   serverId: varchar("server_id", { length: 36 }).notNull(),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
   rating: int("rating").notNull(),
   comment: text("comment"),
   helpful: int("helpful").default(0),
@@ -167,7 +167,7 @@ export const reviews = mysqlTable("reviews", {
 export const comments = mysqlTable("comments", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   serverId: varchar("server_id", { length: 36 }).notNull(),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
   content: text("content").notNull(),
   parentId: varchar("parent_id", { length: 36 }),
   likes: int("likes").default(0),
@@ -177,14 +177,14 @@ export const comments = mysqlTable("comments", {
 export const commentLikes = mysqlTable("comment_likes", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   commentId: varchar("comment_id", { length: 36 }).notNull(),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const votes = mysqlTable("votes", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   serverId: varchar("server_id", { length: 36 }).notNull(),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
   voteType: varchar("vote_type", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -201,7 +201,7 @@ export const partnerships = mysqlTable("partnerships", {
   tags: json("tags").default([]),
   active: boolean("active").default(true),
   featured: boolean("featured").default(false),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  ownerId: varchar("owner_id", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -219,14 +219,14 @@ export const serverTemplates = mysqlTable("server_templates", {
   verified: boolean("verified").default(false),
   downloads: int("downloads").default(0),
   rating: int("rating").default(0),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  ownerId: varchar("owner_id", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const templateProcesses = mysqlTable("template_processes", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   templateId: varchar("template_id", { length: 36 }).notNull(),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
   serverId: varchar("server_id", { length: 32 }),
   status: varchar("status", { length: 20 }).default("pending"),
   progress: int("progress").default(0),
@@ -252,7 +252,7 @@ export const jobs = mysqlTable("jobs", {
   featured: boolean("featured").default(false),
   remote: boolean("remote").default(false),
   active: boolean("active").default(true),
-  ownerId: varchar("owner_id", { length: 36 }).notNull(),
+  ownerId: varchar("owner_id", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at"),
 });
@@ -363,14 +363,16 @@ export type Faq = typeof faqs.$inferSelect;
 // Support tickets table
 export const supportTickets = mysqlTable("support_tickets", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
-  ticketId: varchar("ticket_id", { length: 50 }).notNull().unique(),
-  userId: varchar("user_id", { length: 36 }).notNull(),
+  ticketId: varchar("ticket_id", { length: 20 }).notNull().unique(),
+  userId: varchar("user_id", { length: 10 }).notNull(),
+  discordUserId: varchar("discord_user_id", { length: 32 }),
+  username: text("username"),
   subject: text("subject").notNull(),
   category: varchar("category", { length: 100 }).notNull(),
   priority: varchar("priority", { length: 50 }).notNull().default("medium"),
   description: text("description").notNull(),
   status: varchar("status", { length: 50 }).notNull().default("open"),
-  assignedTo: varchar("assigned_to", { length: 36 }),
+  assignedTo: varchar("assigned_to", { length: 10 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -379,6 +381,8 @@ export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit
   id: true, 
   ticketId: true, 
   userId: true, 
+  discordUserId: true,
+  username: true,
   status: true, 
   assignedTo: true, 
   createdAt: true, 
@@ -407,4 +411,4 @@ export const insertContactSubmissionSchema = createInsertSchema(contactSubmissio
   createdAt: true 
 });
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
-export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;a
