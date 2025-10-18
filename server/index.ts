@@ -159,7 +159,7 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   // Wait for Flask to start, then connect to it
-  const FLASK_BOT_API_URL = process.env.FLASK_BOT_API_URL || 'http://localhost:5001';
+  const FLASK_BOT_API_URL = process.env.FLASK_BOT_API_URL || 'http://backe.up.railway.app';
   
   // Retry logic - Flask needs time to start
   let flaskReady = false;
