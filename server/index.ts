@@ -6,6 +6,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import cookieSession from "cookie-session";
 import { storage } from "./storage";
 import { startDiscordBot } from "./discord-bot";
+import { spawn } from 'child_process';
 import { 
   securityHeaders, 
   sanitizeInput, 
@@ -130,13 +131,12 @@ app.use((req, res, next) => {
   next();
 });
 
+import { spawn } from 'child_process';
+
 (async () => {
   const server = await registerRoutes(app);
 
   // Start Python Discord bots
-  const { spawn } = require('child_process');
-  
-  // Start both Python bots using the start_bots.py script
   const pythonBots = spawn('python3', ['server/start_bots.py'], {
     stdio: 'inherit',
     env: { ...process.env }
