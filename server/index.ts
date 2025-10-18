@@ -14,6 +14,30 @@ import {
   errorHandler 
 } from "./middleware/security";
 
+// Start Flask bot API as a child process
+const flaskProcess = spawn('python3', ['server/flask_bot_api.py'], {
+  stdio: 'inherit', // Show Flask logs in console
+  env: process.env
+});
+
+flaskProcess.on('error', (error) => {
+  console.error('❌ Failed to start Flask bot API:', error);
+});
+
+flaskProcess.on('exit', (code) => {
+  console.log(`⚠️  Flask bot API exited with code ${code}`);
+});
+
+// Cleanup Flask process on exit
+process.on('exit', () => {
+  flaskProcess.kill();
+});
+
+process.on('SIGINT', () => {
+  flaskProcess.kill();
+  process.exit();
+});
+
 // SSL certificates are handled properly by the system
 
 // Extend Express Request type for cookie-session
@@ -131,26 +155,54 @@ app.use((req, res, next) => {
   next();
 });
 
-import { spawn } from 'child_process';
-
 (async () => {
   const server = await registerRoutes(app);
 
-  // Start Python Discord bots
-  const pythonBots = spawn('python', ['server/start_bots.py'], {
-    stdio: 'inherit',
-    env: { ...process.env }
-  });
-
-  pythonBots.on('error', (error: Error) => {
-    console.error('❌ Failed to start Python Discord bots:', error);
-  });
-
-  pythonBots.on('exit', (code: number) => {
-    console.log(`Python Discord bots exited with code ${code}`);
-  });
-
-  console.log('✅ Started Python Discord bots process');
+  // Wait for Flask to start, then connect to it
+  const FLASK_BOT_API_URL = process.env.FLASK_BOT_API_URL || 'http://localhost:5001';
+  
+  // Retry logic - Flask needs time to start
+  let flaskReady = false;
+  let retries = 10;
+  
+  console.log('⏳ Waiting for Flask bot API to start...');
+  
+  while (!flaskReady && retries > 0) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      const healthCheck = await fetch(`${FLASK_BOT_API_URL}/health`, {
+        signal: AbortSignal.timeout(3000) // 3 second timeout
+      });
+      
+      if (healthCheck.ok) {
+        flaskReady = true;
+        console.log('✅ Flask bot API is running');
+        
+        // Start the bots
+        const startResponse = await fetch(`${FLASK_BOT_API_URL}/bots/start`, {
+          method: 'POST'
+        });
+        
+        if (startResponse.ok) {
+          const result = await startResponse.json();
+          console.log('✅ Discord bots started:', result.started);
+        } else {
+          console.error('❌ Failed to start Discord bots via Flask API');
+        }
+        break;
+      }
+    } catch (error) {
+      retries--;
+      if (retries > 0) {
+        console.log(`⏳ Flask not ready yet, retrying... (${retries} attempts left)`);
+      }
+    }
+  }
+  
+  if (!flaskReady) {
+    console.error('❌ Could not connect to Flask bot API after multiple attempts');
+    console.error('   Make sure Flask dependencies are installed: pip install -r requirements.txt');
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
