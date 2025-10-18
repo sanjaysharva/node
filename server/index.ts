@@ -137,7 +137,7 @@ import { spawn } from 'child_process';
   const server = await registerRoutes(app);
 
   // Start Python Discord bots
-  const pythonBots = spawn('python3', ['server/start_bots.py'], {
+  const pythonBots = spawn('python', ['server/start_bots.py'], {
     stdio: 'inherit',
     env: { ...process.env }
   });
