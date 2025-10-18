@@ -1,0 +1,25 @@
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[[deploy.healthcheck]]
+path = "/"
+timeout = 100
+interval = 10
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
+
+[build.nixpacksPlan.phases.install]
+cmds = ["npm ci", "pip install -r requirements.txt"]
+
+[build.nixpacksPlan.phases.build]
+cmds = ["npm run build"]
+
+[build.nixpacksPlan.start]
+cmd = "npm run start"
