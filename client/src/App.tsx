@@ -17,6 +17,7 @@ import Quest from "@/pages/quest";
 import YourServers from "@/pages/your-servers";
 import Advertise from "@/pages/advertise";
 import Profile from "@/pages/profile";
+import MyCards from "@/pages/my-cards";
 import AddEvent from "@/pages/add-event";
 import SearchPage from "@/pages/search";
 import ServerDetail from "@/pages/server-detail";
@@ -48,6 +49,8 @@ import EditJob from "@/pages/edit-job";
 import EditPartnership from "@/pages/edit-partnership";
 import EditTemplate from "@/pages/edit-template";
 import EditEvent from "@/pages/edit-event";
+import EditServer from "@/pages/edit-server";
+import EditBot from "@/pages/edit-bot";
 import UserProfile from "@/pages/user-profile";
 import YourPartnerships from "@/pages/your-partnerships";
 import YourJobs from "@/pages/your-jobs";
@@ -73,6 +76,8 @@ function Router() {
       <Route path="/templates/edit/:id" component={EditTemplate} />
       <Route path="/partnerships/edit/:id" component={EditPartnership} />
       <Route path="/events/edit/:id" component={EditEvent} />
+      <Route path="/servers/edit/:id" component={EditServer} />
+      <Route path="/bots/edit/:id" component={EditBot} />
       <Route path="/add-partnership" component={AddPartnership} />
       <Route path="/add-template" component={AddTemplate} />
       <Route path="/your-servers" component={YourServers} />
@@ -89,6 +94,7 @@ function Router() {
       <Route path="/server-templates" component={ServerTemplates} />
       <Route path="/jobs" component={Jobs} />
       <Route path="/profile" component={Profile} />
+      <Route path="/my-cards" component={MyCards} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/server/:id" component={ServerDetail} />
