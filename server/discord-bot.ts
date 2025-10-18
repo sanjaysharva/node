@@ -854,7 +854,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setTitle(isOwnBalance ? '💰 Your Coin Balance' : `💰 ${targetUser.username}'s Coin Balance`)
           .setDescription(`**${balance} coins**`)
           .setColor(0x7C3AED)
-          .setThumbnail(targetUser.avatarURL() || undefined)
+          .setThumbnail(targetUser.avatarURL() || null)
           .addFields(
             { name: '🏦 Account Status', value: 'Active', inline: true },
             { name: '📊 User ID', value: dbUser.id, inline: true }
@@ -862,7 +862,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setFooter({ text: 'Axiom Coin System • Use coins to boost your servers!', iconURL: client.user?.avatarURL() || undefined })
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], flags: isOwnBalance ? 0 : 64 });
+        await interaction.reply({ embeds: [embed], ephemeral: !isOwnBalance });
         break;
       }
     }
@@ -921,21 +921,20 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
   }
 
   // Note: Reaction role storage not fully implemented yet
-  const reactionRole = null; // await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
-  if (!reactionRole) return;
-
-  const guild = reaction.message.guild;
-  const member = guild?.members.cache.get(user.id);
-  const role = guild?.roles.cache.get(reactionRole.roleId);
-
-  if (member && role) {
-    try {
-      await member.roles.add(role);
-      console.log(`Added role ${role.name} to ${user.tag}`);
-    } catch (error) {
-      console.error('Error adding role:', error);
-    }
-  }
+  // TODO: Implement reaction role storage
+  // const reactionRole = await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
+  // if (!reactionRole) return;
+  // const guild = reaction.message.guild;
+  // const member = guild?.members.cache.get(user.id);
+  // const role = guild?.roles.cache.get(reactionRole.roleId);
+  // if (member && role) {
+  //   try {
+  //     await member.roles.add(role);
+  //     console.log(`Added role ${role.name} to ${user.tag}`);
+  //   } catch (error) {
+  //     console.error('Error adding role:', error);
+  //   }
+  // }
 });
 
 client.on(Events.MessageReactionRemove, async (reaction, user) => {
@@ -951,21 +950,20 @@ client.on(Events.MessageReactionRemove, async (reaction, user) => {
   }
 
   // Note: Reaction role storage not fully implemented yet
-  const reactionRole = null; // await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
-  if (!reactionRole) return;
-
-  const guild = reaction.message.guild;
-  const member = guild?.members.cache.get(user.id);
-  const role = guild?.roles.cache.get(reactionRole.roleId);
-
-  if (member && role) {
-    try {
-      await member.roles.remove(role);
-      console.log(`Removed role ${role.name} from ${user.tag}`);
-    } catch (error) {
-      console.error('Error removing role:', error);
-    }
-  }
+  // TODO: Implement reaction role storage
+  // const reactionRole = await storage.getReactionRole(reaction.message.guildId!, reaction.message.id, reaction.emoji.toString());
+  // if (!reactionRole) return;
+  // const guild = reaction.message.guild;
+  // const member = guild?.members.cache.get(user.id);
+  // const role = guild?.roles.cache.get(reactionRole.roleId);
+  // if (member && role) {
+  //   try {
+  //     await member.roles.remove(role);
+  //     console.log(`Removed role ${role.name} from ${user.tag}`);
+  //   } catch (error) {
+  //     console.error('Error removing role:', error);
+  //   }
+  // }
 });
 
 async function handleBumpCommand(interaction: any) {
@@ -1013,7 +1011,7 @@ async function handleBumpCommand(interaction: any) {
 
     for (const channelData of bumpChannels) {
       try {
-        if (channelData.guildId === guildId) continue;
+        if (channelData.serverId === guildId) continue;
 
         const channel = await client.channels.fetch(channelData.channelId);
         if (channel && channel.type === ChannelType.GuildText) {
@@ -1418,8 +1416,7 @@ client.on('messageCreate', async (message) => {
 
         await targetUser.send({ embeds: [replyEmbed] });
 
-        // Remove processing, add success
-        await message.reactions.removeAll();
+        // Add success reaction
         await message.react('✅');
 
         const confirmEmbed = new EmbedBuilder()
@@ -1436,7 +1433,6 @@ client.on('messageCreate', async (message) => {
           await storage.addSupportTicketResponse(targetDiscordId, message.author.id, replyMessage);
         }
       } catch (error) {
-        await message.reactions.removeAll();
         await message.react('❌');
 
         const errorEmbed = new EmbedBuilder()
@@ -1467,15 +1463,13 @@ client.on('messageCreate', async (message) => {
         const ticket = tickets.find(t => t.ticketId === ticketId);
 
         if (!ticket) {
-          await message.reactions.removeAll();
           await message.react('❌');
           await message.reply('❌ Ticket not found.');
           return;
         }
 
-        await storage.updateSupportTicket(ticket.id, { status: 'closed' });
+        await storage.updateSupportTicketStatus(ticket.ticketId, 'closed');
 
-        await message.reactions.removeAll();
         await message.react('✅');
 
         const closeEmbed = new EmbedBuilder()
@@ -1508,7 +1502,6 @@ client.on('messageCreate', async (message) => {
           }
         }
       } catch (error) {
-        await message.reactions.removeAll();
         await message.react('❌');
         await message.reply('❌ Failed to close ticket.');
         console.error('Error closing ticket:', error);
