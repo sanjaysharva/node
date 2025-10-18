@@ -73,9 +73,14 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 
-                <Button variant="outline" className="border-purple-400/30 hover:bg-purple-400/10" data-testid="button-edit-profile">
+                <Button 
+                  variant="outline" 
+                  className="border-purple-400/30 hover:bg-purple-400/10" 
+                  data-testid="button-view-cards"
+                  onClick={() => window.location.href = '/my-cards'}
+                >
                   <Settings className="w-4 h-4 mr-2" />
-                  Edit Profile
+                  View Cards
                 </Button>
               </div>
             </CardContent>
