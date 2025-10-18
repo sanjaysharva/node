@@ -133,16 +133,24 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Start Discord bot for economy rewards
-  startDiscordBot();
+  // Start Python Discord bots
+  const { spawn } = require('child_process');
   
-  // Start Quest Bot for notifications and channel management
-  try {
-    import('./quest-bot');
-    console.log('🎯 Quest Bot starting...');
-  } catch (error) {
-    console.error('❌ Failed to start Quest Bot:', error);
-  }
+  // Start both Python bots using the start_bots.py script
+  const pythonBots = spawn('python3', ['server/start_bots.py'], {
+    stdio: 'inherit',
+    env: { ...process.env }
+  });
+
+  pythonBots.on('error', (error: Error) => {
+    console.error('❌ Failed to start Python Discord bots:', error);
+  });
+
+  pythonBots.on('exit', (code: number) => {
+    console.log(`Python Discord bots exited with code ${code}`);
+  });
+
+  console.log('✅ Started Python Discord bots process');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
