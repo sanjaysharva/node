@@ -2020,20 +2020,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(users.id, req.user!.id));
 
-      // Send notification to quest channel
-      try {
-        const { sendQuestNotification } = await import('./quest-bot');
-        await sendQuestNotification(serverGuildId, user.discordId, {
-          questId: "join-server",
-          questName: "Join Discord Server",
-          reward: coinsEarned,
-          userTag: user.username || `User ${user.discordId}`,
-          newBalance: newCoins
-        });
-      } catch (notifError) {
-        console.error("Error sending quest notification:", notifError);
-        // Continue even if notification fails
-      }
+      // Quest notifications are handled by the Python Discord bot
+      // The bot listens for quest completions and sends notifications
+      console.log(`Quest completed: ${user.username} - join-server quest`);
 
       console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
       res.json({ coinsEarned, totalCoins: newCoins });
@@ -3362,34 +3351,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/discord/bot-submitted", async (req, res) => {
     try {
       const bot = req.body;
-      const { discordBot } = await import('./discord-bot');
-
-      if (discordBot && discordBot.isReady()) {
-        const ADMIN_CHANNEL_ID = "1234567890"; // Replace with actual admin channel ID
-
-        const embed = new (await import('discord.js')).EmbedBuilder()
-          .setTitle('🤖 New Bot Submission')
-          .setColor('#7C3AED')
-          .addFields(
-            { name: '🤖 Bot Name', value: bot.name, inline: true },
-            { name: '👤 Owner', value: bot.ownerId, inline: true },
-            { name: '🔗 Invite Link', value: bot.inviteUrl, inline: false },
-            { name: '📝 Description', value: bot.description.substring(0, 1000), inline: false }
-          )
-          .setTimestamp();
-
-        if (bot.iconUrl) {
-          embed.setThumbnail(bot.iconUrl);
-        }
-
-        const channel = await discordBot.channels.fetch(ADMIN_CHANNEL_ID);
-        if (channel && channel.isTextBased()) {
-          await channel.send({ 
-            content: '📋 **New bot submission for review!**\n\n*Use `/accept botid:' + bot.id + ' user:@owner action:accept/decline` to process.*',
-            embeds: [embed] 
-          });
-        }
-      }
+      
+      // Python Discord bot handles notifications via DMs to admins
+      // No need to send channel messages here
+      console.log('Bot submission notification handled by Python Discord bot');
 
       res.json({ success: true });
     } catch (error) {
