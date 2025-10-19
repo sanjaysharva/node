@@ -6,37 +6,12 @@ import { setupVite, serveStatic, log } from "./vite";
 import cookieSession from "cookie-session";
 import { storage } from "./storage";
 import { startDiscordBot } from "./discord-bot";
-import { spawn } from 'child_process';
 import { 
   securityHeaders, 
   sanitizeInput, 
   apiLimiter,
   errorHandler 
 } from "./middleware/security";
-
-// Start Flask bot API as a child process
-const flaskProcess = spawn('python3', ['server/flask_bot_api.py'], {
-  stdio: 'inherit', // Show Flask logs in console
-  env: process.env
-});
-
-flaskProcess.on('error', (error) => {
-  console.error('❌ Failed to start Flask bot API:', error);
-});
-
-flaskProcess.on('exit', (code) => {
-  console.log(`⚠️  Flask bot API exited with code ${code}`);
-});
-
-// Cleanup Flask process on exit
-process.on('exit', () => {
-  flaskProcess.kill();
-});
-
-process.on('SIGINT', () => {
-  flaskProcess.kill();
-  process.exit();
-});
 
 // SSL certificates are handled properly by the system
 
@@ -158,14 +133,14 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Wait for Flask to start, then connect to it
-  const FLASK_BOT_API_URL = process.env.FLASK_BOT_API_URL || 'http://backe.up.railway.app';
+  // Connect to external Flask bot API service
+  const FLASK_BOT_API_URL = process.env.FLASK_BOT_API_URL || 'https://lll.up.railway.app';
   
-  // Retry logic - Flask needs time to start
+  // Retry logic - Check external Flask bot API availability
   let flaskReady = false;
   let retries = 10;
   
-  console.log('⏳ Waiting for Flask bot API to start...');
+  console.log(`⏳ Connecting to external Flask bot API at ${FLASK_BOT_API_URL}...`);
   
   while (!flaskReady && retries > 0) {
     try {
@@ -200,8 +175,9 @@ app.use((req, res, next) => {
   }
   
   if (!flaskReady) {
-    console.error('❌ Could not connect to Flask bot API after multiple attempts');
-    console.error('   Make sure Flask dependencies are installed: pip install -r requirements.txt');
+    console.error('❌ Could not connect to external Flask bot API after multiple attempts');
+    console.error(`   Make sure your Flask service at ${FLASK_BOT_API_URL} is running and accessible`);
+    console.error('   You can set FLASK_BOT_API_URL environment variable to change the service URL');
   }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
