@@ -8,7 +8,7 @@ import * as schema from "@shared/schema";
 const dbHost = process.env.DB_HOST || 'mysql.railway.internal';
 const dbPort = parseInt(process.env.DB_PORT || '3306');
 const dbUser = process.env.DB_USER || 'root';
-const dbPassword = process.env.DM_PASSWORD || 'vGJZMQERwhawEuiNFpzSGljtRrqWUYQc';
+const dbPassword = process.env.DM_PASSWORD || 'jmvUBSijictmsGsTTXzOerUGbfgrInis';
 const dbName = process.env.DB_DATABSASE || 'railway';
 
 if (!dbHost || !dbUser || !dbPassword || !dbName) {
