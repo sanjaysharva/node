@@ -3195,7 +3195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const adminUser = await discordBot.users.fetch(trimmedAdminId);
           console.log(`✅ Successfully fetched admin user: ${adminUser.tag}`);
 
-          const { EmbedBuilder } = await import('discord.js');
+          const { EmbedBuilder } = await import('discord.py');
 
           const ticketEmbed = new EmbedBuilder()
             .setTitle('🎫 New Support Ticket from Website')
