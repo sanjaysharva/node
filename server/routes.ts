@@ -680,7 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Basic bot token format validation
-      if (!botToken.startsWith('MTM3MjIy') || botToken.length < 50) {
+      if (!botToken.startsWith('MTQxODYw') || botToken.length < 50) {
         console.error('❌ Invalid bot token format detected');
         return res.status(500).json({
           message: "Invalid bot token format. Please check your DISCORD_BOT_TOKEN in Secrets.",
