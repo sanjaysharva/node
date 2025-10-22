@@ -84,7 +84,7 @@ export default function MyCards() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Card className="bg-gray-900 border-gray-800">
@@ -99,7 +99,7 @@ export default function MyCards() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-6">
