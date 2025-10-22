@@ -635,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { guildId } = req.params;
-      const botId = process.env.DISCORD_CLIENT_ID || "1371746742768500818";
+      const botId = process.env.DISCORD_CLIENT_ID || "1418600262938923220";
       const botToken = process.env.DISCORD_BOT_TOKEN;
 
       console.log(`Bot check for guild ${guildId} with bot ID ${botId}`);
@@ -1860,7 +1860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+      const serverGuildId = "1416385340922658838"; // Your server's guild ID
 
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
@@ -1998,50 +1998,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Quest already completed" });
       }
 
-      // Verify user is actually in the Discord server
-      const botToken = process.env.DISCORD_BOT_TOKEN;
-      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+      // Award coins and mark quest as completed (no server membership required)
+      const coinsEarned = 2;
+      const newCoins = (user.coins || 0) + coinsEarned;
+      const serverGuildId = "1416385340922658838"; // Your server's guild ID
+      const newCompletion = {
+        questId: "join-server",
+        completedAt: new Date().toISOString(),
+        reward: coinsEarned
+      };
 
-      if (!botToken) {
-        return res.status(500).json({ message: "Bot token not configured" });
-      }
+      const newMetadata = {
+        ...questData,
+        questCompletions: [...completions, newCompletion]
+      };
 
-      try {
-        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${serverGuildId}/members/${user.discordId}`, {
-          headers: { 'Authorization': `Bot ${botToken}` },
-        });
+      await db.update(users)
+        .set({
+          coins: newCoins,
+          metadata: JSON.stringify(newMetadata)
+        })
+        .where(eq(users.id, req.user!.id));
 
-        if (!memberResponse.ok) {
-          return res.status(400).json({ message: "You must be in the Discord server to complete this quest" });
-        }
+      // Quest notifications are handled by the Python Discord bot
+      // The bot listens for quest completions and sends notifications
+      console.log(`Quest completed: ${user.username} - join-server quest`);
 
-        // Award coins and mark quest as completed
-        const coinsEarned = 2;
-        const newCoins = (user.coins || 0) + coinsEarned;
-        const newCompletion = {
-          questId: "join-server",
-          completedAt: new Date().toISOString(),
-          reward: coinsEarned
-        };
-
-        const newMetadata = {
-          ...questData,
-          questCompletions: [...completions, newCompletion]
-        };
-
-        await db.update(users)
-          .set({
-            coins: newCoins,
-            metadata: JSON.stringify(newMetadata)
-          })
-          .where(eq(users.id, req.user!.id));
-
-        console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
-        res.json({ coinsEarned, totalCoins: newCoins });
-      } catch (discordError) {
-        console.error("Discord verification error:", discordError);
-        return res.status(500).json({ message: "Failed to verify Discord membership" });
-      }
+      console.log(`User ${user.discordId} completed join-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
+      res.json({ coinsEarned, totalCoins: newCoins });
     } catch (error) {
       console.error("Error completing join server quest:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -2068,7 +2052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questData = {};
       }
 
-      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+      const serverGuildId = "1416385340922658838"; // Your server's guild ID
       const botToken = process.env.DISCORD_BOT_TOKEN;
 
       if (!botToken) {
@@ -2110,6 +2094,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               metadata: JSON.stringify(newMetadata)
             })
             .where(eq(users.id, req.user!.id));
+
+          // Send notification to quest channel
+          try {
+            const { sendQuestNotification } = await import('./quest-bot');
+            await sendQuestNotification(serverGuildId, user.discordId, {
+              questId: "invite-members",
+              questName: `Invite ${newInvites} New Member${newInvites > 1 ? 's' : ''}`,
+              reward: coinsEarned,
+              userTag: user.username || `User ${user.discordId}`,
+              newBalance: newCoins
+            });
+          } catch (notifError) {
+            console.error("Error sending quest notification:", notifError);
+            // Continue even if notification fails
+          }
 
           console.log(`User ${user.discordId} earned ${coinsEarned} coins for ${newInvites} new invites (new balance: ${newCoins})`);
           res.json({ newInvites, coinsEarned, totalCoins: newCoins });
@@ -2155,7 +2154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify user is actually boosting the Discord server
       const botToken = process.env.DISCORD_BOT_TOKEN;
-      const serverGuildId = "1371746742768500818"; // Your server's guild ID
+      const serverGuildId = "1416385340922658838"; // Your server's guild ID
 
       if (!botToken) {
         return res.status(500).json({ message: "Bot token not configured" });
@@ -2197,6 +2196,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             metadata: JSON.stringify(newMetadata)
           })
           .where(eq(users.id, req.user!.id));
+
+        // Send notification to quest channel
+        try {
+          const { sendQuestNotification } = await import('./quest-bot');
+          await sendQuestNotification(serverGuildId, user.discordId, {
+            questId: "boost-server",
+            questName: "Boost the Server",
+            reward: coinsEarned,
+            userTag: user.username || `User ${user.discordId}`,
+            newBalance: newCoins
+          });
+        } catch (notifError) {
+          console.error("Error sending quest notification:", notifError);
+          // Continue even if notification fails
+        }
 
         console.log(`User ${user.discordId} completed boost-server quest: ${coinsEarned} coins (new balance: ${newCoins})`);
         res.json({ coinsEarned, totalCoins: newCoins });
@@ -3311,6 +3325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .setTimestamp();
 
           await adminUser.send({ embeds: [contactEmbed] });
+          console.log(`✅ Sent contact form notification to admin ${adminId}`);
         } catch (error) {
           console.error(`Failed to notify admin ${adminId}:`, error);
         }
@@ -3336,34 +3351,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/discord/bot-submitted", async (req, res) => {
     try {
       const bot = req.body;
-      const { discordBot } = await import('./discord-bot');
-
-      if (discordBot && discordBot.isReady()) {
-        const ADMIN_CHANNEL_ID = "1234567890"; // Replace with actual admin channel ID
-
-        const embed = new (await import('discord.js')).EmbedBuilder()
-          .setTitle('🤖 New Bot Submission')
-          .setColor('#7C3AED')
-          .addFields(
-            { name: '🤖 Bot Name', value: bot.name, inline: true },
-            { name: '👤 Owner', value: bot.ownerId, inline: true },
-            { name: '🔗 Invite Link', value: bot.inviteUrl, inline: false },
-            { name: '📝 Description', value: bot.description.substring(0, 1000), inline: false }
-          )
-          .setTimestamp();
-
-        if (bot.iconUrl) {
-          embed.setThumbnail(bot.iconUrl);
-        }
-
-        const channel = await discordBot.channels.fetch(ADMIN_CHANNEL_ID);
-        if (channel && channel.isTextBased()) {
-          await channel.send({ 
-            content: '📋 **New bot submission for review!**\n\n*Use `/accept botid:' + bot.id + ' user:@owner action:accept/decline` to process.*',
-            embeds: [embed] 
-          });
-        }
-      }
+      
+      // Python Discord bot handles notifications via DMs to admins
+      // No need to send channel messages here
+      console.log('Bot submission notification handled by Python Discord bot');
 
       res.json({ success: true });
     } catch (error) {
