@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -17,7 +18,7 @@ import { useAuth } from "@/lib/auth";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { apiRequest } from "@/lib/queryClient";
 import { insertServerSchema } from "@shared/schema";
-import { Plus, Server, Users, Hash, Link2, Image, Globe, CheckCircle, Megaphone } from "lucide-react";
+import { Plus, Server, Users, Hash, Link2, Image, Globe, CheckCircle, Megaphone, Search } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 
@@ -52,7 +53,8 @@ export default function AdvertiseServer() {
   const [, setLocation] = useLocation();
   const [serverPreview, setServerPreview] = useState<any>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [customTag, setCustomTag] = useState<string>("");
+  const [inviteLink, setInviteLink] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -76,7 +78,7 @@ export default function AdvertiseServer() {
     mutationFn: async (data: ServerFormData) => {
       const processedData = {
         ...data,
-        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+        tags: selectedTags,
       };
       return apiRequest("/api/servers", "POST", processedData);
     },
@@ -93,27 +95,6 @@ export default function AdvertiseServer() {
       toast({
         title: "Failed to Add Server",
         description: error.message || "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Validate invite mutation
-  const validateInviteMutation = useMutation({
-    mutationFn: async (inviteCode: string) => {
-      const response = await apiRequest("/api/discord/validate-invite", "POST", { inviteCode });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setServerPreview(data);
-      if (data.name) {
-        form.setValue("name", data.name);
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Invalid Invite Link",
-        description: "Please check your Discord invite link and try again.",
         variant: "destructive",
       });
     },
@@ -160,7 +141,7 @@ export default function AdvertiseServer() {
         form.setValue("icon", autoFillData.icon);
       }
     }
-  }, [autoFillData.name, autoFillData.discordId, autoFillData.description, serverPreview, form]);
+  }, []);
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -179,9 +160,54 @@ export default function AdvertiseServer() {
     );
   }
 
-  const handleInviteValidation = (inviteCode: string) => {
-    if (inviteCode) {
-      validateInviteMutation.mutate(inviteCode);
+  const analyzeServer = async () => {
+    if (!inviteLink) {
+      toast({
+        title: "Invite link required",
+        description: "Please enter a Discord server invite link",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      // Extract invite code from the link
+      let inviteCode = inviteLink.trim();
+      if (inviteCode.includes('discord.gg/')) {
+        inviteCode = inviteCode.split('discord.gg/')[1].split('?')[0];
+      } else if (inviteCode.includes('discord.com/invite/')) {
+        inviteCode = inviteCode.split('discord.com/invite/')[1].split('?')[0];
+      }
+
+      const response = await apiRequest("/api/discord/validate-invite", "POST", { inviteCode });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid invite link");
+      }
+
+      setServerPreview(data);
+      form.setValue("name", data.name);
+      form.setValue("inviteCode", inviteCode);
+      form.setValue("discordId", data.serverId);
+      form.setValue("icon", data.icon ? data.icon.split('/').pop().split('.')[0] : '');
+      form.setValue("memberCount", data.memberCount || 0);
+      form.setValue("onlineCount", data.onlineCount || 0);
+
+      toast({
+        title: "Server Verified",
+        description: `Successfully loaded ${data.name}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Invalid Invite Link",
+        description: error.message || "Please check your Discord invite link and try again.",
+        variant: "destructive",
+      });
+      setServerPreview(null);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -190,14 +216,6 @@ export default function AdvertiseServer() {
       setSelectedTags(selectedTags.filter(t => t !== tag));
     } else if (selectedTags.length < 10) {
       setSelectedTags([...selectedTags, tag]);
-    }
-  };
-
-  const addCustomTag = () => {
-    const trimmedTag = customTag.trim();
-    if (trimmedTag && !selectedTags.includes(trimmedTag) && selectedTags.length < 10) {
-      setSelectedTags([...selectedTags, trimmedTag]);
-      setCustomTag("");
     }
   };
 
@@ -210,11 +228,20 @@ export default function AdvertiseServer() {
       });
       return;
     }
+
+    if (!serverPreview) {
+      toast({
+        title: "Server Analysis Required",
+        description: "Please analyze your server first.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     const serverData = {
       ...data,
-      tags: selectedTags.join(','),
+      tags: selectedTags,
       discordId: serverPreview?.serverId || null,
       ownerId: user.id
     };
@@ -247,11 +274,51 @@ export default function AdvertiseServer() {
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Server Preview - Show above invite link if auto-filled */}
+                  {/* Discord Invite Link with Analyze Button */}
+                  <div className="space-y-4">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Link2 className="w-4 h-4" />
+                      Discord Invite Link *
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="https://discord.gg/your-invite-code"
+                        value={inviteLink}
+                        onChange={(e) => setInviteLink(e.target.value)}
+                        disabled={!!serverPreview}
+                        className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                        data-testid="input-invite-link"
+                      />
+                      <Button
+                        type="button"
+                        onClick={analyzeServer}
+                        disabled={isAnalyzing || !!serverPreview}
+                        className="bg-purple-600 hover:bg-purple-700"
+                        data-testid="button-analyze"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <Search className="w-4 h-4 mr-2 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="w-4 h-4 mr-2" />
+                            Analyze
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Enter your Discord invite link and click Analyze to load server information
+                    </p>
+                  </div>
+
+                  {/* Server Preview Card */}
                   {serverPreview && (
                     <Card className="border-green-400/20 bg-green-400/5">
                       <CardContent className="p-4">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-4">
                           <CheckCircle className="w-5 h-5 text-green-400" />
                           <span className="text-sm font-medium text-green-400">Server Verified</span>
                         </div>
@@ -268,7 +335,7 @@ export default function AdvertiseServer() {
                             )}
                           </div>
                           <div>
-                            <h3 className="font-semibold" data-testid="text-server-preview-name">
+                            <h3 className="font-semibold text-lg" data-testid="text-server-preview-name">
                               {serverPreview.name || "Server Name"}
                             </h3>
                             <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -281,42 +348,7 @@ export default function AdvertiseServer() {
                     </Card>
                   )}
 
-                  {/* Discord Invite Link */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                      <Link2 className="w-4 h-4" />
-                      Discord Invite Link *
-                    </label>
-                    <FormField
-                      control={form.control}
-                      name="inviteCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="https://discord.gg/your-invite-code"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                const value = e.target.value;
-                                if (value) {
-                                  const code = value.split('/').pop() || value;
-                                  handleInviteValidation(code);
-                                }
-                              }}
-                              data-testid="input-invite-code"
-                            />
-                          </FormControl>
-                          <p className="text-sm text-muted-foreground">
-                            {serverPreview ? "Server information loaded successfully" : "We'll automatically fetch your server information"}
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Description - Show when server preview exists but allow editing */}
+                  {/* Description - Only show when server is analyzed */}
                   {serverPreview && (
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Server Description *</label>
@@ -341,230 +373,152 @@ export default function AdvertiseServer() {
                     </div>
                   )}
 
-                  {/* Basic Information - Only show if not auto-filled */}
-                  {!serverPreview && (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium flex items-center gap-2">
-                          <Globe className="w-4 h-4" />
-                          Server Name *
+                  {/* Tags Section - Only show when server is analyzed */}
+                  {serverPreview && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium leading-none flex items-center gap-2">
+                          <Hash className="w-4 h-4" />
+                          Server Tags
                         </label>
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Input
-                                  placeholder="Your Server Name"
-                                  {...field}
-                                  data-testid="input-server-name"
-                                  className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Select tags that describe your server (maximum 10 tags)
+                        </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Server Description *</label>
-                        <FormField
-                          control={form.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Textarea
-                                  rows={4}
-                                  placeholder="Describe your server and what makes it special..."
-                                  {...field}
-                                  data-testid="textarea-description"
-                                  className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Tags Section */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium leading-none flex items-center gap-2">
-                        <Hash className="w-4 h-4" />
-                        Server Tags
-                      </label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Select tags that describe your server (maximum 10 tags)
-                      </p>
-                    </div>
-
-                    {/* Selected Tags */}
-                    {selectedTags.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-purple-400">Selected Tags ({selectedTags.length}/10)</p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedTags.map((tag, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 cursor-pointer transition-colors"
-                              onClick={() => toggleTag(tag)}
-                              data-testid={`badge-selected-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                            >
-                              {tag} ×
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Custom Tag Input */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Add Custom Tag</label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          placeholder="Enter custom tag..."
-                          value={customTag}
-                          onChange={(e) => setCustomTag(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              addCustomTag();
-                            }
-                          }}
-                          className="flex-1 bg-background/50 border-purple-400/30 focus:border-purple-400/50 text-foreground placeholder:text-muted-foreground"
-                          data-testid="input-custom-tag"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={addCustomTag}
-                          disabled={!customTag.trim() || selectedTags.length >= 10}
-                          className="border-purple-400/30 hover:border-purple-400/50 hover:bg-purple-500/10"
-                          data-testid="button-add-custom-tag"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Available Tags */}
-                    <div className="space-y-3">
-                      {Object.entries(PREDEFINED_TAGS).map(([category, tags]) => (
-                        <div key={category} className="space-y-2">
-                          <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
+                      {/* Selected Tags */}
+                      {selectedTags.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-purple-400">Selected Tags ({selectedTags.length}/10)</p>
                           <div className="flex flex-wrap gap-2">
-                            {tags.map((tag) => {
-                              const isSelected = selectedTags.includes(tag);
-                              const isDisabled = !isSelected && selectedTags.length >= 10;
-
-                              return (
-                                <Badge
-                                  key={tag}
-                                  variant={isSelected ? "default" : "outline"}
-                                  className={`cursor-pointer transition-all duration-200 ${
-                                    isSelected
-                                      ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
-                                      : isDisabled
-                                      ? "opacity-50 cursor-not-allowed border-muted-foreground/20 text-muted-foreground"
-                                      : "border-purple-400/30 text-muted-foreground hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300"
-                                  }`}
-                                  onClick={() => !isDisabled && toggleTag(tag)}
-                                  data-testid={`badge-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                                >
-                                  {tag}
-                                </Badge>
-                              );
-                            })}
+                            {selectedTags.map((tag, index) => (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 cursor-pointer transition-colors"
+                                onClick={() => toggleTag(tag)}
+                                data-testid={`badge-selected-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                              >
+                                {tag} ×
+                              </Badge>
+                            ))}
                           </div>
                         </div>
-                      ))}
+                      )}
+
+                      {/* Available Tags */}
+                      <div className="space-y-3">
+                        {Object.entries(PREDEFINED_TAGS).map(([category, tags]) => (
+                          <div key={category} className="space-y-2">
+                            <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {tags.map((tag) => {
+                                const isSelected = selectedTags.includes(tag);
+                                const isDisabled = !isSelected && selectedTags.length >= 10;
+
+                                return (
+                                  <Badge
+                                    key={tag}
+                                    variant={isSelected ? "default" : "outline"}
+                                    className={`cursor-pointer transition-all duration-200 ${
+                                      isSelected
+                                        ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
+                                        : isDisabled
+                                        ? "opacity-50 cursor-not-allowed border-muted-foreground/20 text-muted-foreground"
+                                        : "border-purple-400/30 text-muted-foreground hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300"
+                                    }`}
+                                    onClick={() => !isDisabled && toggleTag(tag)}
+                                    data-testid={`badge-tag-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                                  >
+                                    {tag}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Bump Settings Dropdown */}
-                  <div className="space-y-4">
-                    <details className="group">
-                      <summary className="flex cursor-pointer items-center justify-between rounded-lg border border-purple-400/30 p-4 text-foreground hover:bg-purple-500/5 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <Megaphone className="w-5 h-5 text-purple-400" />
-                          <span className="font-medium">Bump Settings</span>
-                        </div>
-                        <svg
-                          className="h-5 w-5 shrink-0 transition-transform duration-300 group-open:rotate-180"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </summary>
+                  {/* Bump Settings - Only show when server is analyzed */}
+                  {serverPreview && (
+                    <div className="space-y-4">
+                      <details className="group">
+                        <summary className="flex cursor-pointer items-center justify-between rounded-lg border border-purple-400/30 p-4 text-foreground hover:bg-purple-500/5 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <Megaphone className="w-5 h-5 text-purple-400" />
+                            <span className="font-medium">Bump Settings</span>
+                          </div>
+                          <svg
+                            className="h-5 w-5 shrink-0 transition-transform duration-300 group-open:rotate-180"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </summary>
 
-                      <div className="mt-4 space-y-4 border-l-2 border-purple-400/20 pl-4">
-                        <FormField
-                          control={form.control}
-                          name="bumpEnabled"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border border-purple-400/20 p-4 bg-purple-500/5">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base font-medium">
-                                  Enable Bump System
-                                </FormLabel>
-                                <p className="text-sm text-muted-foreground">
-                                  Allow users to bump your server to other servers using /bump command
-                                </p>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        {form.watch("bumpEnabled") && (
-                          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <i className="fas fa-check text-white text-xs"></i>
-                              </div>
-                              <div className="space-y-2">
-                                <h4 className="font-medium text-green-400">Bump System Features:</h4>
-                                <ul className="text-sm text-green-300 space-y-1">
-                                  <li>• Members can use /bump to promote your server</li>
-                                  <li>• 2-hour cooldown between bumps</li>
-                                  <li>• Your server will appear in other bump channels</li>
-                                  <li>• Track bump analytics in admin panel</li>
-                                </ul>
-                                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded">
-                                  <p className="text-xs text-blue-300">
-                                    💡 <strong>Tip:</strong> Set up a bump channel using /bumpchannel command after adding your server
+                        <div className="mt-4 space-y-4 border-l-2 border-purple-400/20 pl-4">
+                          <FormField
+                            control={form.control}
+                            name="bumpEnabled"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-purple-400/20 p-4 bg-purple-500/5">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base font-medium">
+                                    Enable Bump System
+                                  </FormLabel>
+                                  <p className="text-sm text-muted-foreground">
+                                    Allow users to bump your server to other servers using /bump command
                                   </p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {form.watch("bumpEnabled") && (
+                            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <i className="fas fa-check text-white text-xs"></i>
+                                </div>
+                                <div className="space-y-2">
+                                  <h4 className="font-medium text-green-400">Bump System Features:</h4>
+                                  <ul className="text-sm text-green-300 space-y-1">
+                                    <li>• Members can use /bump to promote your server</li>
+                                    <li>• 2-hour cooldown between bumps</li>
+                                    <li>• Your server will appear in other bump channels</li>
+                                    <li>• Track bump analytics in admin panel</li>
+                                  </ul>
+                                  <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded">
+                                    <p className="text-xs text-blue-300">
+                                      💡 <strong>Tip:</strong> Set up a bump channel using /bumpchannel command after adding your server
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    </details>
-                  </div>
+                          )}
+                        </div>
+                      </details>
+                    </div>
+                  )}
 
                   {/* Submit Buttons */}
                   <div className="flex gap-4 pt-6">
                     <Button
                       type="submit"
                       className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-3 transition-all duration-300 hover:scale-105"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !serverPreview}
                       data-testid="button-submit-server"
                     >
                       {isSubmitting || createServerMutation.isPending ? "Publishing..." : "Publish Server"}
