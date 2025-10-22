@@ -115,6 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/discord", (req, res) => {
     const clientId = process.env.DISCORD_CLIENT_ID || "1418600262938923220";
+    const clientSecret = process.env.DISCORD_CLIENT_SECRET;
     const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
     const redirectUri = `${protocol}://${req.get('host')}/api/auth/discord/callback`;
     const scope = 'identify email guilds';
@@ -126,6 +127,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     if (!clientId) {
       return res.status(500).json({ message: "Discord client ID not configured" });
+    }
+
+    if (!clientSecret) {
+      console.error('❌ DISCORD_CLIENT_SECRET is not set!');
+      return res.status(500).json({ 
+        message: "Discord client secret not configured. Please add DISCORD_CLIENT_SECRET to your Secrets." 
+      });
     }
 
     // Generate secure random state for CSRF protection
@@ -227,15 +235,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
-      const tokenData = await tokenResponse.json();
-
       console.log('Token Response Status:', tokenResponse.status);
-      // Sensitive token data logging removed for security
+      console.log('Token Response Content-Type:', tokenResponse.headers.get('content-type'));
 
       if (!tokenResponse.ok) {
-        console.error('Discord token exchange failed:', tokenData);
-        throw new Error(tokenData.error_description || tokenData.error || 'Failed to get access token');
+        const errorText = await tokenResponse.text();
+        console.error('Discord token exchange failed:', errorText);
+        
+        // Check if response is HTML (error page)
+        if (errorText.startsWith('<!DOCTYPE') || errorText.startsWith('<html')) {
+          console.error('Received HTML error page instead of JSON - likely invalid credentials');
+          return res.status(500).json({ 
+            message: "Discord OAuth configuration error. Please check DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET in Secrets." 
+          });
+        }
+        
+        // Try to parse as JSON
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: 'Unknown error', error_description: errorText };
+        }
+        
+        console.error('Discord OAuth error details:', errorData);
+        throw new Error(errorData.error_description || errorData.error || 'Failed to get access token');
       }
+
+      const tokenData = await tokenResponse.json();
 
       // Get user info from Discord
       const userResponse = await fetch('https://discord.com/api/users/@me', {
