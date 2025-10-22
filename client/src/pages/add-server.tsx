@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -137,7 +137,7 @@ export default function AdvertiseServer() {
   });
 
   // Set server preview if auto-fill data is available (only once on mount)
-  React.useEffect(() => {
+  useEffect(() => {
     if (autoFillData.name && autoFillData.discordId && !serverPreview) {
       const preview = {
         name: autoFillData.name,
@@ -147,8 +147,13 @@ export default function AdvertiseServer() {
         serverId: autoFillData.discordId
       };
       setServerPreview(preview);
+      
+      // Auto-fill the description if provided
+      if (autoFillData.description) {
+        form.setValue("description", autoFillData.description);
+      }
     }
-  }, []);
+  }, [autoFillData.name, autoFillData.discordId, autoFillData.description, serverPreview, form]);
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -401,7 +406,7 @@ export default function AdvertiseServer() {
 
                     {/* Custom Tag Input */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Add Custom Tag</label>
+                      <label className="text-sm font-medium text-muted-foreground">Add Custom Tag</label>
                       <div className="flex gap-2">
                         <Input
                           type="text"
