@@ -148,9 +148,16 @@ export default function AdvertiseServer() {
       };
       setServerPreview(preview);
       
-      // Auto-fill the description if provided
+      // Auto-fill form values
+      form.setValue("name", autoFillData.name);
       if (autoFillData.description) {
         form.setValue("description", autoFillData.description);
+      }
+      form.setValue("memberCount", autoFillData.memberCount);
+      form.setValue("onlineCount", autoFillData.onlineCount);
+      form.setValue("discordId", autoFillData.discordId);
+      if (autoFillData.icon) {
+        form.setValue("icon", autoFillData.icon);
       }
     }
   }, [autoFillData.name, autoFillData.discordId, autoFillData.description, serverPreview, form]);
@@ -240,42 +247,7 @@ export default function AdvertiseServer() {
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Discord Invite Link */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                      <Link2 className="w-4 h-4" />
-                      Discord Invite Link *
-                    </label>
-                    <FormField
-                      control={form.control}
-                      name="inviteCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="https://discord.gg/your-invite-code"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                const value = e.target.value;
-                                if (value) {
-                                  const code = value.split('/').pop() || value;
-                                  handleInviteValidation(code);
-                                }
-                              }}
-                              data-testid="input-invite-code"
-                            />
-                          </FormControl>
-                          <p className="text-sm text-muted-foreground">
-                            We'll automatically fetch your server information
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Server Preview */}
+                  {/* Server Preview - Show above invite link if auto-filled */}
                   {serverPreview && (
                     <Card className="border-green-400/20 bg-green-400/5">
                       <CardContent className="p-4">
@@ -309,44 +281,91 @@ export default function AdvertiseServer() {
                     </Card>
                   )}
 
+                  {/* Discord Invite Link */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Link2 className="w-4 h-4" />
+                      Discord Invite Link *
+                    </label>
+                    <FormField
+                      control={form.control}
+                      name="inviteCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="https://discord.gg/your-invite-code"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                const value = e.target.value;
+                                if (value) {
+                                  const code = value.split('/').pop() || value;
+                                  handleInviteValidation(code);
+                                }
+                              }}
+                              data-testid="input-invite-code"
+                            />
+                          </FormControl>
+                          <p className="text-sm text-muted-foreground">
+                            {serverPreview ? "Server information loaded successfully" : "We'll automatically fetch your server information"}
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Description - Show when server preview exists but allow editing */}
+                  {serverPreview && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Server Description *</label>
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Textarea
+                                rows={4}
+                                placeholder="Describe your server and what makes it special..."
+                                {...field}
+                                data-testid="textarea-description"
+                                className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
                   {/* Basic Information - Only show if not auto-filled */}
                   {!serverPreview && (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium flex items-center gap-2">
-                            <Globe className="w-4 h-4" />
-                            Server Name *
-                          </label>
-                          <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input
-                                    placeholder="Your Server Name"
-                                    {...field}
-                                    data-testid="input-server-name"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium flex items-center gap-2">
-                            <Image className="w-4 h-4" />
-                            Server Icon URL
-                          </label>
-                          <Input
-                            type="url"
-                            placeholder="https://example.com/icon.png"
-                            className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium flex items-center gap-2">
+                          <Globe className="w-4 h-4" />
+                          Server Name *
+                        </label>
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  placeholder="Your Server Name"
+                                  {...field}
+                                  data-testid="input-server-name"
+                                  className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -362,6 +381,7 @@ export default function AdvertiseServer() {
                                   placeholder="Describe your server and what makes it special..."
                                   {...field}
                                   data-testid="textarea-description"
+                                  className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -419,7 +439,7 @@ export default function AdvertiseServer() {
                               addCustomTag();
                             }
                           }}
-                          className="flex-1 bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                          className="flex-1 bg-background/50 border-purple-400/30 focus:border-purple-400/50 text-foreground placeholder:text-muted-foreground"
                           data-testid="input-custom-tag"
                         />
                         <Button
