@@ -63,9 +63,10 @@ export default function AddBot() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bots"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bots/user", user?.id] });
       toast({
-        title: "Bot Submitted for Review!",
-        description: "Your Discord bot has been submitted and is under review. This may take up to 2 days.",
+        title: "Bot Published Successfully!",
+        description: "Your Discord bot has been added to the directory. View it in your bots page or explore the listings.",
       });
       setLocation("/your-bots");
     },
@@ -131,12 +132,24 @@ export default function AddBot() {
   };
 
   const onSubmit = (data: BotFormData) => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to add a bot.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     const botData = {
       ...data,
-      tags: selectedTags.join(',')
+      tags: selectedTags.join(','),
+      ownerId: user.id
     };
-    createBotMutation.mutate(botData);
+    createBotMutation.mutate(botData, {
+      onSettled: () => setIsSubmitting(false)
+    });
   };
 
   return (
