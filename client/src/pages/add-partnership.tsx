@@ -119,13 +119,13 @@ export default function AddPartnership() {
     onSuccess: (data) => {
       console.log("Partnership created:", data);
       toast({
-        title: "Partnership created successfully",
-        description: "Your partnership has been published and is now searchable.",
+        title: "Partnership Published Successfully!",
+        description: "Your partnership has been added to the directory. View it in your partnerships page or explore the listings.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/partnerships"] });
       setTimeout(() => {
-        window.location.href = "/partnership";
-      }, 1000);
+        window.location.href = "/your-partnerships";
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
