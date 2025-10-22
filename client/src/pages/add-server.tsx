@@ -60,6 +60,17 @@ export default function AdvertiseServer() {
   
   usePageTitle("Add Your Discord Server");
 
+  // Check for URL parameters to auto-fill form
+  const urlParams = new URLSearchParams(window.location.search);
+  const autoFillData = {
+    name: urlParams.get('name') || '',
+    description: urlParams.get('description') || '',
+    discordId: urlParams.get('discordId') || '',
+    icon: urlParams.get('icon') || '',
+    memberCount: parseInt(urlParams.get('memberCount') || '0'),
+    onlineCount: parseInt(urlParams.get('onlineCount') || '0')
+  };
+
   // Create server mutation
   const createServerMutation = useMutation({
     mutationFn: async (data: ServerFormData) => {
@@ -71,11 +82,12 @@ export default function AdvertiseServer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/servers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/servers/user", user?.id] });
       toast({
-        title: "Server Added Successfully!",
-        description: "Your Discord server has been published and is now visible to the community.",
+        title: "Server Published Successfully!",
+        description: "Your Discord server has been added to the directory. View it in your servers page or explore the listings.",
       });
-      setLocation("/");
+      setLocation("/your-servers");
     },
     onError: (error: any) => {
       toast({
@@ -110,17 +122,30 @@ export default function AdvertiseServer() {
   const form = useForm<ServerFormData>({
     resolver: zodResolver(serverFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: autoFillData.name,
+      description: autoFillData.description,
       inviteCode: "",
       tags: "",
-      memberCount: 0,
-      onlineCount: 0,
+      memberCount: autoFillData.memberCount,
+      onlineCount: autoFillData.onlineCount,
       verified: false,
       featured: false,
       bumpEnabled: false,
+      discordId: autoFillData.discordId,
+      icon: autoFillData.icon,
     },
   });
+
+  // Set server preview if auto-fill data is available
+  if (autoFillData.name && !serverPreview) {
+    setServerPreview({
+      name: autoFillData.name,
+      icon: autoFillData.icon ? `https://cdn.discordapp.com/icons/${autoFillData.discordId}/${autoFillData.icon}.png` : null,
+      memberCount: autoFillData.memberCount,
+      onlineCount: autoFillData.onlineCount,
+      serverId: autoFillData.discordId
+    });
+  }
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -162,13 +187,25 @@ export default function AdvertiseServer() {
   };
 
   const onSubmit = (data: ServerFormData) => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to add a server.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     const serverData = {
       ...data,
       tags: selectedTags.join(','),
-      discordId: serverPreview?.serverId || null
+      discordId: serverPreview?.serverId || null,
+      ownerId: user.id
     };
-    createServerMutation.mutate(serverData);
+    createServerMutation.mutate(serverData, {
+      onSettled: () => setIsSubmitting(false)
+    });
   };
 
   return (
