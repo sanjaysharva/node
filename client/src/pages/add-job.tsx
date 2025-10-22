@@ -118,8 +118,8 @@ export default function AddJob() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Job needed posting created successfully!",
+        title: "Job Published Successfully!",
+        description: "Your job posting has been added to the directory. View it in your jobs page or explore the listings.",
       });
       // Reset form
       setJobNeededData({
@@ -128,8 +128,8 @@ export default function AddJob() {
         websiteUrl: "",
         description: ""
       });
-      // Redirect to jobs page
-      navigate('/jobs');
+      // Redirect to your jobs page
+      navigate('/your-jobs');
     },
     onError: () => {
       toast({
@@ -168,8 +168,8 @@ export default function AddJob() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Job giving posting created successfully!",
+        title: "Job Published Successfully!",
+        description: "Your job offer has been added to the directory. View it in your jobs page or explore the listings.",
       });
       // Reset form
       setJobGivingData({
@@ -178,8 +178,8 @@ export default function AddJob() {
         description: "",
         currency: []
       });
-      // Redirect to jobs page
-      navigate('/jobs');
+      // Redirect to your jobs page
+      navigate('/your-jobs');
     },
     onError: () => {
       toast({
