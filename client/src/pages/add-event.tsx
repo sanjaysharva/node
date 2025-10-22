@@ -75,10 +75,10 @@ export default function AddEventPage() {
 
       if (response.ok) {
         toast({
-          title: "Event Created!",
-          description: "Your event has been successfully created and is now live.",
+          title: "Event Published Successfully!",
+          description: "Your event has been added to the directory. View it in your events page or explore the listings.",
         });
-        setLocation("/events");
+        setLocation("/your-events");
       } else {
         const error = await response.json();
         throw new Error(error.message || "Failed to create event");
