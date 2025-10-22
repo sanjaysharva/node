@@ -1579,7 +1579,10 @@ export class DatabaseStorage implements IStorage {
   // Support ticket operations implementation
   async createSupportTicket(ticketData: InsertSupportTicket & { userId: string; discordUserId?: string; username?: string }): Promise<SupportTicket> {
     const ticketId = `TICKET-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+    const uuid = crypto.randomUUID(); // Generate UUID for id field
+    
     const result = await this.db.insert(supportTickets).values({
+      id: uuid, // Explicitly set the id
       ...ticketData,
       ticketId,
       userId: ticketData.userId,
