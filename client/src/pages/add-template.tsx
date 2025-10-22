@@ -107,9 +107,12 @@ export default function AddTemplate() {
     onSuccess: (data) => {
       setGeneratedLink(data.templateLink);
       toast({
-        title: "Template created successfully!",
-        description: "Your template is now available for others to use.",
+        title: "Template Published Successfully!",
+        description: "Your server template has been added to the directory. View it in your templates page or explore the listings.",
       });
+      setTimeout(() => {
+        window.location.href = "/your-templates";
+      }, 1000);
     },
     onError: () => {
       toast({
