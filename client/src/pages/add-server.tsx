@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -136,16 +136,19 @@ export default function AdvertiseServer() {
     },
   });
 
-  // Set server preview if auto-fill data is available
-  if (autoFillData.name && !serverPreview) {
-    setServerPreview({
-      name: autoFillData.name,
-      icon: autoFillData.icon ? `https://cdn.discordapp.com/icons/${autoFillData.discordId}/${autoFillData.icon}.png` : null,
-      memberCount: autoFillData.memberCount,
-      onlineCount: autoFillData.onlineCount,
-      serverId: autoFillData.discordId
-    });
-  }
+  // Set server preview if auto-fill data is available (only once on mount)
+  React.useEffect(() => {
+    if (autoFillData.name && autoFillData.discordId && !serverPreview) {
+      const preview = {
+        name: autoFillData.name,
+        icon: autoFillData.icon ? `https://cdn.discordapp.com/icons/${autoFillData.discordId}/${autoFillData.icon}.png` : null,
+        memberCount: autoFillData.memberCount,
+        onlineCount: autoFillData.onlineCount,
+        serverId: autoFillData.discordId
+      };
+      setServerPreview(preview);
+    }
+  }, []);
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -301,64 +304,68 @@ export default function AdvertiseServer() {
                     </Card>
                   )}
 
-                  {/* Basic Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Globe className="w-4 h-4" />
-                        Server Name *
-                      </label>
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                placeholder="Your Server Name"
-                                {...field}
-                                data-testid="input-server-name"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                  {/* Basic Information - Only show if not auto-filled */}
+                  {!serverPreview && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Server Name *
+                          </label>
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Your Server Name"
+                                    {...field}
+                                    data-testid="input-server-name"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Image className="w-4 h-4" />
-                        Server Icon URL
-                      </label>
-                      <Input
-                        type="url"
-                        placeholder="https://example.com/icon.png"
-                        className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
-                      />
-                    </div>
-                  </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium flex items-center gap-2">
+                            <Image className="w-4 h-4" />
+                            Server Icon URL
+                          </label>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com/icon.png"
+                            className="bg-background/50 border-purple-400/30 focus:border-purple-400/50"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Server Description *</label>
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Textarea
-                              rows={4}
-                              placeholder="Describe your server and what makes it special..."
-                              {...field}
-                              data-testid="textarea-description"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Server Description *</label>
+                        <FormField
+                          control={form.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea
+                                  rows={4}
+                                  placeholder="Describe your server and what makes it special..."
+                                  {...field}
+                                  data-testid="textarea-description"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Tags Section */}
                   <div className="space-y-4">
@@ -394,7 +401,7 @@ export default function AdvertiseServer() {
 
                     {/* Custom Tag Input */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Add Custom Tag</label>
+                      <label className="text-sm font-medium">Add Custom Tag</label>
                       <div className="flex gap-2">
                         <Input
                           type="text"
